@@ -154,8 +154,11 @@ class RAGService:
         # override, and returns ``(original, None)`` when the layer is off, so
         # provenance is only attached when a rewrite actually ran.
         from deeptutor.services.rag.query_rewrite import maybe_rewrite
-
-        effective_query, rewrite_outcome = await maybe_rewrite(query, rewrite=rewrite)
+        try:
+            effective_query, rewrite_outcome = await maybe_rewrite(query, rewrite=rewrite)
+        except Exception:
+            # Fail open: any settings/load/LLM error keeps the original query.
+            effective_query, rewrite_outcome = query, None
         if rewrite_outcome is not None:
             await self._emit_tool_event(
                 event_sink,
