@@ -56,6 +56,7 @@ class OpenAICodexProvider(LLMProvider):
         model_slug = _strip_model_prefix(model_name)
         system_prompt, input_items = convert_messages(messages)
 
+        prompt_cache_key = _prompt_cache_key(messages)
         body: dict[str, Any] = {
             "model": model_slug,
             "store": False,
@@ -64,7 +65,7 @@ class OpenAICodexProvider(LLMProvider):
             "input": input_items,
             "text": {"verbosity": "medium"},
             "include": ["reasoning.encrypted_content"],
-            "prompt_cache_key": _prompt_cache_key(messages),
+            "prompt_cache_key": prompt_cache_key,
             "tool_choice": convert_tool_choice(tool_choice) or "auto",
             "parallel_tool_calls": True,
         }
@@ -78,7 +79,9 @@ class OpenAICodexProvider(LLMProvider):
             try:
                 token = await self._load_token()
                 service.validate_runtime_profile(token, model_slug, reasoning_effort)
-                headers = _build_headers(token.account_id, token.access_token)
+                headers = _build_headers(
+                    token.account_id, token.access_token, session_id=prompt_cache_key
+                )
                 try:
                     content, tool_calls, finish_reason = await _request_codex(
                         CODEX_RESPONSES_URL,
@@ -181,7 +184,7 @@ def _strip_model_prefix(model: str) -> str:
     return model
 
 
-def _build_headers(account_id: str, token: str) -> dict[str, str]:
+def _build_headers(account_id: str, token: str, session_id: str | None = None) -> dict[str, str]:
     if not token:
         raise RuntimeError(
             "OpenAI Codex is not logged in. Run `deeptutor provider login openai-codex`."
@@ -196,6 +199,8 @@ def _build_headers(account_id: str, token: str) -> dict[str, str]:
     }
     if account_id:
         headers["chatgpt-account-id"] = str(account_id)
+    if session_id:
+        headers["session-id"] = session_id
     return headers
 
 
@@ -225,13 +230,13 @@ async def _request_codex(
 
 
 def _prompt_cache_key(messages: list[dict[str, Any]]) -> str:
-    # Routing affinity must survive ordinary history growth. The system prefix
-    # identifies reusable instructions; the provider still verifies all tokens.
+    # Routing affinity must survive ordinary history growth. Only the first
+    # system message identifies the reusable instructions; later system
+    # messages (e.g. a rolling summary) can change between calls and must not move the
+    # key. The provider still verifies all tokens.
     prefix = []
-    for message in messages:
-        if message.get("role") != "system":
-            break
-        prefix.append({"role": "system", "content": message.get("content")})
+    if messages and messages[0].get("role") == "system":
+        prefix.append({"role": "system", "content": messages[0].get("content")})
     raw = json.dumps(prefix, ensure_ascii=True, sort_keys=True)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
