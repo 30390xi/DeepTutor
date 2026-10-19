@@ -24,6 +24,8 @@ import type { ExportableMessage } from "@/lib/chat-export";
 import { plainTextPreview } from "@/lib/chat-outline";
 import { displaySessionTitle } from "@/lib/session-title";
 import AssistantResponse from "@/components/common/AssistantResponse";
+import { InlineFileCardProvider } from "@/components/common/InlineFileCard";
+import type { MessageAttachment } from "@/features/chat/ChatStateAdapter";
 import Tooltip from "@/shared/ui/Tooltip";
 
 interface HistoryMessage {
@@ -31,6 +33,27 @@ interface HistoryMessage {
   content: string;
   timestamp?: string;
   channel?: string;
+  attachments?: Record<string, unknown>[];
+}
+
+function historyAttachments(attachments?: Record<string, unknown>[]): MessageAttachment[] {
+  return (attachments ?? []).flatMap((attachment): MessageAttachment[] => {
+    if (
+      typeof attachment.type !== "string" ||
+      typeof attachment.filename !== "string" ||
+      typeof attachment.url !== "string" ||
+      (attachment.generated !== true && attachment.origin !== "workspace")
+    ) return [];
+    return [{
+      type: attachment.type,
+      filename: attachment.filename,
+      url: attachment.url,
+      generated: attachment.generated === true,
+      origin: attachment.origin === "workspace" ? "workspace" : undefined,
+      relative_path: typeof attachment.relative_path === "string" ? attachment.relative_path : undefined,
+      title: typeof attachment.title === "string" ? attachment.title : undefined,
+    }];
+  });
 }
 
 function conversationPreview(content: string): string {
@@ -146,6 +169,16 @@ export default function PartnerArchives({
   const messageScrollRef = useRef<HTMLDivElement>(null);
   const selectedKeyRef = useRef(selectedKey);
   selectedKeyRef.current = selectedKey;
+
+  const downloadGeneratedAttachment = useCallback((attachment: MessageAttachment) => {
+    if (!attachment.url) return;
+    const link = document.createElement("a");
+    link.href = attachment.url;
+    link.download = attachment.filename || "download";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }, []);
 
   const selected = useMemo(
     () =>
@@ -460,7 +493,13 @@ export default function PartnerArchives({
                         }`}
                       >
                         {message.role === "assistant" ? (
-                          <AssistantResponse content={message.content} />
+                          <InlineFileCardProvider
+                            attachments={historyAttachments(message.attachments)}
+                            onOpen={downloadGeneratedAttachment}
+                            unresolvedRelativeLinksAsText
+                          >
+                            <AssistantResponse content={message.content} />
+                          </InlineFileCardProvider>
                         ) : message.content}
                       </div>
                     </div>
