@@ -20,7 +20,7 @@ import shutil
 from deeptutor.services.path_service import get_path_service
 
 ASSETS_DIR = Path(__file__).resolve().parent / "remotion"
-KIT_FILES = ("kit.tsx", "china_outline.json")
+KIT_FILES = ("kit.tsx", "china_outline.json", "voice.ts")
 BUILD_TIMEOUT_S = 600
 INSTALL_TIMEOUT_S = 900
 
@@ -104,11 +104,16 @@ async def ensure_runtime() -> Path:
     return root
 
 
-def prepare_workdir(work_dir: Path, code: str) -> Path:
-    """Write the lesson next to a fresh copy of the kit and return the lesson path."""
+def prepare_workdir(work_dir: Path, code: str, voice: str | None = None) -> Path:
+    """Write the lesson next to a fresh copy of the kit and return the lesson path.
+
+    ``voice`` is the generated ``voice.ts`` module; without it the kit's empty default is used.
+    """
     work_dir.mkdir(parents=True, exist_ok=True)
     for name in KIT_FILES:
         shutil.copy(ASSETS_DIR / name, work_dir / name)
+    if voice is not None:
+        (work_dir / "voice.ts").write_text(voice, encoding="utf-8")
     lesson = work_dir / "Lesson.tsx"
     lesson.write_text(code, encoding="utf-8")
     return lesson

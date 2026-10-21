@@ -115,7 +115,7 @@ const still = query.has("frame") ? Math.max(0, Math.min(LESSON.durationInFrames 
 createRoot(document.getElementById("player")).render(
   <Player component={Lesson} durationInFrames={LESSON.durationInFrames} fps={LESSON.fps}
     compositionWidth={LESSON.width} compositionHeight={LESSON.height} initialFrame={still ?? 0}
-    controls autoPlay={false} loop clickToPlay showVolumeControls={false} allowFullscreen
+    controls autoPlay={false} loop clickToPlay showVolumeControls allowFullscreen
     style={{width: "100%", aspectRatio: LESSON.width + " / " + LESSON.height}} />);
 `);
 try {

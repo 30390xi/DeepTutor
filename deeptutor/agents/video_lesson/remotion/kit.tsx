@@ -2,8 +2,9 @@
 // Lora + Geist type, and restrained motion live here, so the model composes content instead of
 // inventing styling. Every component reads the frame from its enclosing <Sequence>.
 import React, {createContext, useContext} from "react";
-import {AbsoluteFill, Easing, interpolate, useCurrentFrame} from "remotion";
+import {AbsoluteFill, Easing, Html5Audio, Sequence, Series, interpolate, useCurrentFrame} from "remotion";
 import outline from "./china_outline.json";
+import {VOICE} from "./voice";
 
 export const T = {
   paper: "#fdfcf9", paper2: "#f5f2ea", ink: "#1c1816", soft: "#3b3430", muted: "#6d645a",
@@ -404,3 +405,37 @@ export const ChinaMap: React.FC<{x?: number; y?: number; h?: number; delay?: num
     </svg>
   );
 };
+
+// ------------------------------------------------------------------ narrated scenes
+
+/** One scene: `voice` names its narration in the json block, `frames` is the planned length. */
+export type Scene = {voice: string; frames: number; content: React.ReactNode};
+type Clip = {text: string; frames: number; src?: string; captions: {at: number; text: string}[]};
+const LEAD = 10; // frames of picture before the voice starts
+
+const clip = (id: string): Clip => {
+  const c = (VOICE as Record<string, Clip>)[id];
+  if (!c) throw new Error(`scene voice "${id}" has no narration entry in the json block`);
+  return c;
+};
+// A scene lasts as long as planned, or longer when its narration needs the time.
+const sceneLength = (s: Scene) => Math.max(s.frames, LEAD + clip(s.voice).frames + 20);
+
+/** Total length of a lesson built from `scenes`; use it for LESSON.durationInFrames. */
+export const lessonLength = (scenes: Scene[]) => scenes.reduce((n, s) => n + sceneLength(s), 0);
+
+/** Plays the scenes back to back, each with its voice-over and captions timed to the voice. */
+export const Scenes: React.FC<{scenes: Scene[]}> = ({scenes}) => (
+  <Series>
+    {scenes.map((s, i) => {
+      const c = clip(s.voice);
+      return (
+        <Series.Sequence key={i} durationInFrames={sceneLength(s)}>
+          {s.content}
+          {c.src ? <Sequence from={LEAD} layout="none"><Html5Audio src={c.src} /></Sequence> : null}
+          <Narration lines={c.captions.map((l) => ({at: LEAD + l.at, text: l.text}))} />
+        </Series.Sequence>
+      );
+    })}
+  </Series>
+);
