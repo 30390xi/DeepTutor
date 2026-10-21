@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
 import re
 from typing import Any
@@ -10,6 +10,7 @@ from typing import Any
 from deeptutor.agents.base_agent import BaseAgent
 from deeptutor.core.trace import build_trace_metadata, new_call_id
 
+from .narration import NarrationLine
 from .runtime import ASSETS_DIR
 
 _JSON_BLOCK = re.compile(r"```json[ \t]*\n(.*?)\n```", re.S)
@@ -22,6 +23,7 @@ class LessonDraft:
     summary: str
     code: str
     raw: str
+    narration: list[NarrationLine] = field(default_factory=list)
 
 
 def parse_draft(reply: str) -> LessonDraft:
@@ -36,11 +38,19 @@ def parse_draft(reply: str) -> LessonDraft:
             meta = loaded if isinstance(loaded, dict) else {}
         except json.JSONDecodeError:
             meta = {}
+    narration = [
+        NarrationLine(str(item["id"]).strip(), str(item["text"]).strip())
+        for item in meta.get("narration") or []
+        if isinstance(item, dict)
+        and str(item.get("id") or "").strip()
+        and str(item.get("text") or "").strip()
+    ]
     return LessonDraft(
         title=str(meta.get("title") or "").strip(),
         summary=str(meta.get("summary") or "").strip(),
         code=code,
         raw=reply,
+        narration=narration,
     )
 
 

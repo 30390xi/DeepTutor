@@ -31,6 +31,7 @@ class VideoLessonCapability(TurnCapability):
 
     async def run(self, context: UnifiedContext, stream: StreamBus) -> None:
         from deeptutor.agents.video_lesson.lesson_writer import LessonWriterAgent
+        from deeptutor.agents.video_lesson.narration import narrate, voice_module
         from deeptutor.agents.video_lesson.runtime import (
             build_lesson,
             ensure_runtime,
@@ -60,6 +61,8 @@ class VideoLessonCapability(TurnCapability):
         # npm install (first use only) overlaps the first, much longer, LLM call.
         runtime_ready = asyncio.create_task(ensure_runtime())
         timings: dict[str, float] = {"code_generation": 0.0, "render_check": 0.0}
+        voice_cache: dict = {}
+        narrated = False
         attempts: list[dict[str, Any]] = []
         draft = None
         build = None
@@ -93,7 +96,16 @@ class VideoLessonCapability(TurnCapability):
                             source=self.name,
                             stage="render_check",
                         )
-                    await runtime_ready
+                    if draft.narration:
+                        await stream.progress(
+                            message=i18n.t("narrating", "Recording the narration."),
+                            source=self.name,
+                            stage="render_check",
+                        )
+                    clips, _ = await asyncio.gather(
+                        narrate(draft.narration, context.language, voice_cache), runtime_ready
+                    )
+                    narrated = any(clip.audio for clip in clips.values())
                     await stream.progress(
                         message=i18n.t(
                             "checking", "Compiling the animation and checking its frames."
@@ -101,7 +113,9 @@ class VideoLessonCapability(TurnCapability):
                         source=self.name,
                         stage="render_check",
                     )
-                    lesson = prepare_workdir(base_dir / "source", draft.code)
+                    lesson = prepare_workdir(
+                        base_dir / "source", draft.code, voice=voice_module(clips)
+                    )
                     build = await build_lesson(lesson, base_dir / "source" / "player.js")
                 timings["render_check"] += round(time.perf_counter() - started, 3)
                 attempts.append({"attempt": attempt, "stage": build.stage, "errors": build.errors})
@@ -165,7 +179,11 @@ class VideoLessonCapability(TurnCapability):
                     }
                 ],
                 "code": {"language": "tsx", "content": draft.code},
-                "render": {"attempts": attempts, "duration_seconds": seconds},
+                "render": {
+                    "attempts": attempts,
+                    "duration_seconds": seconds,
+                    "narrated": narrated,
+                },
                 "timings": timings,
             },
             source=self.name,

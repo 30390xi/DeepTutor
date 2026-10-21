@@ -40,3 +40,12 @@ def test_writer_agent_starts_a_conversation_with_the_kit() -> None:
     system, user = agent._messages
     assert "export const Stage" in system["content"]
     assert "Explain a cobweb plot" in user["content"]
+
+
+def test_parse_draft_reads_the_narration() -> None:
+    reply = (
+        '```json\n{"title": "t", "narration": [{"id": "s1", "text": "第一句。"}, {"id": "", "text": "x"}]}\n```\n'
+        "```tsx\nexport const Lesson = () => null;\n```"
+    )
+    draft = parse_draft(reply)
+    assert [(n.id, n.text) for n in draft.narration] == [("s1", "第一句。")]
