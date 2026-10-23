@@ -472,10 +472,10 @@ class TurnApplicationService:
         seconds whether or not it is producing output, so "no lease" is the one
         signal that separates a zombie from a slow human.
 
-        Doing it here rather than on a timer is what makes it safe: the only
-        rows ever considered are ones already blocking a real request, so
-        there is no window in which a just-inserted turn can be swept before
-        its first renewal — the hazard that kept the periodic version out.
+        This synchronous path avoids waiting for the background recovery
+        pass when a new request is already blocked. Admission acquires its
+        lease before inserting a turn, so a live new row is protected even
+        before its first renewal.
 
         Returns ``True`` when something was reaped and the caller should retry.
         """
