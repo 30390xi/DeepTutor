@@ -54,6 +54,8 @@ class _ImageDescriptionClient(LLMClient):
         history: list[dict[str, str]] | None = None,
         **kwargs: Any,
     ) -> str:
+        # The caption batcher passes this flag too; the validated verdict wins.
+        kwargs.pop("allow_image_fallback", None)
         # Preserve the full resolved profile (including wire API and endpoint)
         # rather than rebuilding an override from a subset of its fields.
         return await complete_with_config(

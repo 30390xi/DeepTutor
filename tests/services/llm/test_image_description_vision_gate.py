@@ -124,3 +124,35 @@ async def test_complete_sends_images_for_the_validated_selection(
 
     assert await client.complete("Describe", image_data="synthetic-image") == "a labelled diagram"
     assert calls[0]["allow_image_fallback"] is False
+
+
+@pytest.mark.asyncio
+async def test_complete_tolerates_a_caller_supplied_fallback_flag(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """The caption batcher passes this flag itself; it must not collide."""
+    service = _service(tmp_path, [{"id": "m", "model": "llama3.2-vision"}])
+    _patch_catalog(monkeypatch, service)
+    config = resolve_image_description_config(SELECTION)
+    calls: list[bool | None] = []
+
+    async def complete(
+        *,
+        config: Any,
+        prompt: str,
+        system_prompt: str,
+        messages: Any,
+        allow_image_fallback: bool | None = None,
+        **kwargs: Any,
+    ) -> str:
+        calls.append(allow_image_fallback)
+        return "a labelled diagram"
+
+    monkeypatch.setattr(image_description, "complete_with_config", complete)
+    client = image_description._ImageDescriptionClient(config, configure_env=False)
+
+    caption = await client.complete(
+        "Describe", image_data="synthetic-image", max_retries=0, allow_image_fallback=False
+    )
+    assert caption == "a labelled diagram"
+    assert calls == [False]
