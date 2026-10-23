@@ -1,0 +1,93 @@
+"""The image-description gate and the model picker must reach the same verdict.
+
+Both read the same catalog, so a model the picker offers has to be savable and a
+model it hides has to be refused. They disagreed whenever the profile's declared
+binding differed from the provider the runtime detects from ``base_url``: the
+picker judged capability from the declared provider, the gate from the detected
+one (#2037 follow-up).
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from deeptutor.services.config import model_catalog, provider_runtime
+from deeptutor.services.config.model_catalog import ModelCatalogService
+from deeptutor.services.llm import image_description
+from deeptutor.services.llm.capabilities import set_catalog_capability_overrides
+from deeptutor.services.llm.image_description import resolve_image_description_config
+from deeptutor.services.model_selection.llm import list_llm_options
+
+GATEWAY_BASE_URL = "http://localhost:11434/v1"
+SELECTION = {"profile_id": "gateway", "model_id": "m"}
+
+
+@pytest.fixture(autouse=True)
+def _clean_capability_overrides():
+    """The override table is process-global; keep these tests independent."""
+    set_catalog_capability_overrides([])
+    yield
+    set_catalog_capability_overrides([])
+
+
+def _service(
+    tmp_path: Path, models: list[dict[str, Any]], *, binding: str = "openai"
+) -> ModelCatalogService:
+    service = ModelCatalogService(path=tmp_path / "model_catalog.json")
+    catalog = service.load()
+    catalog["services"]["llm"]["profiles"] = [
+        {
+            "id": "gateway",
+            "name": "OpenAI binding pointed at a local gateway",
+            "binding": binding,
+            "base_url": GATEWAY_BASE_URL,
+            "api_key": "synthetic-key",
+            "models": models,
+        }
+    ]
+    service.save(catalog)
+    return service
+
+
+def _patch_catalog(monkeypatch, service: ModelCatalogService) -> None:
+    """Point every catalog lookup on this path at the fixture."""
+    monkeypatch.setattr(model_catalog, "get_model_catalog_service", lambda: service)
+    monkeypatch.setattr(provider_runtime, "get_model_catalog_service", lambda: service)
+    monkeypatch.setattr(
+        image_description, "get_model_catalog_service", lambda: service, raising=False
+    )
+
+
+def _offered(service: ModelCatalogService) -> list[bool]:
+    return [option["supports_vision"] for option in list_llm_options(service.load())["options"]]
+
+
+def test_gate_accepts_every_model_the_picker_offers(tmp_path: Path, monkeypatch) -> None:
+    service = _service(tmp_path, [{"id": "m", "model": "llama3.2-vision"}])
+    _patch_catalog(monkeypatch, service)
+
+    assert _offered(service) == [True]
+    assert resolve_image_description_config(SELECTION).model == "llama3.2-vision"
+
+
+def test_gate_refuses_a_model_the_tables_do_not_know(tmp_path: Path, monkeypatch) -> None:
+    service = _service(tmp_path, [{"id": "m", "model": "llama3.2"}], binding="custom")
+    _patch_catalog(monkeypatch, service)
+
+    assert _offered(service) == [False]
+    with pytest.raises(ValueError, match="must support image input"):
+        resolve_image_description_config(SELECTION)
+
+
+def test_declared_capability_beats_the_provider_table(tmp_path: Path, monkeypatch) -> None:
+    service = _service(
+        tmp_path, [{"id": "m", "model": "gpt-4o", "capabilities": {"vision": False}}]
+    )
+    _patch_catalog(monkeypatch, service)
+
+    assert _offered(service) == [False]
+    with pytest.raises(ValueError, match="must support image input"):
+        resolve_image_description_config(SELECTION)

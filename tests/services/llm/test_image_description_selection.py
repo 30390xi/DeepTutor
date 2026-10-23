@@ -32,7 +32,7 @@ def selected(monkeypatch):
         return config
 
     monkeypatch.setattr(mod, "resolve_llm_config_for_selection", resolve)
-    monkeypatch.setattr(mod, "supports_vision", lambda *_: True)
+    monkeypatch.setattr(mod, "supports_vision_declared", lambda *_: True)
     return config
 
 
@@ -74,7 +74,7 @@ async def test_explicit_model_preserves_full_config_and_process_state(monkeypatc
 
 
 def test_explicit_text_model_is_rejected(monkeypatch, selected):
-    monkeypatch.setattr(mod, "supports_vision", lambda *_: False)
+    monkeypatch.setattr(mod, "supports_vision_declared", lambda *_: False)
     with pytest.raises(ValueError, match="must support image input"):
         mod.get_image_description_client()
 
