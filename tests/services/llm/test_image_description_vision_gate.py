@@ -91,3 +91,36 @@ def test_declared_capability_beats_the_provider_table(tmp_path: Path, monkeypatc
     assert _offered(service) == [False]
     with pytest.raises(ValueError, match="must support image input"):
         resolve_image_description_config(SELECTION)
+
+
+def test_validated_selection_accepts_images_despite_the_detected_binding(
+    tmp_path: Path, monkeypatch
+) -> None:
+    service = _service(tmp_path, [{"id": "m", "model": "llama3.2-vision"}])
+    _patch_catalog(monkeypatch, service)
+
+    config = resolve_image_description_config(SELECTION)
+    # The gateway URL makes the runtime detect ollama although ``openai`` was declared.
+    assert config.binding == "ollama"
+    client = image_description._ImageDescriptionClient(config, configure_env=False)
+    assert client.supports_multimodal_images() is True
+
+
+@pytest.mark.asyncio
+async def test_complete_sends_images_for_the_validated_selection(
+    tmp_path: Path, monkeypatch
+) -> None:
+    service = _service(tmp_path, [{"id": "m", "model": "llama3.2-vision"}])
+    _patch_catalog(monkeypatch, service)
+    config = resolve_image_description_config(SELECTION)
+    calls: list[dict[str, Any]] = []
+
+    async def complete(**kwargs: Any) -> str:
+        calls.append(kwargs)
+        return "a labelled diagram"
+
+    monkeypatch.setattr(image_description, "complete_with_config", complete)
+    client = image_description._ImageDescriptionClient(config, configure_env=False)
+
+    assert await client.complete("Describe", image_data="synthetic-image") == "a labelled diagram"
+    assert calls[0]["allow_image_fallback"] is False

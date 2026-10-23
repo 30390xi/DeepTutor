@@ -38,6 +38,15 @@ def resolve_image_description_config(selection: dict[str, str]) -> LLMConfig:
 
 
 class _ImageDescriptionClient(LLMClient):
+    def supports_multimodal_images(self) -> bool:
+        """Trust the gate: this client only exists for a validated selection.
+
+        ``self.config.binding`` is the provider detected from ``base_url``, which
+        can differ from the declared binding ``resolve_image_description_config``
+        validated, so re-deriving capability here would veto a valid selection.
+        """
+        return True
+
     async def complete(
         self,
         prompt: str,
@@ -52,6 +61,9 @@ class _ImageDescriptionClient(LLMClient):
             prompt=prompt,
             system_prompt=system_prompt or "You are a helpful assistant.",
             messages=history or None,
+            # The validated selection decided images are supported; the factory
+            # would otherwise strip them for the model it detects on its own.
+            allow_image_fallback=False,
             **kwargs,
         )
 
