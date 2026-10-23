@@ -9,6 +9,7 @@ one (#2037 follow-up).
 
 from __future__ import annotations
 
+import base64
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,7 @@ from deeptutor.services.config import model_catalog, provider_runtime
 from deeptutor.services.config.model_catalog import ModelCatalogService
 from deeptutor.services.llm import image_description
 from deeptutor.services.llm.capabilities import set_catalog_capability_overrides
+from deeptutor.services.llm.image_caption_batch import ImageCaptionBatcher
 from deeptutor.services.llm.image_description import resolve_image_description_config
 from deeptutor.services.model_selection.llm import list_llm_options
 
@@ -156,3 +158,49 @@ async def test_complete_tolerates_a_caller_supplied_fallback_flag(
     )
     assert caption == "a labelled diagram"
     assert calls == [False]
+
+
+@pytest.mark.asyncio
+async def test_batcher_drives_the_real_client_end_to_end(tmp_path: Path, monkeypatch) -> None:
+    """Wire the real batcher to the real client: the seam both defects lived on.
+
+    The batcher supplies ``allow_image_fallback`` itself and swallows a failure
+    into ``[None, None]``, so a client that forwarded the flag twice lost every
+    caption in the batch without a visible error.
+    """
+    service = _service(tmp_path, [{"id": "m", "model": "llama3.2-vision"}])
+    _patch_catalog(monkeypatch, service)
+    config = resolve_image_description_config(SELECTION)
+
+    async def complete(
+        *,
+        config: Any,
+        prompt: str,
+        system_prompt: str,
+        messages: Any,
+        allow_image_fallback: bool | None = None,
+        **kwargs: Any,
+    ) -> str:
+        return (
+            '{"captions": [{"image_id": "IMAGE_0", "caption": "first"},'
+            ' {"image_id": "IMAGE_1", "caption": "second"}]}'
+        )
+
+    monkeypatch.setattr(image_description, "complete_with_config", complete)
+    client = image_description._ImageDescriptionClient(config, configure_env=False)
+    batcher = ImageCaptionBatcher(
+        client, prompt="Describe the figure.", system_prompt="You describe figures."
+    )
+    # Unique bytes per run: the caption cache is keyed on the image digest, and
+    # a hit would skip the client call this test exists to exercise.
+    marker = str(tmp_path).encode()
+    images = [
+        {
+            "base64": base64.b64encode(marker + name.encode()).decode(),
+            "mimetype": "image/png",
+            "filename": name,
+        }
+        for name in ("a.png", "b.png")
+    ]
+
+    assert await batcher.describe(images) == ["first", "second"]
