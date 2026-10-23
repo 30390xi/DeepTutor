@@ -321,13 +321,29 @@ class TurnApplicationService:
                 # Ownership/cleanup can change between the reads above.
                 if await store.get_events(turn_id, last_seq):
                     continue
-                # Only legacy terminal rows with no journal need synthesis.
+                # Recovery can commit FAILED before its terminal journal is
+                # written. A client may also have seen volatile events beyond
+                # the durable cursor. In either case preserve the failure
+                # envelope: DONE alone hides errors on partial responses.
                 metadata = {
                     "status": status,
                     "synthesized": True,
                     "error_code": str(turn.get("failure_code") or ""),
                     "retryable": bool(turn.get("retryable")),
                 }
+                if status == "failed":
+                    last_seq += 1
+                    yield {
+                        "type": "error",
+                        "source": "turn_application",
+                        "stage": "",
+                        "content": str(turn.get("error") or "Turn failed; retry to continue"),
+                        "metadata": {**metadata, "turn_terminal": True},
+                        "session_id": turn.get("session_id", ""),
+                        "turn_id": turn_id,
+                        "seq": last_seq,
+                        "timestamp": time.time(),
+                    }
                 yield {
                     "type": "done",
                     "source": "turn_application",
