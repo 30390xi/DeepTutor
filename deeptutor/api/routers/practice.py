@@ -143,9 +143,7 @@ async def practice_analytics(timezone: str = "UTC", days: int = 30):
         raise HTTPException(422, "Days must be 7, 30, or 90")
     store = get_sqlite_session_store()
     try:
-        return await asyncio.to_thread(
-            PracticeStore(store.db_path).analytics, timezone, days
-        )
+        return await asyncio.to_thread(PracticeStore(store.db_path).analytics, timezone, days)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
 

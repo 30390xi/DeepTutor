@@ -232,7 +232,15 @@ class TaskBoardStore:
             connection.execute("BEGIN IMMEDIATE")
             connection.execute(
                 "INSERT INTO cards (id,title,note,status,archived,created_at,updated_at,workspace_id,due_date) VALUES (?,?,?,'todo',0,?,?,?,?)",
-                (uuid4().hex, payload.title, payload.note, now, now, workspace_id, payload.due_date),
+                (
+                    uuid4().hex,
+                    payload.title,
+                    payload.note,
+                    now,
+                    now,
+                    workspace_id,
+                    payload.due_date,
+                ),
             )
             self._changed(connection)
             return self._snapshot(connection)

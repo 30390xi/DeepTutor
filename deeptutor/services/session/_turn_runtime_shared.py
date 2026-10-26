@@ -1413,6 +1413,7 @@ class _TurnExecution:
 # Compatibility for saved requests and clients using passage-based tutoring.
 SELECTION_TUTOR_MAX_CHARS = 12_000
 
+
 def _extract_selection_tutor_context(
     config: dict[str, Any] | None,
 ) -> dict[str, Any] | None:
@@ -1470,6 +1471,7 @@ def _extract_selection_tutor_context(
         context["source_message_role"] = source_message_role
     return context
 
+
 def _selection_source_excerpt(
     source_text: str,
     selected_text: str,
@@ -1500,6 +1502,7 @@ def _selection_source_excerpt(
         excerpt += "\n[later content omitted]"
     return excerpt
 
+
 def _selected_latex_body(selected: str) -> str | None:
     """Return the body of a complete Markdown math selection, if any."""
     match = re.fullmatch(r"\$\$(.+?)\$\$|\$(.+?)\$", selected, flags=re.DOTALL)
@@ -1514,6 +1517,7 @@ def _selected_latex_body(selected: str) -> str | None:
         return None
     return body
 
+
 def _selection_start(source: str, selected: str) -> int:
     """Find an exact selection, or its equivalent LaTeX body, in source text."""
     start = source.find(selected) if selected else -1
@@ -1525,6 +1529,7 @@ def _selection_start(source: str, selected: str) -> int:
     pattern = r"\s+".join(re.escape(part) for part in body.split(" "))
     match = re.search(pattern, source, flags=re.DOTALL)
     return match.start() if match else -1
+
 
 def _latex_selection_is_grounded(source: str, selected: str) -> bool:
     """Whether selected KaTeX LaTeX has an equivalent body in the source.
@@ -1540,6 +1545,7 @@ def _latex_selection_is_grounded(source: str, selected: str) -> bool:
         return False
     normalized_source = " ".join(source.split())
     return body in normalized_source
+
 
 def _selection_is_grounded(source_text: str, selected_text: str) -> bool:
     """Whether the claimed selection occurs in its containing message."""
@@ -1557,6 +1563,7 @@ def _selection_is_grounded(source_text: str, selected_text: str) -> bool:
     if normalized_selected and normalized_selected in normalized_source:
         return True
     return _latex_selection_is_grounded(normalized_source, normalized_selected)
+
 
 async def _resolve_selection_tutor_context(
     store: Any,
@@ -1622,6 +1629,7 @@ async def _resolve_selection_tutor_context(
         selected_text,
     )
     return resolved
+
 
 def _format_selection_tutor_context(context: dict[str, Any], language: str = "en") -> str:
     if context.get("scope") == "conversation":

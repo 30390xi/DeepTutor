@@ -7,9 +7,7 @@ from zoneinfo import ZoneInfo
 from .scheduler import day_bounds
 
 
-def analytics(
-    conn: sqlite3.Connection, timezone: str, days: int, now: float
-) -> dict:
+def analytics(conn: sqlite3.Connection, timezone: str, days: int, now: float) -> dict:
     if days not in {7, 30, 90}:
         raise ValueError("Choose 7, 30 or 90 days")
     day_bounds(timezone, now)

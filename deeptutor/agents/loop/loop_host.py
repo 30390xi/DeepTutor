@@ -96,7 +96,8 @@ class AgentLoopHost:
             return {"available": False, "rejected": False}
         instruction, names = recovery
         self.recovery_schemas = [
-            schema for schema in self.loop.tool_schemas or []
+            schema
+            for schema in self.loop.tool_schemas or []
             if (schema.get("function") or {}).get("name") in names
         ]
         self.recovery_tools = frozenset(
