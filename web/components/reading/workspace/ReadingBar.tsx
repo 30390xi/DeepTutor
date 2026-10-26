@@ -1,5 +1,7 @@
 "use client";
 
+import "./reading-bar.css";
+
 import {
   Expand,
   FileText,
@@ -155,8 +157,8 @@ export function ReadingBar({
         {navigatorOpen ? <PanelLeftClose size={14} /> : <PanelLeftOpen size={14} />}
       </BarButton>
       <nav aria-label={t("navigation.location")} className="dt-reading-crumbs ml-0.5 flex min-w-0 shrink items-center">
-        {feature && <span className="hidden md:contents"><FeatureCrumb section={feature.section} page={feature.page} /></span>}
-        <span className="hidden min-w-[72px] max-w-[220px] shrink-[2] items-center md:inline-flex">
+        {feature && <span className="dt-reading-feature hidden md:contents"><FeatureCrumb section={feature.section} page={feature.page} /></span>}
+        <span className="dt-reading-collection hidden min-w-0 max-w-[220px] shrink-[2] items-center md:inline-flex">
           <InstanceCrumb
             label={title || t("Untitled collection")}
             menuLabel={t("Collections")}
@@ -166,7 +168,7 @@ export function ReadingBar({
             all={{ label: t("Open folder"), href: backHref }}
           />
         </span>
-        <span className="flex min-w-[96px] shrink items-center">
+        <span className="flex min-w-0 shrink items-center">
           <InstanceCrumb
             label={activeDocument?.material.title || activeDocument?.material.filename || t("Immersive reading")}
             icon={FileText}
