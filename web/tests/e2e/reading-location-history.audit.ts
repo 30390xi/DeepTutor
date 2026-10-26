@@ -1,3 +1,4 @@
+import { emptyLearningIndex } from "./fixtures/learning-index";
 import { expect, test } from "@playwright/test";
 import { emptyTaskBoard } from "./fixtures/task-board";
 
@@ -108,6 +109,7 @@ test.beforeEach(async ({ page }) => {
     const json = (payload: unknown, status = 200) =>
       route.fulfill({ status, json: payload });
 
+    if (path === "/api/dashboard/learning-index") return json(emptyLearningIndex);
     if (path === "/api/partners" || path === "/api/partner-groups") return json([]);
     if (path === "/api/task-board") return json(emptyTaskBoard);
     if (path === "/api/auth/status") {
