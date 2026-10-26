@@ -6165,5 +6165,10 @@
   "Ask {{name}}…": "Ask {{name}}…",
   "Dito brings {{name}} into the discussion here, beside the conversation.": "Dito brings {{name}} into the discussion here, beside the conversation.",
   "A conversation with Dito beside the main one. Nothing asked here is added to it.": "A conversation with Dito beside the main one. Nothing asked here is added to it.",
-  "Some conversations are waiting for recovery. Their existing data has been kept.": "Some conversations are waiting for recovery. Their existing data has been kept."
+  "Some conversations are waiting for recovery. Their existing data has been kept.": "Some conversations are waiting for recovery. Their existing data has been kept.",
+  "Video Lesson": "Video Lesson",
+  "Turn a question into an animated explainer you can play": "Turn a question into an animated explainer you can play",
+  "View Remotion Code": "View Remotion Code",
+  "{{seconds}} s": "{{seconds}} s",
+  "Fixed after {{count}} checks": "Fixed after {{count}} checks"
 }

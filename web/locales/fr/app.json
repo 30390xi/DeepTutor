@@ -6319,5 +6319,10 @@
   "Partner group": "Groupe de partenaires",
   "New mastery path": "Nouveau parcours de maîtrise",
   "Guided Solving": "Résolution guidée",
-  "Some conversations are waiting for recovery. Their existing data has been kept.": "Certaines conversations attendent une restauration. Leurs données existantes ont été conservées."
+  "Some conversations are waiting for recovery. Their existing data has been kept.": "Certaines conversations attendent une restauration. Leurs données existantes ont été conservées.",
+  "Video Lesson": "Leçon vidéo",
+  "Turn a question into an animated explainer you can play": "Transformer une question en animation explicative à regarder",
+  "View Remotion Code": "Voir le code Remotion",
+  "{{seconds}} s": "{{seconds}} s",
+  "Fixed after {{count}} checks": "Corrigé après {{count}} vérifications"
 }

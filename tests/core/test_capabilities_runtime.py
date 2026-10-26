@@ -79,6 +79,7 @@ def test_builtin_capability_registry_covers_documented_capabilities() -> None:
         "visualize",
         "mastery_path",
         "immersive_reading",
+        "video_lesson",
     }
 
 

@@ -6187,5 +6187,10 @@
   "{{count}} items_few": "{{count}} елементи",
   "{{count}} items_many": "{{count}} елементів",
   "{{count}} left_few": "Залишилося {{count}}",
-  "{{count}} left_many": "Залишилося {{count}}"
+  "{{count}} left_many": "Залишилося {{count}}",
+  "Video Lesson": "Відеоурок",
+  "Turn a question into an animated explainer you can play": "Перетворіть запитання на анімоване пояснення, яке можна відтворити",
+  "View Remotion Code": "Переглянути код Remotion",
+  "{{seconds}} s": "{{seconds}} с",
+  "Fixed after {{count}} checks": "Виправлено після {{count}} перевірок"
 }

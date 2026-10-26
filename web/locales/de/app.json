@@ -6165,5 +6165,10 @@
   "Ask me two questions to check I understand this block.": "Stelle mir zwei Fragen, um zu prüfen, ob ich diesen Block verstanden habe.",
   "Improve this block": "Diesen Block verbessern",
   "Fix mistakes and fill gaps in this block, and suggest the improved block as an edit.": "Korrigiere Fehler und ergänze Lücken in diesem Block. Schlage den verbesserten Block als Änderung vor.",
-  "Check the facts in this block and comment on anything wrong.": "Prüfe die Fakten in diesem Block und kommentiere Fehler."
+  "Check the facts in this block and comment on anything wrong.": "Prüfe die Fakten in diesem Block und kommentiere Fehler.",
+  "Video Lesson": "Video-Lektion",
+  "Turn a question into an animated explainer you can play": "Verwandle eine Frage in ein abspielbares Erklär-Video",
+  "View Remotion Code": "Remotion-Code anzeigen",
+  "{{seconds}} s": "{{seconds}} s",
+  "Fixed after {{count}} checks": "Nach {{count}} Prüfungen korrigiert"
 }

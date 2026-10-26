@@ -135,6 +135,14 @@ export const CHAT_CAPABILITIES: ChatCapabilityDef[] = [
     defaultTools: [],
   },
   {
+    value: "video_lesson",
+    label: "Video Lesson",
+    description: "Turn a question into an animated explainer you can play",
+    icon: Clapperboard,
+    allowedTools: [],
+    defaultTools: [],
+  },
+  {
     value: "mastery_path",
     label: "Mastery Path",
     description: "Mastery-based tutoring with a hard gate",

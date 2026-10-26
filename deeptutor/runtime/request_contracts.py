@@ -40,6 +40,10 @@ class ImmersiveReadingRequestConfig(EmptyConfig):
     pass
 
 
+class VideoLessonRequestConfig(EmptyConfig):
+    pass
+
+
 class DeepQuestionRequestConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -154,6 +158,7 @@ CAPABILITY_CONFIG_MODELS: dict[str, type[BaseModel]] = {
     "visualize": VisualizeRequestConfig,
     "mastery_path": MasteryPathRequestConfig,
     "immersive_reading": ImmersiveReadingRequestConfig,
+    "video_lesson": VideoLessonRequestConfig,
 }
 
 
@@ -210,6 +215,7 @@ __all__ = [
     "DeepSolveRequestConfig",
     "ImmersiveReadingRequestConfig",
     "MasteryPathRequestConfig",
+    "VideoLessonRequestConfig",
     "VisualizeRequestConfig",
     "build_request_schema",
     "get_capability_request_schema",

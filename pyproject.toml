@@ -168,6 +168,8 @@ video-learning = ["youtube-transcript-api>=1.0.0,<2.0.0"]
 
 # Microsoft Edge read-aloud voices as a free, keyless TTS provider.
 edge-tts = ["edge-tts>=7.0,<8.0"]
+# Compatibility extra for optional video lesson narration.
+video-lesson = ["deeptutor[edge-tts]"]
 
 # Compatibility extra for source installs and older docs. These packages are
 # already included in the public `deeptutor` wheel.
@@ -342,6 +344,9 @@ deeptutor = [
     "**/*.sh",
     "**/*.j2",
     "**/*.jinja",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.mjs",
 ]
 deeptutor_cli = ["**/*.md"]
 deeptutor_web = ["**/*", ".next/**/*"]

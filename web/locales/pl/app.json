@@ -6187,5 +6187,10 @@
   "{{count}} items_few": "{{count}} elementy",
   "{{count}} items_many": "{{count}} elementów",
   "{{count}} left_few": "Pozostało {{count}}",
-  "{{count}} left_many": "Pozostało {{count}}"
+  "{{count}} left_many": "Pozostało {{count}}",
+  "Video Lesson": "Lekcja wideo",
+  "Turn a question into an animated explainer you can play": "Zamień pytanie w animowane wyjaśnienie do odtworzenia",
+  "View Remotion Code": "Pokaż kod Remotion",
+  "{{seconds}} s": "{{seconds}} s",
+  "Fixed after {{count}} checks": "Poprawiono po {{count}} sprawdzeniach"
 }

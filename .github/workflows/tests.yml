@@ -351,10 +351,30 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}
           DEEPTUTOR_TEST_REDIS_URL: redis://127.0.0.1:6379/0
 
+  video-lesson-sandbox:
+    name: Video lesson isolation
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependencies
+        run: pip install -r requirements/server.txt pytest pytest-asyncio
+      - name: Check real rendering, isolation, cancellation and timeout
+        env:
+          DEEPTUTOR_TEST_VIDEO_SANDBOX: "1"
+          DEEPTUTOR_REMOTION_RUNTIME: ${{ runner.temp }}/remotion
+          PYTHONPATH: ${{ github.workspace }}
+        run: pytest -q tests/agents/video_lesson/test_isolation.py tests/services/sandbox/test_process_cancellation.py
+
   test-summary:
     name: Test Summary
     runs-on: ubuntu-24.04
-    needs: [chat-engine, lint, web-tests, multi-worker-web, import-check, python-tests]
+    needs: [chat-engine, lint, web-tests, multi-worker-web, import-check, python-tests, video-lesson-sandbox]
     if: always()
 
     steps:
@@ -365,6 +385,7 @@ jobs:
           echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| TypeScript chat engine | ${{ needs.chat-engine.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Video lesson isolation | ${{ needs.video-lesson-sandbox.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Lint and format | ${{ needs.lint.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Web node tests | ${{ needs.web-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Four-worker browser acceptance | ${{ needs.multi-worker-web.result == 'success' && '✅ Passed' || needs.multi-worker-web.result == 'skipped' && '⏭️ Fixture not configured' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
@@ -372,5 +393,5 @@ jobs:
           echo "| Python tests (3.11/3.12/3.13/3.14) | ${{ needs.python-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
 
       - name: Fail if tests failed
-        if: needs.chat-engine.result == 'failure' || needs.lint.result == 'failure' || needs.web-tests.result == 'failure' || needs.multi-worker-web.result == 'failure' || needs.import-check.result == 'failure' || needs.python-tests.result == 'failure'
+        if: needs.video-lesson-sandbox.result != 'success' || needs.chat-engine.result == 'failure' || needs.lint.result == 'failure' || needs.web-tests.result == 'failure' || needs.multi-worker-web.result == 'failure' || needs.import-check.result == 'failure' || needs.python-tests.result == 'failure'
         run: exit 1
