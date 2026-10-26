@@ -624,6 +624,10 @@ def _unmask(fragment: str, saved: deque[str]) -> str:
 
 
 def _add_inline_runs(paragraph: Any, text: str) -> None:
+    # A literal NUL in the input collides with the escape sentinel ``_MASK``
+    # and would make ``_unmask`` pop a saved char that was never stored. NUL is
+    # not valid XML text content anyway, so drop it before masking.
+    text = text.replace(_MASK, "")
     masked, saved = _mask_escapes(text)
     cursor = 0
     for match in _INLINE_RE.finditer(masked):
