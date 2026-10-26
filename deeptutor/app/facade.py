@@ -128,14 +128,14 @@ class DeepTutorApp:
                 ),
             )
         if resolved == "video_lesson":
-            available = shutil.which("node") is not None and shutil.which("npm") is not None
+            available = all(shutil.which(tool) is not None for tool in ("node", "npm", "docker"))
             return CapabilityAvailability(
                 name=resolved,
                 available=available,
                 install_hint=(
                     ""
                     if available
-                    else "Install Node.js 22+ (with npm); Remotion is installed on first use."
+                    else "Install Node.js 22+ (with npm) and Docker with a running Linux-container daemon. Remotion and the isolated renderer are prepared on first use."
                 ),
             )
         return CapabilityAvailability(name=resolved, available=True)

@@ -1,5 +1,5 @@
 // Compile a model-written Remotion lesson (Lesson.tsx + the shipped kit) into a browser player
-// script. Before bundling, sample frames are rendered in a permission-restricted Node process so
+// script. Before bundling, sample frames are rendered in a network-isolated Docker container so
 // runtime errors come back to the model instead of reaching the learner.
 //
 //   node build.mjs <Lesson.tsx> <out.js>
@@ -8,7 +8,7 @@
 // esbuild (see package.json next to this file). Prints one JSON line: {ok, stage, errors, frames}.
 
 import {createRequire} from "node:module";
-import {mkdtempSync, writeFileSync, rmSync} from "node:fs";
+import {mkdtempSync, writeFileSync, readFileSync, rmSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
 import {spawnSync} from "node:child_process";
@@ -95,10 +95,23 @@ try {
   rmSync(tmp, {recursive: true, force: true});
   report({ok: false, stage: "compile", errors: fmtErrors(e)});
 }
-// Model code runs here: no file writes, child processes, workers or native addons.
-const run = spawnSync(process.execPath, ["--permission", `--allow-fs-read=${tmp}`, join(tmp, "check.mjs")],
-  {encoding: "utf8", timeout: 180000});
+// No generated code executes in this process. The Python host owns a hardened
+// container and removes it on success, timeout, failure, or cancellation.
+const docker = process.env.DEEPTUTOR_RENDER_DOCKER;
+const container = process.env.DEEPTUTOR_RENDER_CONTAINER;
+if (!docker || !/^dt-lesson-[a-f0-9]{32}$/.test(container || "")) {
+  rmSync(tmp, {recursive: true, force: true});
+  report({ok: false, stage: "sandbox", errors: ["An isolated render container is required"]});
+}
+const run = spawnSync(docker, ["start", "--attach", "--interactive", container], {
+  input: readFileSync(join(tmp, "check.mjs")), encoding: "utf8",
+  timeout: Number(process.env.DEEPTUTOR_RENDER_TIMEOUT_MS) || 180000,
+  maxBuffer: 1024 * 1024,
+});
 rmSync(tmp, {recursive: true, force: true});
+if (run.error || run.signal || run.status !== 0) {
+  report({ok: false, stage: "render", errors: [(run.error?.message || run.stderr || "Render process failed").slice(-1500)]});
+}
 let checked;
 try { checked = JSON.parse(run.stdout.trim().split("\n").pop()); }
 catch { report({ok: false, stage: "render", errors: [(run.stderr || run.stdout || "no output").slice(-1500)]}); }

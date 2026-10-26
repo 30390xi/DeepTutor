@@ -136,6 +136,7 @@ class VideoLessonCapability(TurnCapability):
         finally:
             if not runtime_ready.done():
                 runtime_ready.cancel()
+            await asyncio.gather(runtime_ready, return_exceptions=True)
 
         if draft is None or build is None or not build.ok:
             last = attempts[-1]["errors"] if attempts else []

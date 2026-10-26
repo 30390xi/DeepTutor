@@ -37,3 +37,12 @@ def test_write_page_inlines_the_bundle_safely(tmp_path: Path) -> None:
 def test_prepare_workdir_writes_the_voice_module(tmp_path: Path) -> None:
     prepare_workdir(tmp_path / "source", "", voice="export const VOICE = {s1: {}};")
     assert "s1" in (tmp_path / "source" / "voice.ts").read_text(encoding="utf-8")
+
+
+def test_video_lesson_requires_a_docker_runtime(monkeypatch) -> None:
+    import pytest
+    from deeptutor.agents.video_lesson import runtime
+
+    monkeypatch.setattr(runtime.shutil, "which", lambda _name: None)
+    with pytest.raises(runtime.VideoLessonRuntimeError, match="Docker"):
+        runtime._docker()
