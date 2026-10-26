@@ -30,15 +30,12 @@ export function TopicAtlas({
   error,
   onCreate,
   onRetry,
-  scopeChip,
 }: {
   topics: MasteryTopic[]
   loading: boolean
   error: string | null
   onCreate: (trigger: HTMLButtonElement) => void
   onRetry: () => void
-  /** Rendered beside the eyebrow when this visit belongs to one course. */
-  scopeChip?: React.ReactNode
 }) {
   const { t } = useTranslation()
   const activeTopics = topics.filter(topic => topic.metadata.status === 'active')
@@ -56,7 +53,6 @@ export function TopicAtlas({
       subtitle={t(
         "Work through each topic's knowledge points, then pick up any session where you left off."
       )}
-      scopeChip={scopeChip}
       action={
         <button
           type="button"
@@ -101,7 +97,7 @@ export function TopicAtlas({
                   MASTERY_OPENING_SCOPE
                 )
               }
-              href={masterySessionRoute(firstDueTopic.path_id, 'review', '', firstDueTopic.content_workspace_id ?? '')}
+              href={masterySessionRoute(firstDueTopic.path_id, 'review', firstDueTopic.content_workspace_id ?? '')}
               className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-[var(--primary)] px-3.5 text-xs font-semibold text-white transition hover:opacity-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 "
             >
               {t('Start review')}: {topicDisplayName(firstDueTopic, t)}

@@ -31,11 +31,9 @@ import { readDemo, writeDemo } from './demo-transport'
 export function LearningOverview({
   collections,
   onOpen,
-  onCreate,
 }: {
   collections: Collections
   onOpen: (r: LearningRecord) => void
-  onCreate: () => void
 }) {
   const [kind, setKind] = useState('all')
   return (
@@ -43,12 +41,6 @@ export function LearningOverview({
       back={false}
       title="学习"
       subtitle="你的书籍、精通之路、练习和阅读，都在这里。"
-      action={
-        <button className={pageActionClass()} onClick={onCreate}>
-          <Plus size={15} />
-          新建学习
-        </button>
-      }
       tabs={
         <div className="preview-filter-bar">
           {[{ id: 'all', label: '全部' }, ...learningKinds].map(k => (
@@ -84,38 +76,31 @@ export function LearningOverview({
             )
           })}
       </div>
-      <button className="preview-new-learning-row" onClick={onCreate}>
-        <Plus size={20} />
-        <span>
-          开始一段新的学习<strong>选择一种方式，留下你的学习记录</strong>
-        </span>
-      </button>
     </LearningShell>
   )
 }
-export function CreateLearningDialog({
-  open,
-  onClose,
+export function CreateLearningPage({
+  onBack,
   onCreate,
 }: {
-  open: boolean
-  onClose: () => void
+  onBack: () => void
   onCreate: (r: LearningRecord) => void
 }) {
   const [kind, setKind] = useState<LearningKind>('book')
   const [title, setTitle] = useState('')
   const [goal, setGoal] = useState('')
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      title="新建学习"
-      description="选一种适合你的方式，之后都可以从学习记录里继续。"
-      closeLabel="关闭"
-      size="lg"
-    >
+    <FeaturePage className="preview-create-learning-page">
+      <button className="preview-back-link" onClick={onBack}>
+        <ArrowLeft size={14} />
+        返回所有学习
+      </button>
+      <PageHeader
+        title="新建学习"
+        description="选一种适合你的方式，之后都可以从学习记录里继续。"
+      />
       <form
-        className="preview-create-form"
+        className="preview-create-form preview-create-learning-form"
         onSubmit={e => {
           e.preventDefault()
           if (!title.trim()) return
@@ -180,7 +165,7 @@ export function CreateLearningDialog({
           </button>
         </div>
       </form>
-    </Dialog>
+    </FeaturePage>
   )
 }
 const bookChapters = [

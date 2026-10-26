@@ -65,6 +65,7 @@ export function pageSections({
       label: t('navigation.home'),
       icon: HomeShelfIcon,
       pages: [
+        { href: '/chat', label: t('Chat'), icon: MessageCircle },
         { href: '/calendar', label: t('Calendar'), icon: CalendarDays, account: true },
         { href: '/kanban', label: t('Task Board'), icon: Columns3 },
         { href: '/co-writer', label: t('Co-Writer'), icon: PenLine },
@@ -113,22 +114,21 @@ export function pageSections({
 }
 
 /**
- * Full-screen views that carry the workspace in a header of their own — a
- * conversation, a reader, a study session, a document — so a second bar
- * above them would only cost the content its height.
+ * Views whose working toolbar carries the location itself — the reader's
+ * bar sits over the document column only, the notebook's over the page —
+ * so they draw the same crumbs there (see `useShelfFeature`) instead of
+ * under a second bar.
  */
 const OWN_HEADER = [
-  /^\/chat(\/|$)/,
   /^\/co-writer\/[^/]+/,
-  /^\/learning\/mastery\/[^/]+\/sessions(\/|$)/,
   /^\/learning\/reading\/(?!folders\/|materials$)[^/]+/,
   /^\/learning\/watching\//,
 ]
 
 /**
- * The section and page a pathname belongs to: the index page itself, or the
- * index page a workspace detail view (a book, a path, a notebook) lives
- * under. Account shelves keep their detail views to themselves.
+ * The section and page a pathname belongs to: the feature page itself, or
+ * the feature page a detail view (a conversation, a book, a path, a folder,
+ * a partner) lives under.
  */
 export function locatePage(pathname: string, sections: PageSection[]) {
   for (const section of sections) {
@@ -138,11 +138,11 @@ export function locatePage(pathname: string, sections: PageSection[]) {
   return OWN_HEADER.some(pattern => pattern.test(pathname)) ? null : ownerOf(pathname, sections)
 }
 
-/** The workspace index page a detail path lives under, by longest prefix. */
-function ownerOf(pathname: string, sections: PageSection[]) {
+/** The feature page a detail path lives under, by longest prefix. */
+function ownerOf(pathname: string, sections: PageSection[], workspaceOnly = false) {
   let owner: { section: PageSection; page: PageEntry } | null = null
   for (const section of sections) {
-    if (section.account) continue
+    if (workspaceOnly && section.account) continue
     for (const page of section.pages) {
       if (pathname.startsWith(`${page.href}/`) && page.href.length > (owner?.page.href.length ?? 0))
         owner = { section, page }
@@ -161,7 +161,7 @@ export function switchDestination(pathname: string): string {
   // The account's own pages are the same on both sides of a switch.
   if (['partners', 'personalization'].includes(categoryForPath(pathname))) return pathname
   if (EVERY_PAGE.some(section => section.pages.some(page => page.href === pathname))) return pathname
-  const owner = ownerOf(pathname, EVERY_PAGE)
+  const owner = ownerOf(pathname, EVERY_PAGE, true)
   if (owner) return owner.page.href
   const section = pathname.split('/')[1]
   return section ? `/${section}` : '/chat'

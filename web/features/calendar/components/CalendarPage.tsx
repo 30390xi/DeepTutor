@@ -1,10 +1,12 @@
 'use client'
 
+import { browserStorage } from '@/shared/storage'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { CalendarDays, ChevronLeft, ChevronRight, Plus, Search, PanelLeft, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { PageHeader } from '@/components/layout/FeaturePage'
 import HeaderActionButton from '@/features/chat/components/HeaderActionButton'
+import { PageBarSlot, usePageBarOffers } from '@/components/layout/PageChrome'
 import { useActiveWorkspaceId } from '@/hooks/useActiveWorkspaceId'
 import { useTaskBoard } from '@/lib/task-board-store'
 import { DEFAULT_TASK_COLORS, updateTaskCard } from '@/lib/task-board-api'
@@ -45,7 +47,7 @@ import {
   type EventItem,
   type LayerToggles,
 } from '../model/items'
-import { AnchoredPopover, type Anchor } from './AnchoredPopover'
+import { AnchoredPopover, anchorOf, type Anchor } from './AnchoredPopover'
 import { CalendarRail } from './CalendarRail'
 import { TimeGrid, type GridDraft } from './TimeGrid'
 import { MonthView } from './MonthView'
@@ -73,6 +75,9 @@ const center: Anchor = { top: 110, bottom: 140, left: 280, right: 280 }
 
 export default function CalendarPage() {
   const { t, i18n } = useTranslation()
+  const hasInstance = usePageBarOffers('instance')
+  const hasActions = usePageBarOffers('actions')
+  const inBar = hasInstance && hasActions
   const workspaceId = useActiveWorkspaceId()
   const { board } = useTaskBoard()
   const blocks = useTaskBlocks(workspaceId)
@@ -92,6 +97,7 @@ export default function CalendarPage() {
   const [hits, setHits] = useState<api.SearchHit[] | null>(null)
   const [searching, setSearching] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>(
     'unsupported'
   )
@@ -131,7 +137,7 @@ export default function CalendarPage() {
     const timer = setInterval(() => setNow(new Date()), 30_000)
     setPermission(typeof Notification === 'undefined' ? 'unsupported' : Notification.permission)
     try {
-      const prefs = JSON.parse(localStorage.getItem('deeptutor.calendar.preferences') ?? 'null')
+      const prefs = JSON.parse(browserStorage.readRaw('local', 'deeptutor.calendar.preferences') ?? 'null')
       if (prefs) {
         if (['day', 'week', 'month', 'agenda'].includes(prefs.view)) setView(prefs.view)
         if (prefs.layers) setToggles({ ...DEFAULT_LAYERS, ...prefs.layers })
@@ -140,7 +146,7 @@ export default function CalendarPage() {
     return () => clearInterval(timer)
   }, [])
   useEffect(() => {
-    localStorage.setItem(
+    browserStorage.writeRaw('local',
       'deeptutor.calendar.preferences',
       JSON.stringify({ view, layers: toggles })
     )
@@ -192,9 +198,9 @@ export default function CalendarPage() {
       ),
     })
   }
-  const newEvent = () => {
+  const newEvent = (anchor?: Anchor) => {
     const start = atMinutes(cursor, now.getHours() * 60 + 60)
-    create({ start, end: new Date(start.getTime() + 3600_000), allDay: false })
+    create({ start, end: new Date(start.getTime() + 3600_000), allDay: false }, anchor)
   }
   const navigate = (direction: number) => {
     setPanel(null)
@@ -223,7 +229,8 @@ export default function CalendarPage() {
         newEvent()
         e.preventDefault()
       } else if (k === '/') {
-        searchRef.current?.focus()
+        setSearchOpen(true)
+        requestAnimationFrame(() => searchRef.current?.focus())
         e.preventDefault()
       } else if (k === 'arrowleft') {
         navigate(-1)
@@ -323,64 +330,129 @@ export default function CalendarPage() {
     month: 'long',
     ...(view === 'day' ? { day: 'numeric' } : {}),
   })
+  // Where the layout has a page bar, the toolbar moves up into it — the
+  // navigation beside the feature crumb, the view tools on the right — so the
+  // calendar itself starts one row higher.
+  const lead = (
+    <>
+      <HeaderActionButton
+        icon={PanelLeft}
+        label={t('Calendar sidebar')}
+        active={rail}
+        onClick={() => setRail(!rail)}
+      />
+      <button
+        className="dt-cal-today"
+        onClick={() => {
+          setCursor(new Date())
+          setQuery('')
+        }}
+      >
+        {t('Today')}
+      </button>
+      <div className="dt-cal-step">
+        <HeaderActionButton icon={ChevronLeft} label={t('Previous')} onClick={() => navigate(-1)} />
+        <HeaderActionButton icon={ChevronRight} label={t('Next')} onClick={() => navigate(1)} />
+      </div>
+      <h2>{heading}</h2>
+    </>
+  )
+  const tools = (
+    <>
+      <div className={`dt-cal-search ${searchOpen || query ? 'is-open' : ''}`}>
+        {searchOpen || query ? (
+          <>
+            <Search size={14} aria-hidden />
+            <input
+              ref={searchRef}
+              autoFocus
+              aria-label={t('Search calendar')}
+              placeholder={t('Search events…')}
+              value={query}
+              maxLength={200}
+              onChange={e => setQuery(e.target.value)}
+              onBlur={() => {
+                if (!query) setSearchOpen(false)
+              }}
+              onKeyDown={e => {
+                if (e.key === 'Escape') {
+                  setQuery('')
+                  setSearchOpen(false)
+                }
+              }}
+            />
+            {query && (
+              <HeaderActionButton
+                icon={X}
+                label={t('Clear search')}
+                onClick={() => {
+                  setQuery('')
+                  setSearchOpen(false)
+                }}
+              />
+            )}
+          </>
+        ) : (
+          <HeaderActionButton
+            icon={Search}
+            label={t('Search calendar')}
+            title={`${t('Search calendar')}  /`}
+            onClick={() => setSearchOpen(true)}
+          />
+        )}
+      </div>
+      <div className="dt-cal-views" role="tablist" aria-label={t('Calendar view')}>
+        {(['day', 'week', 'month', 'agenda'] as const).map(v => (
+          <button
+            key={v}
+            role="tab"
+            aria-selected={view === v}
+            onClick={() => {
+              setView(v)
+              setPanel(null)
+            }}
+          >
+            {t({ day: 'Day', week: 'Week', month: 'Month', agenda: 'Agenda' }[v])}
+          </button>
+        ))}
+      </div>
+      <button
+        className="dt-cal-primary dt-cal-new"
+        disabled={!calendars}
+        onClick={event => newEvent(anchorOf(event.currentTarget) ?? undefined)}
+      >
+        <Plus size={15} strokeWidth={2} />
+        <span>{t('New event')}</span>
+      </button>
+    </>
+  )
   return (
-    <section className="dt-calendar" aria-label={t('Calendar')} aria-busy={busy}>
+    <section
+      className={`dt-calendar ${inBar ? 'has-bar-toolbar' : ''}`}
+      aria-label={t('Calendar')}
+      aria-busy={busy}
+    >
       <div className="dt-cal-page-title">
         <PageHeader title={t('Calendar')} icon={CalendarDays} />
       </div>
-      <div className="dt-cal-toolbar">
-        <HeaderActionButton
-          icon={PanelLeft}
-          label={t('Calendar sidebar')}
-          onClick={() => setRail(!rail)}
-        />
-        <button
-          onClick={() => {
-            setCursor(new Date())
-            setQuery('')
-          }}
-        >
-          {t('Today')}
-        </button>
-        <HeaderActionButton icon={ChevronLeft} label={t('Previous')} onClick={() => navigate(-1)} />
-        <HeaderActionButton icon={ChevronRight} label={t('Next')} onClick={() => navigate(1)} />
-        <h2>{heading}</h2>
-        <div className="dt-cal-search">
-          <Search size={14} aria-hidden />
-          <input
-            ref={searchRef}
-            aria-label={t('Search calendar')}
-            placeholder={t('Search')}
-            value={query}
-            maxLength={200}
-            onChange={e => setQuery(e.target.value)}
-          />
-          {query && (
-            <HeaderActionButton icon={X} label={t('Clear search')} onClick={() => setQuery('')} />
-          )}
+      {inBar ? (
+        <>
+          <PageBarSlot name="instance">
+            <div className="dt-cal-toolbar is-in-bar">{lead}</div>
+          </PageBarSlot>
+          <PageBarSlot name="actions">
+            <div className="dt-cal-toolbar is-in-bar is-tools">{tools}</div>
+          </PageBarSlot>
+        </>
+      ) : (
+        <div className="dt-cal-toolbar">
+          {lead}
+          {tools}
         </div>
-        <select
-          aria-label={t('Calendar view')}
-          value={view}
-          onChange={e => {
-            setView(e.target.value as View)
-            setPanel(null)
-          }}
-        >
-          {(['day', 'week', 'month', 'agenda'] as const).map(v => (
-            <option key={v} value={v}>
-              {t({ day: 'Day', week: 'Week', month: 'Month', agenda: 'Agenda' }[v])}
-            </option>
-          ))}
-        </select>
-        <button className="dt-cal-primary" disabled={!calendars} onClick={newEvent}>
-          <Plus size={15} />
-          {t('New event')}
-        </button>
-      </div>
+      )}
       {(calendarError || occurrences.error || layers.error) && (
-        <div role="alert" className="dt-cal-alert">
-          {t('Could not load calendar.')}
+        <div role="alert" className="dt-cal-alert is-error">
+          <span>{t('Could not load calendar.')}</span>
           <button
             onClick={() => {
               void refreshCalendars()
@@ -393,13 +465,13 @@ export default function CalendarPage() {
         </div>
       )}
       {error && !editing && (
-        <div role="alert" className="dt-cal-alert">
-          {error}
+        <div role="alert" className="dt-cal-alert is-error">
+          <span>{error}</span>
         </div>
       )}
       {undo && (
         <div role="status" className="dt-cal-alert">
-          {t('Event deleted')}
+          <span>{t('Event deleted')}</span>
           <button
             disabled={busy}
             onClick={() =>

@@ -104,9 +104,7 @@ it('creates an event, shows it in the agenda, and deletes it with undo available
   fireEvent.click(screen.getByRole('button', { name: 'Save' }))
   await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   expect(events[0].title).toBe('Study algebra')
-  fireEvent.change(screen.getByRole('combobox', { name: 'Calendar view' }), {
-    target: { value: 'agenda' },
-  })
+  fireEvent.click(screen.getByRole('tab', { name: 'Agenda' }))
   fireEvent.click(await screen.findByRole('button', { name: /Study algebra/ }))
   fireEvent.click(screen.getByRole('button', { name: 'Delete event' }))
   fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
@@ -134,12 +132,12 @@ it('does not trigger calendar shortcuts while typing in the editor', async () =>
   fireEvent.keyDown(window, { key: 'c' })
   const title = screen.getByRole('textbox', { name: 'Event title' })
   fireEvent.keyDown(title, { key: 'w' })
-  expect(screen.getByRole('combobox', { name: 'Calendar view' })).toHaveValue('month')
+  expect(screen.getByRole('tab', { name: 'Month' })).toHaveAttribute('aria-selected', 'true')
   fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancel' }))
   await act(async () => {
     fireEvent.keyDown(window, { key: 'w' })
   })
-  expect(screen.getByRole('combobox', { name: 'Calendar view' })).toHaveValue('week')
+  expect(screen.getByRole('tab', { name: 'Week' })).toHaveAttribute('aria-selected', 'true')
 })
 
 describe('calendar models', () => {

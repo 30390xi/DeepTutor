@@ -19,7 +19,7 @@ from deeptutor.services.practice.scheduler import Rating, day_bounds
 from deeptutor.services.practice.storage import PracticeStore, ReviewConflict
 from deeptutor.services.session import get_sqlite_session_store
 
-from .question_notebook import NotebookEntryItem, _course_session_ids
+from .question_notebook import NotebookEntryItem
 
 router = APIRouter()
 
@@ -100,11 +100,10 @@ async def _entry(entry_id: int) -> dict:
 
 
 @router.get("/summary", response_model=PracticeSummary)
-async def summary(timezone: str = "UTC", course_id: str = ""):
+async def summary(timezone: str = "UTC"):
     store = get_sqlite_session_store()
-    sessions = await _course_session_ids(store, course_id)
     try:
-        return await asyncio.to_thread(PracticeStore(store.db_path).overview, timezone, sessions)
+        return await asyncio.to_thread(PracticeStore(store.db_path).overview, timezone)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
 
@@ -112,15 +111,13 @@ async def summary(timezone: str = "UTC", course_id: str = ""):
 @router.get("/queue", response_model=list[PracticeQuestion])
 async def queue(
     timezone: str = "UTC",
-    course_id: str = "",
     category_id: int | None = None,
     limit: int = Query(default=20, ge=1, le=100),
 ):
     store = get_sqlite_session_store()
     practice = PracticeStore(store.db_path)
-    sessions = await _course_session_ids(store, course_id)
     try:
-        ids = await asyncio.to_thread(practice.queue, timezone, sessions, category_id, limit)
+        ids = await asyncio.to_thread(practice.queue, timezone, category_id, limit)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
     from deeptutor.services.workspace.context import current_workspace_id
@@ -140,15 +137,14 @@ async def queue(
 
 
 @router.get("/analytics", response_model=PracticeAnalytics)
-async def practice_analytics(timezone: str = "UTC", days: int = 30, course_id: str = ""):
+async def practice_analytics(timezone: str = "UTC", days: int = 30):
     _validate_timezone(timezone)
     if days not in {7, 30, 90}:
         raise HTTPException(422, "Days must be 7, 30, or 90")
     store = get_sqlite_session_store()
-    sessions = await _course_session_ids(store, course_id)
     try:
         return await asyncio.to_thread(
-            PracticeStore(store.db_path).analytics, timezone, days, sessions
+            PracticeStore(store.db_path).analytics, timezone, days
         )
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
@@ -257,9 +253,7 @@ async def import_template(format: Literal["csv", "xlsx"] = "csv"):
 async def import_preview(
     file: UploadFile = File(...),
     target: Literal["bank", "mistakes"] = Form("bank"),
-    course_id: str = Form("", max_length=200),
 ):
-    await _course_session_ids(get_sqlite_session_store(), course_id)
     try:
         data = await file.read(MAX_BYTES + 1)
         parsed = await asyncio.to_thread(preview, data, file.filename or "")
@@ -274,7 +268,6 @@ async def import_preview(
             file.filename or "",
             target,
             parsed["questions"],
-            course_id,
         )
     return {
         "token": token,

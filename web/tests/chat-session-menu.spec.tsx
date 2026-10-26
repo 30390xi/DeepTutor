@@ -44,7 +44,6 @@ function show(overrides: Partial<Parameters<typeof ChatSessionMenu>[0]> = {}) {
       preferences: { workspace_id: "algebra" },
     },
     title: "Learning algebra",
-    courses: [],
     workspaces: [workspace],
     live: false,
     canSave: true,

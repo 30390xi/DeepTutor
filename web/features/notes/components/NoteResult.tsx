@@ -15,6 +15,7 @@ export default function NoteResult({ payload }: { payload: Record<string, unknow
     if (result)
       return (
         <Animation
+          bare
           result={{
             ...result,
             timings: {},

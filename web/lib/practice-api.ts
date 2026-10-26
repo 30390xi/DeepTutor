@@ -37,8 +37,8 @@ export interface PracticeAnalytics {
   sources: (PracticeCounts & { source: string })[]
   totals: PracticeCounts
 }
-export const getPracticeAnalytics = (courseId = '', days = 30) =>
-  request<PracticeAnalytics>(`/analytics?${params(courseId)}&days=${days}`)
+export const getPracticeAnalytics = (days = 30) =>
+  request<PracticeAnalytics>(`/analytics?${params()}&days=${days}`)
 export interface ImportPreview {
   token: string | null
   total: number
@@ -73,16 +73,15 @@ const json = (body: unknown): RequestInit => ({
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify(body),
 })
-function params(courseId = ''): string {
+function params(): string {
   return new URLSearchParams({
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
-    course_id: courseId,
   }).toString()
 }
-export const getPracticeSummary = (courseId = '') =>
-  request<PracticeSummary>(`/summary?${params(courseId)}`)
-export const getPracticeQueue = (courseId = '') =>
-  request<PracticeQuestion[]>(`/queue?${params(courseId)}`)
+export const getPracticeSummary = () =>
+  request<PracticeSummary>(`/summary?${params()}`)
+export const getPracticeQueue = () =>
+  request<PracticeQuestion[]>(`/queue?${params()}`)
 export const getPracticeQuestion = (id: number, workspaceId?: string) =>
   request<PracticeQuestion>(`/questions/${id}`, undefined, workspaceId)
 export const checkPracticeAnswer = (id: number, answer: string, workspaceId?: string) =>
@@ -103,11 +102,10 @@ export const savePracticeReview = (
     json(body),
     workspaceId
   )
-export function previewPracticeImport(file: File, target: 'bank' | 'mistakes', courseId = '') {
+export function previewPracticeImport(file: File, target: 'bank' | 'mistakes') {
   const data = new FormData()
   data.append('file', file)
   data.append('target', target)
-  data.append('course_id', courseId)
   return request<ImportPreview>('/import/preview', { method: 'POST', body: data })
 }
 export const commitPracticeImport = (token: string) =>

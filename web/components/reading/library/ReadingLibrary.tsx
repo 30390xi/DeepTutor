@@ -35,10 +35,6 @@ import {
 } from "@/lib/reading-workspace-api";
 import { readingFailureMessage } from "@/lib/reading-failure";
 
-import {
-  CourseScopeChip,
-  useCourseScope,
-} from "@/components/courses/CourseScope";
 
 import { FolderDialog } from "./FolderDialog";
 import { FolderGlyph } from "./FolderGlyph";
@@ -68,8 +64,6 @@ export function ReadingLibraryPage() {
     null
   );
 
-  // Present when opened from a course page or a Course Study hand-off.
-  const scope = useCourseScope();
 
   const create = useCallback(() => setFolderDialog({ mode: "create" }), []);
   useCreateRequest(create);
@@ -115,22 +109,15 @@ export function ReadingLibraryPage() {
     [materials]
   );
 
-  // Opened inside a course, this is that course's shelf: only the collections
-  // it references, and anything made here joins it. A course that references
-  // none shows the empty pitch, which is now a real offer rather than a dead
-  // end — creating from it attaches on the way out.
   const rows = useMemo(() => {
-    const allowed = scope ? new Set(scope.refIds("reading_workspace")) : null;
-    const sorted = collections.filter(
-      collection => !allowed || allowed.has(collection.workspace_id)
-    );
+    const sorted = [...collections];
     sorted.sort((a, b) =>
       sort === "name"
         ? a.title.localeCompare(b.title, i18n.language)
         : b.updated_at - a.updated_at
     );
     return sorted;
-  }, [collections, i18n.language, scope, sort]);
+  }, [collections, i18n.language, sort]);
 
   const menuKey = (collection: ReadingWorkspace) =>
     libraryItemKey(collection, collection.workspace_id);
@@ -142,7 +129,6 @@ export function ReadingLibraryPage() {
       materialCount={materials.length}
       actionLabel={t("New collection")}
       onAction={create}
-      scopeChip={scope ? <CourseScopeChip scope={scope} /> : null}
     >
       <InvidiousAccountFeedback />
       <div className="mt-5 flex flex-col gap-3 border-b border-[var(--border)] pb-3 sm:flex-row sm:items-center">
@@ -247,11 +233,6 @@ export function ReadingLibraryPage() {
               void refresh();
               return;
             }
-            await scope?.attach(
-              "reading_workspace",
-              collection.workspace_id,
-              collection.title
-            );
             router.push(readingFolderRoute(collection.workspace_id));
           }}
         />

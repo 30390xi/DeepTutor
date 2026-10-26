@@ -225,6 +225,43 @@
         "title": "AdminCreateUserRequest",
         "type": "object"
       },
+      "AnchorThreadRequest": {
+        "properties": {
+          "block_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Block Id",
+            "type": "string"
+          },
+          "origin": {
+            "default": "ask",
+            "enum": [
+              "ask",
+              "generate"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
+          "quote": {
+            "default": "",
+            "maxLength": 4000,
+            "title": "Quote",
+            "type": "string"
+          },
+          "session_id": {
+            "pattern": "^[A-Za-z0-9_.:-]{1,128}$",
+            "title": "Session Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "block_id"
+        ],
+        "title": "AnchorThreadRequest",
+        "type": "object"
+      },
       "AnnotationInfo": {
         "properties": {
           "annotation_id": {
@@ -541,29 +578,6 @@
         "title": "AssetSpec",
         "type": "object"
       },
-      "AttachCourseResourceRequest": {
-        "properties": {
-          "kind": {
-            "title": "Kind",
-            "type": "string"
-          },
-          "label": {
-            "default": "",
-            "title": "Label",
-            "type": "string"
-          },
-          "ref_id": {
-            "title": "Ref Id",
-            "type": "string"
-          }
-        },
-        "required": [
-          "kind",
-          "ref_id"
-        ],
-        "title": "AttachCourseResourceRequest",
-        "type": "object"
-      },
       "AuditRequest": {
         "properties": {
           "budget": {
@@ -865,7 +879,7 @@
       "Body_admin_import_users_api_auth_users_import_post": {
         "properties": {
           "file": {
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "File",
             "type": "string"
           }
@@ -886,7 +900,7 @@
           "files": {
             "default": [],
             "items": {
-              "format": "binary",
+              "contentMediaType": "application/octet-stream",
               "type": "string"
             },
             "title": "Files",
@@ -944,7 +958,7 @@
       "Body_import_docx_api_documents_import_docx_post": {
         "properties": {
           "file": {
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "File",
             "type": "string"
           }
@@ -957,14 +971,8 @@
       },
       "Body_import_preview_api_question_notebook_practice_import_preview_post": {
         "properties": {
-          "course_id": {
-            "default": "",
-            "maxLength": 200,
-            "title": "Course Id",
-            "type": "string"
-          },
           "file": {
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "File",
             "type": "string"
           },
@@ -987,7 +995,7 @@
       "Body_import_visualizer_api_visualizers_import_post": {
         "properties": {
           "file": {
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "File",
             "type": "string"
           }
@@ -1001,8 +1009,8 @@
       "Body_library_add": {
         "properties": {
           "file": {
+            "contentMediaType": "application/octet-stream",
             "description": "Raw file bytes",
-            "format": "binary",
             "title": "File",
             "type": "string"
           },
@@ -1027,7 +1035,7 @@
       "Body_preview_office_upload_api_file_preview_pdf_post": {
         "properties": {
           "file": {
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "File",
             "type": "string"
           }
@@ -1062,7 +1070,7 @@
       "Body_speech_to_text_api_voice_stt_post": {
         "properties": {
           "file": {
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "File",
             "type": "string"
           },
@@ -1087,7 +1095,7 @@
       "Body_upload_avatar_api_auth_profile_avatar_put": {
         "properties": {
           "file": {
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "File",
             "type": "string"
           }
@@ -1106,7 +1114,7 @@
           },
           "files": {
             "items": {
-              "format": "binary",
+              "contentMediaType": "application/octet-stream",
               "type": "string"
             },
             "title": "Files",
@@ -1145,7 +1153,7 @@
       "Body_upload_material_api_reading_materials_post": {
         "properties": {
           "file": {
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "File",
             "type": "string"
           }
@@ -1159,7 +1167,7 @@
       "Body_upload_note_asset_api_documents__doc_id__assets_post": {
         "properties": {
           "file": {
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "File",
             "type": "string"
           }
@@ -3055,50 +3063,6 @@
         "title": "CreateCard",
         "type": "object"
       },
-      "CreateCourseRequest": {
-        "properties": {
-          "color": {
-            "default": "",
-            "title": "Color",
-            "type": "string"
-          },
-          "default_capability": {
-            "default": "",
-            "maxLength": 64,
-            "title": "Default Capability",
-            "type": "string"
-          },
-          "default_persona": {
-            "default": "",
-            "maxLength": 80,
-            "title": "Default Persona",
-            "type": "string"
-          },
-          "description": {
-            "default": "",
-            "maxLength": 300,
-            "title": "Description",
-            "type": "string"
-          },
-          "instructions": {
-            "default": "",
-            "maxLength": 4000,
-            "title": "Instructions",
-            "type": "string"
-          },
-          "name": {
-            "maxLength": 60,
-            "minLength": 1,
-            "title": "Name",
-            "type": "string"
-          }
-        },
-        "required": [
-          "name"
-        ],
-        "title": "CreateCourseRequest",
-        "type": "object"
-      },
       "CreateDocumentRequest": {
         "properties": {
           "blocks": {
@@ -4178,6 +4142,11 @@
       },
       "DocumentSummaryResponse": {
         "properties": {
+          "cover": {
+            "default": "",
+            "title": "Cover",
+            "type": "string"
+          },
           "created_at": {
             "title": "Created At",
             "type": "number"
@@ -7903,6 +7872,30 @@
         "title": "NetworkSettingsUpdate",
         "type": "object"
       },
+      "NoteGeneration": {
+        "additionalProperties": false,
+        "description": "The learning block on the open note page this turn fills in.\n\nSent by the note companion when a block's own \"Generate\" runs. The server\nowns the instructions that follow from it, so the learner's message stays\nexactly what they see in the conversation.",
+        "properties": {
+          "block_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_-]+$",
+            "title": "Block Id",
+            "type": "string"
+          },
+          "kind": {
+            "default": "",
+            "maxLength": 32,
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "block_id"
+        ],
+        "title": "NoteGeneration",
+        "type": "object"
+      },
       "NotebookCaptureRequest": {
         "properties": {
           "material_ids": {
@@ -10831,17 +10824,6 @@
             ],
             "title": "Archived"
           },
-          "course_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Course Id"
-          },
           "parent_session_id": {
             "anyOf": [
               {
@@ -11040,22 +11022,6 @@
           "mode"
         ],
         "title": "SetSessionModeRequest",
-        "type": "object"
-      },
-      "SetSyllabusRequest": {
-        "properties": {
-          "units": {
-            "items": {
-              "$ref": "#/components/schemas/SyllabusUnitRequest"
-            },
-            "title": "Units",
-            "type": "array"
-          }
-        },
-        "required": [
-          "units"
-        ],
-        "title": "SetSyllabusRequest",
         "type": "object"
       },
       "SettingsDraftPayload": {
@@ -11482,42 +11448,6 @@
           "raw_view_extensions"
         ],
         "title": "SupportedFormats",
-        "type": "object"
-      },
-      "SyllabusUnitRequest": {
-        "properties": {
-          "covered": {
-            "default": false,
-            "title": "Covered",
-            "type": "boolean"
-          },
-          "id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          },
-          "topics": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Topics",
-            "type": "array"
-          }
-        },
-        "required": [
-          "title"
-        ],
-        "title": "SyllabusUnitRequest",
         "type": "object"
       },
       "SyncFolderResponse": {
@@ -12412,18 +12342,6 @@
             "title": "Content",
             "type": "string"
           },
-          "course_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "default": null,
-            "title": "Course Id"
-          },
           "followup_question_context": {
             "anyOf": [
               {
@@ -12558,6 +12476,17 @@
             ],
             "default": null,
             "title": "Note Document Id"
+          },
+          "note_generation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/NoteGeneration"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
           },
           "notebook_references": {
             "items": {
@@ -13291,93 +13220,6 @@
         "title": "UpdateCard",
         "type": "object"
       },
-      "UpdateCourseRequest": {
-        "properties": {
-          "color": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Color"
-          },
-          "default_capability": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Default Capability"
-          },
-          "default_persona": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Default Persona"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "maxLength": 300,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "instructions": {
-            "anyOf": [
-              {
-                "maxLength": 4000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Instructions"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "maxLength": 60,
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "status": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Status"
-          }
-        },
-        "title": "UpdateCourseRequest",
-        "type": "object"
-      },
       "UpdateDocumentRequest": {
         "properties": {
           "blocks": {
@@ -13989,19 +13831,6 @@
           }
         },
         "title": "UpdateSkillRequest",
-        "type": "object"
-      },
-      "UpdateSyllabusUnitRequest": {
-        "properties": {
-          "covered": {
-            "title": "Covered",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "covered"
-        ],
-        "title": "UpdateSyllabusUnitRequest",
         "type": "object"
       },
       "UpdateVideoNoteRequest": {
@@ -21217,803 +21046,6 @@
         ]
       }
     },
-    "/api/courses": {
-      "get": {
-        "operationId": "list_courses_api_courses_get",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "Authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "in": "cookie",
-            "name": "dt_token",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Dt Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response List Courses Api Courses Get",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "List Courses",
-        "tags": [
-          "courses"
-        ]
-      },
-      "post": {
-        "operationId": "create_course_api_courses_post",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "Authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "in": "cookie",
-            "name": "dt_token",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Dt Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateCourseRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Create Course Api Courses Post",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Create Course",
-        "tags": [
-          "courses"
-        ]
-      }
-    },
-    "/api/courses/resource-candidates": {
-      "get": {
-        "operationId": "list_resource_candidates_api_courses_resource_candidates_get",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "Authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "in": "cookie",
-            "name": "dt_token",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Dt Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response List Resource Candidates Api Courses Resource Candidates Get",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "List Resource Candidates",
-        "tags": [
-          "courses"
-        ]
-      }
-    },
-    "/api/courses/{course_id}": {
-      "delete": {
-        "operationId": "delete_course_api_courses__course_id__delete",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "course_id",
-            "required": true,
-            "schema": {
-              "title": "Course Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "Authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "in": "cookie",
-            "name": "dt_token",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Dt Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Delete Course Api Courses  Course Id  Delete",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Delete Course",
-        "tags": [
-          "courses"
-        ]
-      },
-      "patch": {
-        "operationId": "update_course_api_courses__course_id__patch",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "course_id",
-            "required": true,
-            "schema": {
-              "title": "Course Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "Authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "in": "cookie",
-            "name": "dt_token",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Dt Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateCourseRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Update Course Api Courses  Course Id  Patch",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Update Course",
-        "tags": [
-          "courses"
-        ]
-      }
-    },
-    "/api/courses/{course_id}/resources": {
-      "post": {
-        "operationId": "attach_course_resource_api_courses__course_id__resources_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "course_id",
-            "required": true,
-            "schema": {
-              "title": "Course Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "Authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "in": "cookie",
-            "name": "dt_token",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Dt Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AttachCourseResourceRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Attach Course Resource Api Courses  Course Id  Resources Post",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Attach Course Resource",
-        "tags": [
-          "courses"
-        ]
-      }
-    },
-    "/api/courses/{course_id}/resources/{resource_id}": {
-      "delete": {
-        "operationId": "detach_course_resource_api_courses__course_id__resources__resource_id__delete",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "course_id",
-            "required": true,
-            "schema": {
-              "title": "Course Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "resource_id",
-            "required": true,
-            "schema": {
-              "title": "Resource Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "Authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "in": "cookie",
-            "name": "dt_token",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Dt Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Detach Course Resource Api Courses  Course Id  Resources  Resource Id  Delete",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Detach Course Resource",
-        "tags": [
-          "courses"
-        ]
-      }
-    },
-    "/api/courses/{course_id}/state": {
-      "get": {
-        "operationId": "get_course_state_api_courses__course_id__state_get",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "course_id",
-            "required": true,
-            "schema": {
-              "title": "Course Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "Authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "in": "cookie",
-            "name": "dt_token",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Dt Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Get Course State Api Courses  Course Id  State Get",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Get Course State",
-        "tags": [
-          "courses"
-        ]
-      }
-    },
-    "/api/courses/{course_id}/syllabus": {
-      "put": {
-        "operationId": "set_course_syllabus_api_courses__course_id__syllabus_put",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "course_id",
-            "required": true,
-            "schema": {
-              "title": "Course Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "Authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "in": "cookie",
-            "name": "dt_token",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Dt Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetSyllabusRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Set Course Syllabus Api Courses  Course Id  Syllabus Put",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Set Course Syllabus",
-        "tags": [
-          "courses"
-        ]
-      }
-    },
-    "/api/courses/{course_id}/syllabus/{unit_id}": {
-      "patch": {
-        "operationId": "update_syllabus_unit_api_courses__course_id__syllabus__unit_id__patch",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "course_id",
-            "required": true,
-            "schema": {
-              "title": "Course Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "unit_id",
-            "required": true,
-            "schema": {
-              "title": "Unit Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "Authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "in": "cookie",
-            "name": "dt_token",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Dt Token"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateSyllabusUnitRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Update Syllabus Unit Api Courses  Course Id  Syllabus  Unit Id  Patch",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Update Syllabus Unit",
-        "tags": [
-          "courses"
-        ]
-      }
-    },
     "/api/dashboard/learning-index": {
       "get": {
         "description": "Read-only entry points into the request's workspace.",
@@ -24256,6 +23288,241 @@
           }
         },
         "summary": "Review Note Suggestion",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/documents/{doc_id}/threads": {
+      "get": {
+        "description": "The page's conversations, each with its anchor and its session's state.",
+        "operationId": "note_threads_api_documents__doc_id__threads_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc_id",
+            "required": true,
+            "schema": {
+              "title": "Doc Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "dt_token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Dt Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Note Threads",
+        "tags": [
+          "documents"
+        ]
+      },
+      "post": {
+        "operationId": "anchor_note_thread_api_documents__doc_id__threads_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc_id",
+            "required": true,
+            "schema": {
+              "title": "Doc Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "dt_token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Dt Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnchorThreadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Anchor Note Thread",
+        "tags": [
+          "documents"
+        ]
+      }
+    },
+    "/api/documents/{doc_id}/threads/{session_id}": {
+      "delete": {
+        "description": "Delete a page conversation: the session goes to the recycle bin with it.",
+        "operationId": "delete_note_thread_api_documents__doc_id__threads__session_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "doc_id",
+            "required": true,
+            "schema": {
+              "title": "Doc Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "dt_token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Dt Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Note Thread",
         "tags": [
           "documents"
         ]
@@ -44759,19 +44026,9 @@
     },
     "/api/question-notebook/categories": {
       "get": {
-        "description": "Categories, with their counts scoped the same way the listing is.\n\nWithout the scope the rail would offer \"Address translation 3\" inside a\ncourse holding none of those three.",
+        "description": "Categories and their question counts.",
         "operationId": "list_categories_api_question_notebook_categories_get",
         "parameters": [
-          {
-            "in": "query",
-            "name": "course_id",
-            "required": false,
-            "schema": {
-              "default": "",
-              "title": "Course Id",
-              "type": "string"
-            }
-          },
           {
             "in": "header",
             "name": "Authorization",
@@ -45134,16 +44391,6 @@
                 }
               ],
               "title": "Is Correct"
-            }
-          },
-          {
-            "in": "query",
-            "name": "course_id",
-            "required": false,
-            "schema": {
-              "default": "",
-              "title": "Course Id",
-              "type": "string"
             }
           },
           {
@@ -46045,16 +45292,6 @@
         "operationId": "list_question_bank_materials_api_question_notebook_materials_get",
         "parameters": [
           {
-            "in": "query",
-            "name": "course_id",
-            "required": false,
-            "schema": {
-              "default": "",
-              "title": "Course Id",
-              "type": "string"
-            }
-          },
-          {
             "in": "header",
             "name": "Authorization",
             "required": false,
@@ -46141,16 +45378,6 @@
               "default": 30,
               "title": "Days",
               "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "course_id",
-            "required": false,
-            "schema": {
-              "default": "",
-              "title": "Course Id",
-              "type": "string"
             }
           },
           {
@@ -46691,16 +45918,6 @@
           },
           {
             "in": "query",
-            "name": "course_id",
-            "required": false,
-            "schema": {
-              "default": "",
-              "title": "Course Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
             "name": "category_id",
             "required": false,
             "schema": {
@@ -46807,16 +46024,6 @@
             }
           },
           {
-            "in": "query",
-            "name": "course_id",
-            "required": false,
-            "schema": {
-              "default": "",
-              "title": "Course Id",
-              "type": "string"
-            }
-          },
-          {
             "in": "header",
             "name": "Authorization",
             "required": false,
@@ -46879,19 +46086,9 @@
     },
     "/api/question-notebook/stats": {
       "get": {
-        "description": "Counts behind the filter chips; also the agent's one-call overview.\n\nTakes the same course scope as the listing: showing one course's questions\nnext to whole-library counts would make the rail lie about how much is there.",
+        "description": "Counts behind the filter chips; also the agent's one-call overview.",
         "operationId": "question_bank_stats_api_question_notebook_stats_get",
         "parameters": [
-          {
-            "in": "query",
-            "name": "course_id",
-            "required": false,
-            "schema": {
-              "default": "",
-              "title": "Course Id",
-              "type": "string"
-            }
-          },
           {
             "in": "header",
             "name": "Authorization",

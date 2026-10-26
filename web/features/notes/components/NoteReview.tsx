@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Link from 'next/link'
+import './note-library.css'
+import { Layers, X } from 'lucide-react'
 import { noteRequest } from '@/lib/notes-api'
 import PickerShell from '@/components/common/PickerShell'
 interface Card {
@@ -37,52 +39,66 @@ export default function NoteReview() {
       setBusy(false)
     }
   }
+  if (!cards.length && !open) return null
   return (
     <>
       <button
-        className="inline-flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-[var(--secondary)]"
-        onClick={() => setOpen(true)}
+        className="dt-notes-review-trigger"
+        onClick={() => {
+          setRevealed(false)
+          setOpen(true)
+        }}
       >
-        {t('Review flashcards')}{' '}
-        <span className="text-[var(--muted-foreground)]">{cards.length}</span>
+        <Layers size={14} strokeWidth={1.7} />
+        {t('Review flashcards')}
+        <span className="dt-notes-review-count">{cards.length}</span>
       </button>
       <PickerShell open={open} onClose={() => setOpen(false)} ariaLabel={t('Review flashcards')}>
-        <div className="w-[min(520px,90vw)] rounded-xl bg-[var(--card)] p-6 text-center">
+        <div className="dt-notes-review">
+          <header>
+            <span>{t('Review flashcards')}</span>
+            {card && <span>{t('{{count}} left', { count: cards.length })}</span>}
+            <button className="dt-note-icon-button" aria-label={t('Close')} onClick={() => setOpen(false)}>
+              <X size={15} />
+            </button>
+          </header>
           {card ? (
             <>
-              <Link
-                href={`/co-writer/${card.page_id}#${card.block_id}`}
-                className="text-xs text-[var(--muted-foreground)]"
-              >
-                {card.page_title} ↗
+              <div className="dt-notes-review-card">
+                <p className="is-front">{card.front}</p>
+                {revealed && <p className="is-back">{card.back}</p>}
+              </div>
+              <Link href={`/co-writer/${card.page_id}#${card.block_id}`} className="dt-notes-review-source">
+                {t('From “{{page}}”', { page: card.page_title || t('Untitled') })} ↗
               </Link>
-              <p className="my-8 text-lg">{card.front}</p>
-              {revealed ? (
-                <>
-                  <p className="mb-8 text-base">{card.back}</p>
-                  <div className="flex justify-center gap-4">
+              <div className="dt-notes-review-actions">
+                {revealed ? (
+                  <>
                     <button disabled={busy} onClick={() => void grade(false)}>
                       {t('Again')}
                     </button>
-                    <button disabled={busy} onClick={() => void grade(true)}>
+                    <button disabled={busy} className="is-primary" onClick={() => void grade(true)}>
                       {t('Remembered')}
                     </button>
-                  </div>
-                </>
-              ) : (
-                <button onClick={() => setRevealed(true)}>{t('Show answer')}</button>
-              )}
+                  </>
+                ) : (
+                  <button className="is-primary" onClick={() => setRevealed(true)}>
+                    {t('Show answer')}
+                  </button>
+                )}
+              </div>
             </>
           ) : (
-            <p>{t('All caught up')}</p>
+            <div className="dt-notes-review-done">
+              <span aria-hidden>🎉</span>
+              <p>{t('All caught up')}</p>
+            </div>
           )}
-          {error && <p role="alert">{error}</p>}
-          <button
-            className="mt-5 text-sm text-[var(--muted-foreground)]"
-            onClick={() => setOpen(false)}
-          >
-            {t('Close')}
-          </button>
+          {error && (
+            <p role="alert" className="dt-notes-review-error">
+              {error}
+            </p>
+          )}
         </div>
       </PickerShell>
     </>

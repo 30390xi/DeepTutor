@@ -4,6 +4,7 @@ import type { MasteryQuestion } from '@/lib/mastery-question'
 export type PreviewView =
   | 'home'
   | 'learning'
+  | 'new-learning'
   | 'library'
   | 'reading'
   | 'writing'

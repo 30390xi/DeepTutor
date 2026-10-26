@@ -7,6 +7,7 @@ import Tooltip from '@/shared/ui/Tooltip'
 import {
   addMonths,
   dateKey,
+  daysBetween,
   formatDate,
   formatMonthTitle,
   formatWeekday,
@@ -28,6 +29,7 @@ export function MiniMonth({
   today: Date
   onPick: (day: Date) => void
 }) {
+  const narrow = daysBetween(range[0], range[1]) <= 7
   const { t, i18n } = useTranslation()
   const locale = i18n.language
   const [shown, setShown] = useState(() => startOfMonth(cursor))
@@ -77,7 +79,8 @@ export function MiniMonth({
           <div key={dateKey(week[0])} role="row" className="dt-cal-mini-row">
             {week.map(day => {
               const key = dateKey(day)
-              const inRange = key >= range[0] && key < range[1]
+              // Shading a whole month in a month picker says nothing; mark a week or a day.
+              const inRange = narrow && key >= range[0] && key < range[1]
               return (
                 <button
                   key={key}

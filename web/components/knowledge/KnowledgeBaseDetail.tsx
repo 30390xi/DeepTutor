@@ -1,5 +1,6 @@
 "use client";
 
+import { KnowledgeBaseCrumb } from "@/components/layout/instance-crumbs";
 import Tooltip from "@/shared/ui/Tooltip";
 import { knowledgeBaseRef } from "@/lib/knowledge-helpers";
 import type { EmbeddingModelSelection } from "@/features/knowledge/model/types";
@@ -205,6 +206,7 @@ export default function KnowledgeBaseDetail({
 
   return (
     <main className="flex h-full flex-1 flex-col overflow-hidden bg-[var(--background)]">
+      <KnowledgeBaseCrumb id={kb.name} label={kb.name} />
       {/* Header */}
       <div className="border-b border-[var(--border)] bg-[var(--card)] px-6 py-4">
         <div className="flex items-start justify-between gap-3">

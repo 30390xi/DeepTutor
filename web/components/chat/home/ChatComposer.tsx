@@ -42,8 +42,6 @@ import {
 } from "@/lib/doc-attachments";
 import { useTranslation } from "react-i18next";
 
-import { CoursePill } from "@/components/chat/home/CoursePill";
-import type { StudyCourse } from "@/lib/courses-api";
 import type { SelectedHistorySession } from "@/components/chat/HistorySessionPicker";
 import type { SelectedQuestionEntry } from "@/components/chat/QuestionBankPicker";
 import type { SelectedRecord } from "@/lib/notebook-selection-types";
@@ -54,18 +52,18 @@ import type { SpaceMemoryFile } from "@/lib/space-items";
 import type { SelectedBookReference } from "@/lib/book-references";
 import type { SelectedReadingReference } from "@/lib/reading-references";
 import { usePartnerRoster } from "@/hooks/usePartnerRoster";
-import { listPartnerGroups, type PartnerGroup } from "@/lib/partner-groups-api";
+import { usePartnerGroups } from "@/hooks/usePartnerGroups";
 import ContextBudgetChip, { type ContextBudget } from "./ContextBudgetChip";
-import { RailSlot } from "@/components/chat/home/ComposerRail";
 import ComposerResources, {
   type ComposerResourceItem,
 } from "./ComposerResources";
 import KnowledgeSelector from "./KnowledgeSelector";
 import ModelSelector from "./ModelSelector";
 import styles from "./ChatComposer.module.css";
-import { ComposerTray } from "./ComposerTray";
+import { ComposerTray, type TrayMode } from "./ComposerTray";
 import type { AnswerModeProps, PartnerLinkProps } from "./AnswerModeMenu";
 import type { LeadToken } from "./ComposerLead";
+import { modeIcon } from "./ComposerIcons";
 import type { ComposerResourceCatalog } from "@/hooks/useComposerResources";
 import type { ResourceSelection } from "@/features/chat/ChatStateAdapter";
 
@@ -92,9 +90,12 @@ import { ComposerInput, type ComposerInputHandle } from "./ComposerInput";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import type { CapabilityDef } from "@/features/capabilities/presentation";
 import AttachmentProcessingStatus from "./AttachmentProcessingStatus";
+import { QuotedPassage } from "./QuotedPassage";
+import { isQuoteAttachment, quoteText } from "@/lib/quote-attachments";
 import type { AttachmentProcessingItem } from "@/features/chat/selectors/attachment-processing";
 import Tooltip from "@/shared/ui/Tooltip";
 import { useCapabilityLabel } from "@/features/ui-layout/tokens";
+import { useUiLayout } from "@/hooks/useUiLayout";
 
 interface PendingAttachment {
   type: string;
@@ -103,6 +104,7 @@ interface PendingAttachment {
   previewUrl?: string;
   size?: number;
   mimeType?: string;
+  text?: string;
 }
 
 interface KnowledgeBase {
@@ -203,9 +205,6 @@ export default memo(function ChatComposer({
   dragCounter,
   dragging,
   capMenuOpen,
-  courses = [],
-  courseId = "",
-  onSelectCourse,
   workspaceId = "",
   spaceMenuOpen,
   hasMessages,
@@ -294,10 +293,15 @@ export default memo(function ChatComposer({
   onSelectCapability,
   onCancelStreaming,
   prefillInputRef,
+  focusInputRef,
+  queueWhileStreaming = false,
+  inputFooter,
   inputPlaceholder,
   inputPlaceholderCompletion,
   inputHeader,
   showCapabilityChip = true,
+  docked = false,
+  trayEnd,
 }: {
   taskSessionId?: string | null;
   draftTaskIds?: string[];
@@ -311,12 +315,6 @@ export default memo(function ChatComposer({
   dragCounter: RefObject<number>;
   dragging: boolean;
   capMenuOpen: boolean;
-  /* Course binding. Absent on the standalone composers (Mastery Path,
-     Immersive Reading), which are already inside one subject's surface and
-     have no course to choose. */
-  courses?: StudyCourse[];
-  courseId?: string;
-  onSelectCourse?: (courseId: string) => void;
   /* The conversation's workspace, for task links. Choosing it is the
      shell's job (the sidebar and the location chip), not the composer's. */
   workspaceId?: string;
@@ -452,6 +450,12 @@ export default memo(function ChatComposer({
    * without owning the composer's imperative handle directly.
    */
   prefillInputRef?: React.MutableRefObject<((text: string) => void) | null>;
+  /** Receives a function that puts the caret in the textarea. */
+  focusInputRef?: React.MutableRefObject<(() => void) | null>;
+  /** Let a message be sent while a turn runs; the surface queues it. */
+  queueWhileStreaming?: boolean;
+  /** Shown just above the input, under any attachments (the queue). */
+  inputFooter?: ReactNode;
   /** Override the composer placeholder (e.g. quiz follow-up). */
   inputPlaceholder?: string;
   /** A line Tab accepts while the composer is empty. See ComposerInput. */
@@ -468,9 +472,20 @@ export default memo(function ChatComposer({
    * cannot pick anything.
    */
   showCapabilityChip?: boolean;
+  /**
+   * The composer sits at the foot of a narrow pane (a side chat) rather than
+   * in the middle of an empty page: it stays one line tall from the start and
+   * its lists always open upward, into the pane, never off its bottom edge.
+   */
+  docked?: boolean;
+  /** A surface's own control at the far end of the tray (who answers). */
+  trayEnd?: ReactNode;
 }) {
   const { t } = useTranslation();
   const capabilityLabel = useCapabilityLabel();
+  // The modern layout picks the mode in the tray and writes it at the start
+  // of the message; the classic one keeps its chip in the toolbar.
+  const modeInTray = useUiLayout() === "modern" && showCapabilityChip;
   const canSelectPartner = Boolean(onSelectPartner || onAnswerByChange);
   const canSelectGroup = Boolean(onSelectPartnerGroup);
   const {
@@ -479,23 +494,11 @@ export default memo(function ChatComposer({
     error: partnerLoadError,
   } = usePartnerRoster(canSelectPartner);
   const partnerName = partners.find(partner => partner.partner_id === selectedPartner)?.name || selectedPartner;
-  const [partnerGroups, setPartnerGroups] = useState<PartnerGroup[]>([]);
-  const [groupLoadError, setGroupLoadError] = useState(false);
-  const [groupsLoading, setGroupsLoading] = useState(false);
-  useEffect(() => {
-    if (!canSelectGroup) return;
-    let active = true;
-    const refresh = () => {
-      setGroupsLoading(true);
-      void listPartnerGroups().then(groups => {
-        if (active) { setPartnerGroups(groups); setGroupLoadError(false); }
-      }).catch(() => { if (active) setGroupLoadError(true); })
-        .finally(() => { if (active) setGroupsLoading(false); });
-    };
-    refresh();
-    window.addEventListener("focus", refresh);
-    return () => { active = false; window.removeEventListener("focus", refresh); };
-  }, [canSelectGroup]);
+  const {
+    groups: partnerGroups,
+    loading: groupsLoading,
+    error: groupLoadError,
+  } = usePartnerGroups(canSelectGroup);
   const partnerGroupName = partnerGroups.find(group => group.group_id === selectedPartnerGroup)?.name || selectedPartnerGroup;
 
   const CapIcon = activeCap.icon;
@@ -638,6 +641,14 @@ export default memo(function ChatComposer({
   }, []);
 
   useEffect(() => {
+    if (!focusInputRef) return;
+    focusInputRef.current = focusTextarea;
+    return () => {
+      focusInputRef.current = null;
+    };
+  }, [focusInputRef, focusTextarea]);
+
+  useEffect(() => {
     const rememberFocus = () => {
       restoreFocusOnReturnRef.current =
         document.activeElement === textareaRef.current;
@@ -732,7 +743,10 @@ export default memo(function ChatComposer({
   // thing that can move it forward is the user's answer. Locking the composer
   // there made the interactive card the ONLY way to answer — and left the
   // learner with no way out at all if the card failed to render.
-  const streamingBlocksSend = isStreaming && !awaitingUserReply;
+  // Where the surface can hold messages for a running turn, a message typed
+  // mid-turn is sent (queued) and Stop moves to a button of its own.
+  const queuing = Boolean(queueWhileStreaming) && isStreaming && !awaitingUserReply;
+  const streamingBlocksSend = isStreaming && !awaitingUserReply && !(queuing && hasIntent);
   const canSend = hasIntent && !streamingBlocksSend && !isConfigBlocked;
 
   // `blocked` only exists once there is intent: without it the button stays
@@ -767,7 +781,8 @@ export default memo(function ChatComposer({
   };
   // One selection summary for files, references, and conversation resources.
   const contextTreeItems: ContextTreeItem[] = [
-    ...attachments.map((file, index): ContextTreeItem => ({key:`file-${index}`, icon:Paperclip, kind:t("Attach files"),label:file.filename,thumbnailUrl:file.type === "image" ? file.previewUrl : undefined,onClick:()=>onPreviewAttachment?.(index),onRemove:()=>onRemoveAttachment(index)})),
+    // Quotes are drawn as passages above the input, not listed as files.
+    ...attachments.flatMap((file, index): ContextTreeItem[] => isQuoteAttachment(file) ? [] : [{key:`file-${index}`, icon:Paperclip, kind:t("Attach files"),label:file.filename,thumbnailUrl:file.type === "image" ? file.previewUrl : undefined,onClick:()=>onPreviewAttachment?.(index),onRemove:()=>onRemoveAttachment(index)}]),
     ...selectedKnowledgeBases.map((id): ContextTreeItem => ({key:`kb-${id}`,icon:Database,kind:t("Knowledge"),label:knowledgeBases.find(kb=>knowledgeBaseRef(kb)===id)?.name || id,onRemove:()=>onToggleKB(id)})),
     ...selectedBookReferences.map((book): ContextTreeItem => ({
       key: `book-${book.bookId}`,
@@ -833,10 +848,27 @@ export default memo(function ChatComposer({
     })),
   ];
 
-  // Skills and connectors from the tray open the message itself instead of
-  // joining the attachments: they say how to answer, not what to read.
-  const leadTokens: LeadToken[] =
-    resourceSelection && onResourceSelectionChange
+  // The mode, skills and connectors from the tray open the message itself
+  // instead of joining the attachments: they say how to answer, not what to
+  // read. The mode goes first, the way a command would.
+  const modeToken: LeadToken[] =
+    modeInTray && activeCap.value
+      ? [
+          {
+            key: `mode:${activeCap.value}`,
+            icon: modeIcon(activeCap),
+            kind: t("Mode"),
+            label: capabilityLabel(activeCap),
+            onRemove: () => handleSelectCapability(""),
+          },
+        ]
+      : [];
+  const trayMode: TrayMode | undefined = modeInTray
+    ? { capabilities, value: activeCap.value, onChange: handleSelectCapability }
+    : undefined;
+  const leadTokens: LeadToken[] = [
+    ...modeToken,
+    ...(resourceSelection && onResourceSelectionChange
       ? [
           ...resourceSelection.skills.map((id): LeadToken => ({
             key: `skill:${id}`,
@@ -861,7 +893,8 @@ export default memo(function ChatComposer({
               }),
           })),
         ]
-      : [];
+      : []),
+  ];
   const answerMode: AnswerModeProps | undefined =
     onPersonaSelectionChange || onAnswerByChange
       ? {
@@ -945,7 +978,9 @@ export default memo(function ChatComposer({
       ? t("Stop generating")
       : awaitingUserReply
         ? t("Send answer")
-        : t("Send");
+        : queuing
+          ? t("Queue message")
+          : t("Send");
   const sendTitle =
     sendState === "blocked"
       ? t("Confirm settings on the right to send.")
@@ -1004,12 +1039,16 @@ export default memo(function ChatComposer({
   return (
     <div
       ref={composerRef}
-      className={`relative ${spaceMenuOpen || personaSelectorOpen ? "z-[61]" : "z-20"} mx-auto w-full shrink-0 px-6 pb-5 ${hasMessages ? "pt-1 max-w-[960px]" : "max-w-[768px]"}`}
+      className={`relative ${spaceMenuOpen || personaSelectorOpen ? "z-[61]" : "z-20"} mx-auto w-full shrink-0 ${
+        // Docked in a pane: the pane is the frame, so the composer keeps a
+        // narrow margin instead of the page's wide gutter.
+        docked ? "px-3 pb-3 pt-1" : `px-6 pb-5 ${hasMessages ? "pt-1 max-w-[960px]" : "max-w-[768px]"}`
+      }`}
       style={{
         transition: "max-width 650ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
-      {hasMessages && (
+      {hasMessages && !docked && (
         <div className="pointer-events-none absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-transparent to-[var(--background)]/72" />
       )}
 
@@ -1052,13 +1091,23 @@ export default memo(function ChatComposer({
           />
 
           {inputHeader}
+          {attachments.map((file, index) =>
+            isQuoteAttachment(file) ? (
+              <QuotedPassage
+                key={`quote-${index}`}
+                quote={quoteText(file)}
+                onRemove={() => onRemoveAttachment(index)}
+              />
+            ) : null,
+          )}
           <SelectedResources items={contextTreeItems}/>
           <AttachmentProcessingStatus items={attachmentProcessing} />
+          {inputFooter}
           <ComposerInput
             ref={inputHandleRef}
             textareaRef={textareaRef}
             isVisualizeMode={isVisualizeMode}
-            isStreaming={isStreaming}
+            isStreaming={isStreaming && !queuing}
             canSendEmpty={hasReferences}
             onSend={doSend}
             onInputChange={handleInputChange}
@@ -1089,10 +1138,10 @@ export default memo(function ChatComposer({
             replyLanguageDefaultLabel={replyLanguageDefaultLabel}
             replyLanguageDisabled={replyLanguageDisabled}
             onReplyLanguageChange={onReplyLanguageChange}
-            languagePickerBelow={!hasMessages}
+            languagePickerBelow={!hasMessages && !docked}
             placeholder={inputPlaceholder}
             placeholderCompletion={inputPlaceholderCompletion}
-            minHeight={hasMessages ? 28 : 64}
+            minHeight={hasMessages || docked ? 28 : 64}
             lead={leadTokens}
           />
 
@@ -1151,7 +1200,7 @@ export default memo(function ChatComposer({
                   />
                 }
 
-                {showCapabilityChip && (
+                {showCapabilityChip && !modeInTray && (
                   <div className="relative min-w-0 max-w-full">
                     <Tooltip label={capabilityLabel(activeCap)} suppressed={capMenuOpen} side="top">
                       <button
@@ -1180,7 +1229,7 @@ export default memo(function ChatComposer({
                         className="dt-popup-up absolute bottom-full left-0 z-50 mb-1.5 w-[260px] overflow-visible rounded-xl border border-[var(--border)] bg-[var(--popover)] py-1 shadow-lg backdrop-blur-md"
                       >
                         {capabilities
-                          .filter((cap) => !cap.secondary)
+                          .filter((cap) => !cap.secondary && !cap.legacy)
                           .map((cap) => (
                             <CapMenuItem
                               key={cap.value}
@@ -1191,7 +1240,7 @@ export default memo(function ChatComposer({
                           ))}
                         {(() => {
                           const loopCaps = capabilities.filter(
-                            (cap) => cap.secondary,
+                            (cap) => cap.secondary && !cap.legacy,
                           );
                           if (loopCaps.length === 0) return null;
                           const loopSelected = loopCaps.some(
@@ -1276,22 +1325,6 @@ export default memo(function ChatComposer({
                   </div>
                 )}
 
-
-                {onSelectCourse ? (
-                  <RailSlot
-                    onClear={courseId ? () => onSelectCourse("") : undefined}
-                    clearLabel={t("Clear course")}
-                  >
-                    <CoursePill
-                      courses={courses}
-                      courseId={courseId}
-                      onSelect={onSelectCourse}
-                      needsCourse={activeCap.value === "course_study"}
-                    />
-                  </RailSlot>
-                ) : null}
-
-
               </div>
 
               <div className={styles.actions}>
@@ -1345,6 +1378,19 @@ export default memo(function ChatComposer({
                     place (both stacked in the same grid cell) and the progress
                     ring moves to the perimeter, where it can spin without
                     fighting the square for the same space. */}
+                {queuing && hasIntent ? (
+                  <Tooltip label={t("Stop generating")} side="top">
+                    <button
+                      type="button"
+                      onClick={onCancelStreaming}
+                      aria-label={t("Stop generating")}
+                      className="relative ml-1 inline-grid h-8 w-8 shrink-0 place-items-center rounded-full text-[var(--muted-foreground)] ring-1 ring-inset ring-[var(--border)] transition-colors hover:text-[var(--foreground)] active:scale-95"
+                    >
+                      <span className="pointer-events-none absolute -inset-[3px] rounded-full border-2 border-[color-mix(in_srgb,var(--primary)_15%,transparent)] border-t-[var(--primary)] animate-spin" />
+                      <Square size={10} strokeWidth={2.6} className="fill-current" />
+                    </button>
+                  </Tooltip>
+                ) : null}
                 <Tooltip label={sendTitle} side="top">
                   <button
                     type="button"
@@ -1382,9 +1428,10 @@ export default memo(function ChatComposer({
             </div>
           </div>
         </div>
-        {(resourceCatalog && resourceSelection && onResourceSelectionChange) || answerMode || partnerLinks ? (
+        {trayMode || (resourceCatalog && resourceSelection && onResourceSelectionChange) || answerMode || partnerLinks || trayEnd ? (
           <ComposerTray
-            placement={hasMessages ? "up" : "down"}
+            placement={hasMessages || docked ? "up" : "down"}
+            mode={trayMode}
             resources={
               resourceCatalog && resourceSelection && onResourceSelectionChange
                 ? { catalog: resourceCatalog, selection: resourceSelection, onChange: onResourceSelectionChange }
@@ -1392,6 +1439,7 @@ export default memo(function ChatComposer({
             }
             partners={partnerLinks}
             answer={answerMode}
+            end={trayEnd}
           />
         ) : null}
       </div>

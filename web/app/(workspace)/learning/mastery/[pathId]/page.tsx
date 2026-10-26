@@ -40,6 +40,7 @@ import {
   type Translate,
 } from "@/components/space/learning/format";
 import { PathTitle } from "@/components/space/learning/PathTitle";
+import { MasteryPathCrumb } from "@/components/layout/instance-crumbs";
 import { ReviewTrail } from "@/components/space/learning/ReviewTrail";
 import { SessionCamp } from "@/components/space/learning/SessionCamp";
 import { useMasteryPathActivity } from "@/hooks/useMasteryPathActivity";
@@ -321,6 +322,7 @@ export default function MasteryTopicPage() {
     // be three tiny scrollers.
     <main className="mastery-shell flex h-full flex-col overflow-y-auto [scrollbar-gutter:stable]">
       <PageContainer className="flex min-h-0 flex-1 flex-col pb-40 sm:pb-10">
+        <MasteryPathCrumb id={pathId} label={displayName} />
         <div className="flex items-center justify-between gap-3">
           <Link
             href={scopedUrl(MASTERY_HOME)}

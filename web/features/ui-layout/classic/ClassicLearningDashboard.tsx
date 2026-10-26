@@ -120,7 +120,7 @@ export function ClassicLearningDashboard() {
                 {todos.reviews.map(topic => (
                   <LearningCard
                     key={`${topic.content_workspace_id}:${topic.path_id}`}
-                    href={scopedUrl(masterySessionRoute(topic.path_id, 'review', '', topic.content_workspace_id || ''), topic.content_workspace_id || '')}
+                    href={scopedUrl(masterySessionRoute(topic.path_id, 'review', topic.content_workspace_id || ''), topic.content_workspace_id || '')}
                     title={topic.name || topic.metadata.goal}
                     icon={<Route size={19} />}
                     subtitle={t('{{count}} reviews due', {

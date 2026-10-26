@@ -38,6 +38,7 @@ import { activeWorkspaceId, scopedUrl } from "@/lib/workspace-scope";
 
 import { AddMaterialsDialog } from "./AddMaterialsDialog";
 import { FolderDialog } from "./FolderDialog";
+import { ReadingFolderCrumb } from "@/components/layout/instance-crumbs";
 import { DeleteCollectionDialog } from "./ReadingLibrary";
 import { MaterialGlyph, materialDetail, relativeDate } from "./shared";
 
@@ -151,6 +152,7 @@ export function ReadingFolderPage({ folderId }: { folderId: string }) {
 
   return (
     <FolderFrame>
+      <ReadingFolderCrumb id={folderId} label={folder.title} onRename={() => setDialog("edit")} />
       <nav
         aria-label={t("Breadcrumb")}
         className="dt-section-back flex min-w-0 items-center gap-1 text-[12px] text-[var(--muted-foreground)]"

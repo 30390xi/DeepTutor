@@ -18,8 +18,7 @@ export function categoryForPath(pathname: string): NavigationCategory {
   if (PERSONALIZATION_ROOTS.some(root => under(pathname, root))) return 'personalization'
   if (
     pathname === '/learning' ||
-    pathname.startsWith('/learning/') ||
-    pathname.startsWith('/courses')
+    pathname.startsWith('/learning/')
   )
     return 'learning'
   if (['/space', '/notebooks', '/knowledge-bases'].some(root => under(pathname, root)))

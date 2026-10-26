@@ -65,6 +65,7 @@ export interface NativeInput {
   rebindingTools: string[];
   deferOutput: boolean;
   policyHooks: boolean;
+  userInputEnabled?: boolean;
   initialToolChoice: string | null;
   copy: Record<string, string>;
 }

@@ -37,7 +37,7 @@ import { CategoryTabs, CategoryBody } from './PreviewNavigation'
 import { useCollections, type Category, type LearningRecord } from './collections'
 import {
   LearningOverview,
-  CreateLearningDialog,
+  CreateLearningPage,
   LearningRecordSurface,
   PartnerSurface,
   ResourceSurface,
@@ -65,6 +65,7 @@ import { readDemo, writeDemo } from './demo-transport'
 const icons: Record<PreviewView, LucideIcon> = {
   home: Home,
   learning: Compass,
+  'new-learning': Plus,
   library: Library,
   reading: BookOpen,
   writing: PenLine,
@@ -79,6 +80,7 @@ const icons: Record<PreviewView, LucideIcon> = {
 const titles: Record<PreviewView, string> = {
   home: '主页',
   learning: '我的学习',
+  'new-learning': '新建学习',
   library: '资料',
   partners: '伙伴',
   kanban: '任务看板',
@@ -212,7 +214,9 @@ function Workspace() {
     return hash in titles ? (hash as PreviewView) : 'home'
   })
   const collections = useCollections()
-  const [category, setCategory] = useState<Category>(() => readDemo('category', 'home'))
+  const [category, setCategory] = useState<Category>(() =>
+    view === 'new-learning' ? 'learning' : readDemo('category', 'home')
+  )
   const [activeRecord, setActiveRecord] = useState(
     () =>
       decodeURIComponent(location.hash.split('/')[1] || '') ||
@@ -234,7 +238,7 @@ function Workspace() {
   useEffect(() => writeDemo('active-partner', activePartner), [activePartner])
   useEffect(() => writeDemo('resource-href', resourceHref), [resourceHref])
   const [assistantOpen, setAssistantOpen] = useState(() => location.hash.startsWith('#reading'))
-  const [dialog, setDialog] = useState<'search' | 'start' | 'settings' | 'about' | null>(null)
+  const [dialog, setDialog] = useState<'search' | 'settings' | 'about' | null>(null)
   const [query, setQuery] = useState('')
   const [favorites, setFavorites] = useState<string[]>(() =>
     readDemo('favorites', ['attention', 'research'])
@@ -267,7 +271,7 @@ function Workspace() {
     if (item) setRecentIds(ids => [item.id, ...ids.filter(id => id !== item.id)])
     setView(next)
     setCategory(
-      ['learning', 'reading', 'mastery', 'record'].includes(next)
+      ['learning', 'new-learning', 'reading', 'mastery', 'record'].includes(next)
         ? 'learning'
         : ['library', 'resource'].includes(next)
           ? 'library'
@@ -290,6 +294,7 @@ function Workspace() {
       const entity = decodeURIComponent(raw || '')
       if (h in titles) {
         setView(h as PreviewView)
+        if (h === 'new-learning') setCategory('learning')
         if (h === 'record' && entity) setActiveRecord(entity)
         if (h === 'partners') setActivePartner(entity)
         if (h === 'resource' && entity) setResourceHref(entity)
@@ -533,7 +538,7 @@ function Workspace() {
                 resourceHref={resourceHref}
                 onGo={go}
                 onRecord={openRecord}
-                onCreate={() => setDialog('start')}
+                onCreate={() => go('new-learning')}
                 onPartner={openPartner}
                 onNewPartner={() => {
                   openPartner('')
@@ -670,10 +675,15 @@ function Workspace() {
                 </FeaturePage>
               )}
               {view === 'learning' && (
-                <LearningOverview
-                  collections={collections}
-                  onOpen={openRecord}
-                  onCreate={() => setDialog('start')}
+                <LearningOverview collections={collections} onOpen={openRecord} />
+              )}
+              {view === 'new-learning' && (
+                <CreateLearningPage
+                  onBack={() => go('learning')}
+                  onCreate={record => {
+                    collections.setLearning(all => [record, ...all])
+                    openRecord(record)
+                  }}
                 />
               )}
               {view === 'library' && (
@@ -946,14 +956,6 @@ function Workspace() {
             ) && <p>没有匹配内容</p>}
         </div>
       </Dialog>
-      <CreateLearningDialog
-        open={dialog === 'start'}
-        onClose={() => setDialog(null)}
-        onCreate={record => {
-          collections.setLearning(all => [record, ...all])
-          openRecord(record)
-        }}
-      />
       <Dialog
         open={dialog === 'settings'}
         title="偏好设置"

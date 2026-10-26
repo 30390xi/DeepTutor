@@ -63,6 +63,7 @@ class CoWriterDocumentSummary(BaseModel):
     preview: str = ""
     parent_id: str | None = None
     icon: str = ""
+    cover: str = ""
     pinned: bool = False
     revision: int = 0
 
@@ -99,11 +100,45 @@ def _derive_title(content: str, fallback: str = "Untitled draft") -> str:
     return fallback
 
 
-def _build_preview(content: str, limit: int = 160) -> str:
+_FENCE = re.compile(r"^\s*(```|~~~)")
+_IMAGE = re.compile(r"!\[[^\]]*\]\([^)]*\)")
+_LINK = re.compile(r"\[([^\]]*)\]\([^)]*\)")
+_TAG = re.compile(r"</?[A-Za-z][^>]*>")
+_LINE_MARK = re.compile(r"^(?:#{1,6}\s+|>\s?|[-*+]\s+\[[ xX]\]\s+|[-*+]\s+|\d+[.)]\s+)+")
+_EMPHASIS = re.compile(r"(\*\*|__|~~|`)")
+_RULE = re.compile(r"^\s*([-*_]\s*){3,}$")
+_TABLE_RULE = re.compile(r"^\s*\|?\s*:?-{2,}")
+
+
+def _plain_lines(content: str) -> list[str]:
+    """Readable text of a markdown body: what a list card shows, not its syntax."""
+    lines: list[str] = []
+    fenced = False
+    for raw in content.splitlines():
+        if _FENCE.match(raw):
+            fenced = not fenced
+            continue
+        if fenced or _RULE.match(raw) or _TABLE_RULE.match(raw):
+            continue
+        line = raw.strip()
+        if line.startswith("|"):
+            line = " · ".join(cell.strip() for cell in line.strip("|").split("|") if cell.strip())
+        line = _TAG.sub("", _LINK.sub(r"\1", _IMAGE.sub("", line))).strip()
+        line = _LINE_MARK.sub("", line)
+        line = _EMPHASIS.sub("", line).replace("$$", "").strip()
+        if line:
+            lines.append(line)
+    return lines
+
+
+def _build_preview(content: str, limit: int = 160, title: str = "") -> str:
     if not content:
         return ""
-    cleaned = "\n".join(line.strip() for line in content.splitlines() if line.strip())
-    cleaned = cleaned.replace("\n", "  ")
+    lines = _plain_lines(content)
+    # A page usually opens with its own title as a heading; the card shows it already.
+    if lines and title and lines[0].strip().casefold() == title.strip().casefold():
+        lines = lines[1:]
+    cleaned = "  ".join(lines)
     if len(cleaned) <= limit:
         return cleaned
     return cleaned[:limit].rstrip() + "…"
@@ -179,9 +214,10 @@ class CoWriterStorage:
                     title=doc.title or _derive_title(doc.content),
                     created_at=doc.created_at,
                     updated_at=doc.updated_at,
-                    preview=_build_preview(doc.content),
+                    preview=_build_preview(doc.content, title=doc.title),
                     parent_id=doc.parent_id,
                     icon=doc.icon,
+                    cover=doc.cover,
                     pinned=doc.pinned,
                     revision=doc.revision,
                 )

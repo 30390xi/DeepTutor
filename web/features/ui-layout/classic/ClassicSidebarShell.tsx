@@ -31,7 +31,6 @@ import type {
 } from "@/lib/session-api";
 import type { MasteryTopicLabel } from "@/lib/learning-api";
 import type { ReadingCollectionLabel } from "@/lib/reading-workspace-api";
-import type { StudyCourse } from "@/lib/courses-api";
 import { useSidebarResize } from "@/hooks/useSidebarResize";
 import { SidebarHome, SidebarNav } from "@/components/sidebar/SidebarNav";
 import { SECONDARY_NAV, isNavActive } from "@/components/sidebar/nav-entries";
@@ -45,7 +44,7 @@ import {
 // Session data arrives after mount; defer its organization UI with it so
 // every workspace route does not download it as part of the initial shell.
 const OrganizedSessionList = dynamic(
-  () => import("@/components/courses/OrganizedSessionList"),
+  () => import("@/components/sessions/OrganizedSessionList"),
   {
     ssr: false,
     loading: () => (
@@ -73,7 +72,6 @@ export interface SidebarShellProps {
   onSelectSession?: (sessionId: string) => void | Promise<void>;
   onRenameSession?: (sessionId: string, title: string) => void | Promise<void>;
   onDeleteSession?: (sessionId: string) => void | Promise<void>;
-  courses?: StudyCourse[];
   /** Topic labels for grouping mastery study conversations under their path. */
   masteryTopics?: MasteryTopicLabel[];
   /** Collection labels for grouping reading conversations under their shelf. */
@@ -319,10 +317,6 @@ export function ClassicSidebarShell({
             ) : onOrganizeSession ? (
               <OrganizedSessionList
                 sessions={visibleSessions}
-                // Course grouping temporarily hidden pending further product
-                // work; passing [] keeps the list flat without touching the
-                // course data callers still fetch.
-                courses={[]}
                 workspaces={workspaces}
                 masteryTopics={masteryTopics}
                 readingCollections={readingCollections}

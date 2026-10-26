@@ -55,7 +55,6 @@ class BranchSelectionRequest(BaseModel):
 class SessionOrganizationRequest(BaseModel):
     """User-controlled organization metadata stored with the conversation."""
 
-    course_id: str | None = None
     workspace_id: str | None = None
     parent_session_id: str | None = None
     session_kind: Literal["chat", "selection_tutor", "immersive_reading"] | None = None
@@ -566,16 +565,6 @@ async def update_session_organization(
                 raise HTTPException(status_code=409, detail=str(exc)) from exc
             return {"session": moved}
         updates["workspace_id"] = workspace_id or None
-    if "course_id" in fields:
-        course_id = str(payload.course_id or "").strip()
-        if course_id:
-            from deeptutor.services.courses import CourseNotFoundError, get_course_service
-
-            try:
-                get_course_service().get(course_id)
-            except CourseNotFoundError as exc:
-                raise HTTPException(status_code=404, detail="Course not found") from exc
-        updates["course_id"] = course_id
     if "parent_session_id" in fields:
         parent_id = str(payload.parent_session_id or "").strip()
         if parent_id == session_id:
@@ -602,7 +591,7 @@ async def update_session_organization(
     if updates:
         await store.update_session_preferences(session_id, updates)
         cascade_updates = {
-            key: updates[key] for key in ("course_id", "archived", "workspace_id") if key in updates
+            key: updates[key] for key in ("archived", "workspace_id") if key in updates
         }
         if cascade_updates:
             # Selected-text tutor threads stay with their source conversation.

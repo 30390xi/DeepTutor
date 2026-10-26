@@ -22,6 +22,9 @@ class NativeAdapter:
         self.pipeline, self.context, self.stream, self.schemas = pipeline, context, stream, schemas
 
     async def invoke(self, operation: str, args: dict[str, Any], state: dict[str, Any]) -> Any:
+        if operation == "read_user_inputs":
+            drain = self.context.runtime.drain_user_inputs
+            return drain() if drain is not None else []
         if operation == "event":
             event = args["event"]
             kind = StreamEventType(event["type"])

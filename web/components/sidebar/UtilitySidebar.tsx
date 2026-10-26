@@ -18,7 +18,6 @@ import {
   type SessionOrganizationPatch,
   type SessionSummary,
 } from "@/lib/session-api";
-import { listCourses, type StudyCourse } from "@/lib/courses-api";
 import {
   fetchReadingCollectionIndex,
   type ReadingCollectionLabel,
@@ -35,7 +34,6 @@ export default function UtilitySidebar() {
   const router = useRouter();
   const { activeSessionId, setActiveSessionId } = useAppShell();
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
-  const [courses, setCourses] = useState<StudyCourse[]>([]);
   const [masteryTopics, setMasteryTopics] = useState<MasteryTopicLabel[]>([]);
   const [readingCollections, setReadingCollections] = useState<
     ReadingCollectionLabel[]
@@ -49,15 +47,13 @@ export default function UtilitySidebar() {
     }
     try {
       // Labels only name a heading, so losing them costs grouping, not the list.
-      const [nextSessions, nextCourses, nextTopics, nextCollections] =
+      const [nextSessions, nextTopics, nextCollections] =
         await Promise.all([
           listAllSessions({ force: true }),
-          listCourses({ force: true }).catch(() => [] as StudyCourse[]),
           fetchMasteryTopicIndex().catch(() => [] as MasteryTopicLabel[]),
           fetchReadingCollectionIndex().catch(() => [] as ReadingCollectionLabel[]),
         ]);
       setSessions(nextSessions);
-      setCourses(nextCourses);
       setMasteryTopics(nextTopics);
       setReadingCollections(nextCollections);
       hasLoadedSessionsRef.current = true;
@@ -146,7 +142,6 @@ export default function UtilitySidebar() {
     <LayoutSidebarShell
       showSessions
       sessions={sessions}
-      courses={courses}
       masteryTopics={masteryTopics}
       readingCollections={readingCollections}
       activeSessionId={activeSessionId}

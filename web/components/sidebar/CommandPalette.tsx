@@ -15,6 +15,7 @@ import { usePartnerNavigation } from '@/hooks/usePartnerNavigation'
 import { allLearningActivity } from '@/lib/learning-dashboard'
 import { navigateTask } from '@/lib/workspace-scope'
 import type { SessionSummary } from '@/lib/session-api'
+import { isNoteSession } from '@/lib/mastery-session'
 import { learningSurface } from '@/components/learning/surfaces'
 import { navVisibleUnderPolicy } from './nav-entries'
 
@@ -107,7 +108,12 @@ export function CommandPalette({
       { id: 'settings', label: t('Settings'), icon: glyph(Settings), run: go('/settings') },
     ]
     const conversations: PaletteItem[] = sessions
-      .filter(session => !session.preferences?.archived && !session.preferences?.parent_session_id)
+      .filter(
+        session =>
+          !session.preferences?.archived &&
+          !session.preferences?.parent_session_id &&
+          !isNoteSession(session)
+      )
       .map(session => ({
         id: `session:${session.session_id}`,
         label: session.title || t('New conversation'),

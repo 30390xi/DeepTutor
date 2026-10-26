@@ -27,8 +27,8 @@ import type {
   SessionSummary,
 } from "@/lib/session-api";
 import type { MasteryTopicLabel } from "@/lib/learning-api";
+import { isNoteSession } from "@/lib/mastery-session";
 import type { ReadingCollectionLabel } from "@/lib/reading-workspace-api";
-import type { StudyCourse } from "@/lib/courses-api";
 import { useSidebarResize } from "@/hooks/useSidebarResize";
 import { CategoryBody, CategoryTabs, useCategoryNavigation } from "@/components/sidebar/CategoryNavigation";
 import { isLearningSession } from "@/lib/navigation";
@@ -50,7 +50,7 @@ const CommandPalette = dynamic(
 // Session data arrives after mount; defer its organization UI with it so
 // every workspace route does not download it as part of the initial shell.
 const OrganizedSessionList = dynamic(
-  () => import("@/components/courses/OrganizedSessionList"),
+  () => import("@/components/sessions/OrganizedSessionList"),
   {
     ssr: false,
     loading: () => (
@@ -85,7 +85,6 @@ export interface SidebarShellProps {
   onSelectSession?: (sessionId: string) => void | Promise<void>;
   onRenameSession?: (sessionId: string, title: string) => void | Promise<void>;
   onDeleteSession?: (sessionId: string) => void | Promise<void>;
-  courses?: StudyCourse[];
   /** Topic labels for grouping mastery study conversations under their path. */
   masteryTopics?: MasteryTopicLabel[];
   /** Collection labels for grouping reading conversations under their shelf. */
@@ -216,7 +215,10 @@ export function SidebarShell({
   // The product shell files learning conversations under Learning only; an
   // embedded body (the /preview demo) brings its own lists.
   const listed = sessions.filter(
-    (session) => !session.preferences?.archived && !session.preferences?.parent_session_id,
+    (session) =>
+      !session.preferences?.archived &&
+      !session.preferences?.parent_session_id &&
+      !isNoteSession(session),
   );
   const visibleSessions = bodySlot ? listed : listed.filter((session) => !isLearningSession(session));
 
@@ -230,7 +232,6 @@ export function SidebarShell({
           render: (rows) => (
             <OrganizedSessionList
               sessions={rows}
-              courses={[]}
               workspaces={workspaces}
               nested={false}
               times
@@ -276,10 +277,6 @@ export function SidebarShell({
           ) : (
             <OrganizedSessionList
               sessions={visibleSessions}
-              // Course grouping temporarily hidden pending further product
-              // work; passing [] keeps the list flat without touching the
-              // course data callers still fetch.
-              courses={[]}
               workspaces={workspaces}
               timeline={chatView}
               masteryTopics={masteryTopics}

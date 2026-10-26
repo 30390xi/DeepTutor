@@ -24,19 +24,18 @@ from deeptutor.services.session.workspace_preferences import (
 from deeptutor.services.workspace.activity import workspace_writer
 
 from .._turn_runtime_shared import (
-    _apply_course_defaults,
     _coerce_bool,
-    _course_conventions_block,
-    _extract_selection_tutor_context,
+    _extract_side_chat_context,
     _llm_selection_dict,
     _mastery_loop_managed,
     _mastery_path_id,
+    _note_generation,
     _partner_group_references,
     _reading_material_id,
     _reading_material_revision,
     _reading_references,
     _reading_workspace_id,
-    _resolve_selection_tutor_context,
+    _resolve_side_chat_context,
     _timed_media_id,
     _TurnExecution,
     _workspace_mode,
@@ -69,7 +68,8 @@ _REPLAY_SNAPSHOT_FIELDS: dict[str, str] = {
     "llm_selection": "llmSelection",
     "workspace_mode": "workspaceMode",
     "workspace_id": "workspaceId",
-    "course_id": "courseId",
+    "note_document_id": "noteDocumentId",
+    "note_generation": "noteGeneration",
     "mastery_path_id": "masteryPathId",
     "mastery_session_mode": "masterySessionMode",
     "mastery_answer": "masteryAnswer",
@@ -84,25 +84,14 @@ _REPLAY_SNAPSHOT_FIELDS: dict[str, str] = {
     "auto_route": "autoRoute",
 }
 
-# What a reopened Little Tutor thread needs to pin its passage again. Kept
-# short because preferences ride along with every session-list row; a prefix
-# of the selection still grounds against its source message.
-TUTOR_THREAD_SELECTION_MAX_CHARS = 2_000
-
-
 def _tutor_thread_preferences(context: dict[str, Any]) -> dict[str, Any]:
-    if context.get("scope") == "conversation":
-        return {"tutor_scope": "conversation"}
-    preferences: dict[str, Any] = {
-        "tutor_scope": "selection",
-        "tutor_selected_text": str(context.get("selected_text") or "")[
-            :TUTOR_THREAD_SELECTION_MAX_CHARS
-        ],
-    }
-    source_message_id = context.get("source_message_id")
-    if isinstance(source_message_id, int) and source_message_id > 0:
-        preferences["tutor_source_message_id"] = source_message_id
-    return preferences
+    if context.get("selected_text"):
+        return {
+            "tutor_scope": "selection",
+            "tutor_selected_text": str(context["selected_text"])[:2000],
+            "tutor_source_message_id": context.get("source_message_id"),
+        }
+    return {"tutor_scope": "conversation"}
 
 
 class TurnRequestPreparer:
@@ -316,31 +305,6 @@ class TurnRequestPreparer:
             payload.pop("timed_media_id", None)
             payload.pop("timed_media_viewport", None)
 
-        course_id_explicit = "course_id" in payload
-        requested_course_id = str(
-            (payload.get("course_id") if course_id_explicit else preferences.get("course_id")) or ""
-        ).strip()
-        bound_course = None
-        if requested_course_id:
-            from deeptutor.services.courses import (
-                CourseNotFoundError,
-                get_course_service,
-            )
-
-            try:
-                bound_course = await asyncio.to_thread(
-                    get_course_service().get,
-                    requested_course_id,
-                )
-            except CourseNotFoundError:
-                requested_course_id = ""
-        if bound_course is not None:
-            payload = _apply_course_defaults(
-                payload,
-                bound_course,
-                preferences=preferences,
-            )
-
         requested_capability = str(payload.get("capability") or "chat")
         # Resolved before routing, and from the *requested* action: the
         # workspace is what decides whether this turn may be re-routed at all,
@@ -386,16 +350,6 @@ class TurnRequestPreparer:
             **payload,
             "capability": capability,
             "workspace_mode": workspace_mode,
-            "course_id": requested_course_id,
-            # Rendered here, where the course is already loaded and validated,
-            # and carried on the payload so the run phase needs no second read.
-            # Session preferences are assembled key by key below, so this rides
-            # along without being persisted.
-            "course_conventions": (
-                _course_conventions_block(bound_course, str(payload.get("language") or "en"))
-                if bound_course is not None
-                else ""
-            ),
             "requested_capability": requested_capability,
             "capability_route": (
                 capability_route.as_metadata() if capability_route is not None else None
@@ -668,12 +622,13 @@ class TurnRequestPreparer:
         # non-empty legacy capability is persisted as part of migration.
         if workspace_mode_explicit or workspace_mode:
             preference_update["workspace_mode"] = workspace_mode
-        if course_id_explicit:
-            preference_update["course_id"] = requested_course_id
+
+        if payload.get("note_document_id"):
+            preference_update["note_document_id"] = payload["note_document_id"]
 
         raw_selection_context = payload.get("selection_tutor_context")
         if isinstance(raw_selection_context, dict):
-            selection_tutor_context = _extract_selection_tutor_context(
+            selection_tutor_context = _extract_side_chat_context(
                 {"selection_tutor_context": dict(raw_selection_context)}
             )
             if selection_tutor_context is None:
@@ -681,7 +636,7 @@ class TurnRequestPreparer:
                     "A Little Tutor thread needs selected text or the conversation it is about"
                 )
             try:
-                resolved_selection_context = await _resolve_selection_tutor_context(
+                resolved_selection_context = await _resolve_side_chat_context(
                     self.store,
                     selection_tutor_context,
                 )
@@ -729,7 +684,7 @@ class TurnRequestPreparer:
                     {
                         "parent_session_id": parent_session_id,
                         "session_kind": "selection_tutor",
-                        "course_id": str(parent_preferences.get("course_id") or ""),
+                        "side_chat_group_id": str(payload.get("partner_discussion_group_id") or ""),
                         **_tutor_thread_preferences(selection_tutor_context),
                     }
                 )
@@ -1136,6 +1091,17 @@ class TurnRequestPreparer:
             # against the same document. An explicit override wins (the reader
             # may have moved on), and the viewport is deliberately not restored —
             # "where the user was looking" is stale by definition on a retry.
+            "note_document_id": (
+                overrides.get("note_document_id")
+                if "note_document_id" in overrides
+                else snapshot.get("noteDocumentId") or preferences.get("note_document_id")
+            )
+            or None,
+            "note_generation": _note_generation(
+                overrides.get("note_generation")
+                if "note_generation" in overrides
+                else snapshot.get("noteGeneration")
+            ),
             "reading_material_id": _reading_material_id(
                 overrides.get("reading_material_id")
                 if "reading_material_id" in overrides

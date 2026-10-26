@@ -80,11 +80,17 @@
 }
 .dt-product-sidebar .dt-category-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 2px 8px 8px; flex-shrink: 0; }
 .dt-category-bar [role="tablist"] { display: flex; flex: 1; align-items: center; min-width: 0; gap: 1px; }
-.dt-category-bar [role="tab"] { position: relative; display: flex; align-items: center; justify-content: center; flex: 1; min-width: 30px; height: var(--dt-nav-row); gap: 6px; padding: 0 8px; color: var(--muted-foreground); border-radius: var(--dt-nav-radius); transition: color 140ms, background-color 140ms; }
+/* Padding gives way first as the sidebar narrows, so a selected account shelf
+   (the longest row) still fits. */
+.dt-category-bar [role="tab"] { position: relative; display: flex; align-items: center; justify-content: center; flex: 1; min-width: 34px; height: 34px; gap: 6px; padding: 0 clamp(5px, (100cqi - 180px) / 10, 10px); color: var(--muted-foreground); border-radius: var(--dt-nav-radius); transition: color 140ms, background-color 140ms; }
 .dt-category-bar [role="tab"] > svg, .dt-category-bar [role="tab"] > span:not(.dt-category-pill) { position: relative; z-index: 1; flex-shrink: 0; }
-.dt-category-bar [role="tab"] > span:not(.dt-category-pill) { display: none; font-size: var(--dt-nav-list-text); font-weight: 500; white-space: nowrap; }
+.dt-category-bar [role="tab"] > span:not(.dt-category-pill) { display: none; font-size: 13.5px; font-weight: 500; white-space: nowrap; }
 .dt-category-bar [role="tab"].is-active { flex: 1.9; color: var(--foreground); }
 .dt-category-bar [role="tab"].is-active > span:not(.dt-category-pill) { display: inline; }
+/* A label longer than the room left (an English account shelf, a narrow
+   sidebar) truncates instead of pushing the row past the sidebar's edge. */
+.dt-category-bar:not(.is-collapsed) :has(> [role="tab"].is-active) { min-width: 0; }
+.dt-category-bar [role="tab"].is-active > span:not(.dt-category-pill) { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .dt-category-pill { position: absolute; inset: 0; border-radius: var(--dt-nav-radius); background: var(--accent); }
 /* Workspace shelves | account shelves. */
 .dt-category-divider { flex: none; width: 1px; height: 14px; margin: 0 4px; background: color-mix(in srgb, var(--border) 85%, transparent); }
@@ -97,7 +103,7 @@
 .dt-category-bar [role="tab"].is-active .dt-shelf-fill { fill: color-mix(in srgb, currentColor 16%, transparent); }
 /* The account's pair folds small while the workspace is in use and opens
    under the pointer or focus. */
-.dt-account-tabs { display: flex; align-items: center; gap: 1px; flex: none; }
+.dt-account-tabs { display: flex; align-items: center; gap: 1px; flex: 0 1 auto; min-width: 0; }
 .dt-category-bar.is-collapsed .dt-account-tabs { flex-direction: column; gap: 5px; }
 .dt-account-tabs [role="tab"] { transition: padding 240ms var(--dt-ease), margin 240ms var(--dt-ease), opacity 200ms, color 140ms, background-color 140ms; }
 .dt-account-tabs [role="tab"] > svg { transition: transform 240ms var(--dt-ease); }
@@ -106,8 +112,8 @@
 .dt-account-tabs.is-tucked [role="tab"] { min-width: 0; padding: 0 6px; }
 .dt-account-tabs.is-tucked > :first-child { position: relative; z-index: 2; }
 .dt-account-tabs.is-tucked > :first-child [role="tab"] > svg { filter: drop-shadow(1.5px 0 0 var(--secondary)) drop-shadow(1.5px 1px 0 var(--secondary)); }
-.dt-account-tabs.is-tucked > :last-child [role="tab"] { margin-left: -21px; padding-left: 0; opacity: .5; }
-.dt-account-tabs.is-tucked > :last-child [role="tab"] > svg { transform: translateX(9px) scale(.86); }
+.dt-account-tabs.is-tucked > :last-child [role="tab"] { margin-left: -23px; padding-left: 0; opacity: .5; }
+.dt-account-tabs.is-tucked > :last-child [role="tab"] > svg { transform: translateX(10px) scale(.86); }
 .dt-account-tabs.is-tucked:hover [role="tab"] { opacity: 1; }
 /* The account's half sits at the far end of the bar. */
 .dt-category-bar:not(.is-collapsed) .dt-category-divider { margin-left: auto; }
@@ -435,6 +441,34 @@ button.dt-record-toggle:focus-visible { outline: 2px solid var(--ring); outline-
 .dt-tray-button[data-active] .dt-tray-value { color: var(--primary); }
 .dt-tray-chevron { flex: none; opacity: 0.55; transition: transform 220ms var(--dt-ease); }
 .dt-tray-button[aria-expanded="true"] .dt-tray-chevron { transform: rotate(180deg); }
+/* Folding buttons rest as marks and unfold while pointed at, focused or
+   open. Each run of words sits in a one-column grid that animates between
+   nothing and its own width, so the button grows with the words and the
+   ones after it make way, instead of the words being cut at a fixed width;
+   the words themselves arrive a beat behind, out of a slight blur. */
+.dt-tray-button:has(.dt-tray-reveal) { gap: 0; padding: 0 7px; }
+.dt-tray-reveal {
+  display: grid; grid-template-columns: 1fr; min-width: 0;
+  transition: grid-template-columns 340ms var(--dt-ease);
+}
+.dt-tray-reveal > span { min-width: 0; overflow: hidden; }
+.dt-tray-reveal-run {
+  display: flex; align-items: center; gap: 6px; padding-left: 6px; white-space: nowrap;
+  transition: opacity 200ms 60ms, filter 260ms 40ms, transform 340ms var(--dt-ease);
+}
+.dt-tray-button[data-fold] .dt-tray-reveal { grid-template-columns: 0fr; }
+.dt-tray-button[data-fold] .dt-tray-reveal-run { opacity: 0; filter: blur(3px); transform: translateX(-6px); transition: opacity 120ms, filter 160ms, transform 300ms var(--dt-ease); }
+.dt-tray-menu:hover .dt-tray-button[data-fold] .dt-tray-reveal,
+.dt-tray-button[data-fold]:is(:focus-visible, [aria-expanded="true"]) .dt-tray-reveal { grid-template-columns: 1fr; }
+.dt-tray-menu:hover .dt-tray-button[data-fold] .dt-tray-reveal-run,
+.dt-tray-button[data-fold]:is(:focus-visible, [aria-expanded="true"]) .dt-tray-reveal-run {
+  opacity: 1; filter: none; transform: none; transition: opacity 200ms 60ms, filter 260ms 40ms, transform 340ms var(--dt-ease);
+}
+/* What is chosen, as a mark: it stays when the words fold away. */
+.dt-tray-value-icon { display: grid; flex: none; padding-left: 6px; color: var(--primary); animation: dt-tray-mark-in 260ms cubic-bezier(0.34, 1.56, 0.64, 1); }
+.dt-tray-button[data-fold] .dt-tray-value-icon { padding-left: 4px; }
+.dt-tray-button[data-fold][data-active] > svg:first-child { color: var(--primary); }
+@keyframes dt-tray-mark-in { from { opacity: 0; transform: scale(0.5); } }
 .dt-tray-dots { display: inline-flex; gap: 3px; }
 .dt-tray-status { flex: none; width: 6px; height: 6px; border-radius: 999px; }
 
@@ -474,6 +508,10 @@ button.dt-record-toggle:focus-visible { outline: 2px solid var(--ring); outline-
   transition: background-color 140ms, color 140ms;
 }
 .dt-tray-lead:has(> .rounded-full:only-child) { background: transparent; }
+.dt-tray-list[data-bare] .dt-tray-lead { width: 30px; height: 30px; background: transparent;
+  /* Opaque, so a mark's strokes do not darken where they cross. */
+  color: color-mix(in srgb, var(--foreground) 72%, var(--popover)); }
+.dt-tray-list[data-bare] .dt-tray-row[aria-selected="true"] .dt-tray-lead { background: transparent; color: var(--primary); }
 .dt-tray-row[aria-selected="true"] .dt-tray-lead { background: color-mix(in srgb, var(--primary) 11%, transparent); color: var(--primary); }
 .dt-tray-lead-status { position: absolute; right: -1px; bottom: -1px; width: 8px; height: 8px; border-radius: 999px; box-shadow: 0 0 0 2px var(--popover); }
 .dt-tray-row-title, .dt-tray-row-meta { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -522,7 +560,9 @@ button.dt-record-toggle:focus-visible { outline: 2px solid var(--ring); outline-
 }
 @media (prefers-reduced-motion: reduce) {
   .dt-lead-token, .dt-lead-more, .dt-tray-budget { animation: none; }
-  .dt-tray-check, .dt-tray-chevron, .dt-lead-icon > svg, .dt-tray-grip::before { transition: none; }
+  .dt-tray-check, .dt-tray-chevron, .dt-lead-icon > svg, .dt-tray-grip::before,
+  .dt-tray-reveal, .dt-tray-reveal-run { transition: none !important; }
+  .dt-tray-value-icon { animation: none; }
 }
 
 /* Ways to start: a row that opens one card of requests at a time, then one
@@ -596,29 +636,92 @@ button.dt-record-toggle:focus-visible { outline: 2px solid var(--ring); outline-
 .dt-starter-advice button:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
 .dt-starter-advice button:disabled { opacity: 0.45; cursor: not-allowed; }
 :root[data-ui-layout="modern"] .dt-chat-title { font-family: theme("fontFamily.sans"); font-size: 15px; letter-spacing: -0.01em; }
+/* Its title and actions went up into the page bar; nothing is left of the row. */
+.dt-chat-head:empty { display: none; }
 
-/* ---- Page bar: the page's name on the left, its actions on the right --
-   On a section page the bar is the whole header: the page's own title,
-   icon and blurb step out of view (the heading stays for screen readers)
-   and its actions move up here. Detail pages keep their title, which is
-   their content; their actions still come up. */
-.dt-page-bar { display: flex; align-items: center; gap: 4px; min-height: 52px; padding: 8px 16px 8px 12px; flex-shrink: 0; }
+/* ---- Page bar: 「feature / one use of it」 on the left, actions right --
+   The feature is a soft chip; the open session, document or folder is
+   plain text in the same box beside it, filled only on hover. On a feature
+   page the bar is the whole header: the page's own title, icon and blurb
+   step out of view (the heading stays for screen readers) and its actions
+   move up here. Detail pages keep their title, which is their content;
+   their actions still come up. */
+.dt-page-bar { display: flex; align-items: center; gap: 2px; min-height: 52px; padding: 8px 16px 8px 12px; flex-shrink: 0; }
 @media (max-width: 767px) { .dt-page-bar { display: none; } }
 .dt-crumb {
   display: inline-flex; align-items: center; gap: 7px; height: 30px; max-width: 100%; padding: 0 9px;
-  border-radius: var(--dt-radius-sm); font-size: 14px; font-weight: 500; color: var(--foreground); transition: background-color 120ms;
+  border-radius: var(--dt-radius-sm); font-size: 14px; font-weight: 500; color: var(--foreground);
+  transition: background-color 120ms, color 120ms;
 }
-.dt-crumb:hover, .dt-crumb[aria-expanded="true"] { background: var(--accent); }
+.dt-crumb.is-feature { background: rgb(var(--dt-ink) / 0.05); }
+.dt-crumb.is-feature:hover, .dt-crumb.is-feature[aria-expanded="true"] { background: rgb(var(--dt-ink) / 0.085); }
+.dt-crumb.is-instance { gap: 6px; padding: 0 6px 0 8px; font-weight: 450; }
+.dt-crumb.is-instance:hover, .dt-crumb.is-instance[aria-expanded="true"] { background: var(--accent); }
+.dt-crumb.is-placeholder { color: var(--muted-foreground); }
+.dt-crumb-caret { flex-shrink: 0; margin-left: -1px; opacity: 0; color: var(--muted-foreground); transition: opacity 120ms; }
+.dt-crumb:hover .dt-crumb-caret, .dt-crumb[aria-expanded="true"] .dt-crumb-caret, .dt-crumb:focus-visible .dt-crumb-caret { opacity: 1; }
 .dt-crumb:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+.dt-crumb-sep { flex-shrink: 0; padding: 0 3px; font-size: 14px; color: rgb(var(--dt-ink) / 0.3); user-select: none; }
+.dt-crumb-dot { width: 8px; height: 8px; flex-shrink: 0; border-radius: 999px; }
+.dt-crumb-input {
+  height: 30px; min-width: 120px; max-width: min(480px, 50vw); padding: 0 8px; border-radius: var(--dt-radius-sm);
+  background: var(--background); font-size: 14px; font-weight: 450; color: var(--foreground);
+  box-shadow: inset 0 0 0 1px rgb(var(--dt-ink) / 0.16); outline: none;
+}
+.dt-crumb-input:focus { box-shadow: inset 0 0 0 1px var(--ring), 0 0 0 3px color-mix(in srgb, var(--ring) 18%, transparent); }
 .dt-crumb-panel { width: 248px; max-height: min(420px, 70vh); overflow-y: auto; }
-.dt-page-bar-meta { display: flex; min-width: 0; align-items: center; gap: 6px; }
+.dt-crumb-panel.is-instances { display: flex; flex-direction: column; width: 320px; max-height: min(480px, 72vh); overflow: hidden; }
+.dt-crumb-rows { min-height: 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; }
+.dt-crumb-search { display: flex; flex-shrink: 0; align-items: center; gap: 8px; height: 32px; margin: 0 0 4px; padding: 0 8px; border-radius: var(--dt-radius-sm); background: rgb(var(--dt-ink) / 0.04); color: var(--muted-foreground); }
+.dt-crumb-search input { flex: 1; min-width: 0; background: transparent; font-size: 13px; color: var(--foreground); outline: none; }
+.dt-crumb-search input::placeholder { color: var(--muted-foreground); }
+.dt-crumb-detail { flex-shrink: 0; font-size: 11.5px; color: var(--muted-foreground); }
+.dt-crumb-check { flex-shrink: 0; color: var(--muted-foreground); }
+.dt-crumb-empty { padding: 14px 8px; font-size: 12.5px; color: var(--muted-foreground); }
+.dt-page-bar-instance { display: flex; min-width: 0; align-items: center; }
+.dt-crumb-tail { min-width: 0; overflow: hidden; padding: 0 6px; font-size: 13.5px; color: var(--muted-foreground); text-overflow: ellipsis; white-space: nowrap; }
+/* A study session's own row is empty once the bar holds its location and controls. */
+.dt-study-head:not(:has(*)) { display: none; }
+.dt-page-bar-instance:empty { display: none; }
+/* Views of the open instance, right after its crumb (a partner's chat / configure / channels). */
+.dt-bar-tabs { display: flex; flex-shrink: 0; align-items: center; gap: 1px; margin-left: 10px; padding-left: 10px; border-left: 1px solid var(--border); }
+.dt-bar-tab { display: inline-flex; height: 28px; align-items: center; gap: 6px; padding: 0 9px; border-radius: var(--dt-radius-sm); font-size: 13px; color: var(--muted-foreground); white-space: nowrap; transition: background-color 120ms, color 120ms; }
+.dt-bar-tab:hover { background: var(--accent); color: var(--foreground); }
+.dt-bar-tab[aria-selected="true"] { background: rgb(var(--dt-ink) / 0.05); color: var(--foreground); font-weight: 500; }
+.dt-bar-tab:focus-visible { outline: 2px solid var(--ring); outline-offset: -2px; }
+.dt-bar-tab > svg { flex-shrink: 0; opacity: .8; }
+@media (max-width: 1099px) { .dt-bar-tab > svg { display: none; } }
+.dt-page-bar-meta { display: flex; min-width: 0; align-items: center; gap: 6px; margin-left: 6px; }
 .dt-page-bar-meta:empty, .dt-page-bar-actions:empty { display: none; }
-.dt-page-bar-actions { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px; margin-left: auto; }
+.dt-page-bar-actions { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 2px; margin-left: auto; }
 .dt-page-bar-actions > * { max-width: 100%; }
-/* Actions in the bar read as toolbar buttons, a size down from page buttons. */
-.dt-page-bar-actions .dt-page-action { height: 32px; padding: 0 12px; border-radius: 9px; font-size: 13px; }
-.dt-page-bar-actions .dt-page-action:not([class*="bg-[var(--primary)]"]) { border-color: transparent; background: transparent; color: var(--muted-foreground); }
-.dt-page-bar-actions .dt-page-action:not([class*="bg-[var(--primary)]"]):hover { background: var(--accent); color: var(--foreground); }
+/* Whatever a page hands up reads as one toolbar: the same 30px row as the
+   crumbs, no borders or shadows, muted text that fills on hover. The page's
+   primary action keeps its weight through ink, not a blue slab — it takes
+   the feature chip's soft fill, so the bar's two ends match. Pages style
+   their buttons for their own header; in the bar this wins (menus, tab
+   strips and the calendar's own toolbar keep theirs). */
+.dt-page-bar .dt-page-bar-actions :is(a, button, summary):not(.absolute *, .dt-popover *, [role="menu"] *, [role="tablist"] *, [role="dialog"] *, .dt-cal-toolbar *) {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 30px; min-height: 30px; min-width: 30px; padding: 0 9px;
+  border: 0; border-radius: var(--dt-radius-sm); box-shadow: none; outline-offset: -2px;
+  background: transparent; color: var(--muted-foreground);
+  font-size: 13px; font-weight: 450; line-height: 1; white-space: nowrap; opacity: 1;
+  transition: background-color 120ms, color 120ms;
+}
+.dt-page-bar .dt-page-bar-actions :is(a, button, summary):not(.absolute *, .dt-popover *, [role="menu"] *, [role="tablist"] *, [role="dialog"] *, .dt-cal-toolbar *):is(:hover, [aria-expanded="true"], [aria-pressed="true"]) {
+  background: var(--accent); color: var(--foreground);
+}
+.dt-page-bar .dt-page-bar-actions :is(a, button):not(.absolute *, .dt-popover *, [role="menu"] *, [role="tablist"] *, [role="dialog"] *, .dt-cal-toolbar *):is([class*="bg-[var(--primary)]"], [class~="bg-primary"]) {
+  background: rgb(var(--dt-ink) / 0.05); color: var(--foreground); font-weight: 500;
+}
+.dt-page-bar .dt-page-bar-actions :is(a, button):not(.absolute *, .dt-popover *, [role="menu"] *, [role="tablist"] *, [role="dialog"] *, .dt-cal-toolbar *):is([class*="bg-[var(--primary)]"], [class~="bg-primary"]):hover {
+  background: rgb(var(--dt-ink) / 0.085);
+}
+.dt-page-bar .dt-page-bar-actions :is(a, button, summary):not(.absolute *, .dt-popover *, [role="menu"] *, [role="tablist"] *, [role="dialog"] *, .dt-cal-toolbar *) > svg { width: 15px; height: 15px; flex-shrink: 0; }
+.dt-page-bar .dt-page-bar-actions :is(a, button, summary):disabled { opacity: .45; background: transparent; }
+/* The row's own wrappers add no spacing of their own. */
+.dt-page-bar-actions > div { gap: 2px; }
 .dt-menu-item[aria-current="page"] { background: color-mix(in srgb, var(--primary) 9%, transparent); }
 main:has(.dt-page-bar[data-exact]) [data-page-header][data-level="1"] > :first-child {
   position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
@@ -626,11 +729,20 @@ main:has(.dt-page-bar[data-exact]) [data-page-header][data-level="1"] > :first-c
 main:has(.dt-page-bar[data-exact]) [data-page-header][data-level="1"]:not(:has(> [data-page-actions])) { margin-bottom: 0; }
 /* The bar replaces each section's "← back" link; detail pages without the
    bar keep theirs. */
-@media (min-width: 768px) { main:has(.dt-page-bar) .dt-section-back { display: none; } }
-/* With the bar above, pages need less air of their own. */
-main:has(.dt-page-bar) [data-feature-page] > .dt-page-container { padding-top: 12px; }
-@media (min-width: 1024px) { main:has(.dt-page-bar) [data-feature-page] > .dt-page-container { padding-top: 16px; } }
-main:has(.dt-page-bar:not([data-exact])) [data-feature-page] > .dt-page-container { padding-top: 24px; }
+@media (min-width: 768px) {
+  main:has(.dt-page-bar) .dt-section-back,
+  /* …and the row that held nothing but that link, with its spacing. */
+  main:has(.dt-page-bar) :has(> .dt-section-back:only-child) { display: none; }
+}
+/* With the bar above, pages need less air of their own: the bar is the
+   title, so the content starts right under it. Scoped to the layout like the
+   48/64px title air it replaces, which would otherwise win on specificity. */
+:root[data-ui-layout="modern"] main:has(.dt-page-bar) [data-feature-page] > .dt-page-container { padding-top: 8px; }
+:root[data-ui-layout="modern"] main:has(.dt-page-bar:not([data-exact])) [data-feature-page] > .dt-page-container { padding-top: 20px; }
+/* The header has folded into the bar; the block after it starts the page,
+   as does the first thing inside that block. */
+main:has(.dt-page-bar[data-exact]) [data-page-header][data-level="1"]:not(:has(> [data-page-actions])) + *,
+main:has(.dt-page-bar[data-exact]) [data-page-header][data-level="1"]:not(:has(> [data-page-actions])) + * > :first-child { margin-top: 0; }
 
 /* ---- Learning surfaces: panels without frames --------------------------
    Reading, mastery, books and writing shared one card: a 1px border, a grey

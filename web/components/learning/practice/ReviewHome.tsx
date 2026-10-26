@@ -30,7 +30,7 @@ export function ReviewHome() {
   const refresh = useCallback(async () => {
     const request = ++sequence.current
     try {
-      const next = await getPracticeSummary('')
+      const next = await getPracticeSummary()
       if (request !== sequence.current) return
       setSummary(next)
       setError('')
@@ -53,7 +53,7 @@ export function ReviewHome() {
     if (starting) return
     setStarting(true)
     try {
-      const rows = await getPracticeQueue('')
+      const rows = await getPracticeQueue()
       if (rows.length)
         setSession(
           rows.map(row => ({
@@ -109,7 +109,6 @@ export function ReviewHome() {
           {importing && (
             <PracticeImport
               initialTarget="bank"
-              courseId=""
               onClose={() => setImporting(false)}
               onImported={message => {
                 setNotice(message)
@@ -186,7 +185,7 @@ export function ReviewHome() {
               <ChevronDown size={16} className="transition group-open:rotate-180" />
             </summary>
             <div className="px-4 pb-4">
-              <PracticeInsights courseId="" revision={revision} />
+              <PracticeInsights revision={revision} />
             </div>
           </details>
         </div>

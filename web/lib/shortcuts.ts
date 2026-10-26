@@ -43,7 +43,7 @@ export function matchesShortcut(event: KeyboardEvent, shortcut: Shortcut, mac = 
 export const SHORTCUTS = {
   search: { key: 'K', mod: true },
   newChat: { key: 'O', mod: true, shift: true },
-  /** A Little Tutor side chat about the open conversation, in the viewer. */
+  /** A side chat with Dito about the open conversation, in the viewer. */
   sideChat: { key: 'S', mod: true, alt: true },
   category: (index: number): Shortcut => ({ key: String(index + 1), mod: true, alt: true }),
 } as const

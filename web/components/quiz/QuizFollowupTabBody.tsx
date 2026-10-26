@@ -27,13 +27,14 @@ import {
   MessagesSquare,
   PenLine,
   Sparkles,
-  TextQuote,
   type LucideIcon,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import MarkdownRenderer from "@/components/common/MarkdownRenderer";
 import { ACTIVITY_TILE } from "@/components/chat/home/SessionActivityPanel";
 import FollowupChatComposer from "@/components/quiz/FollowupChatComposer";
+import type { ComposerResourceCatalog } from "@/hooks/useComposerResources";
+import type { SideChatResponder } from "@/lib/side-chat";
 import {
   AskUserOptions,
   extractMessageSegments,
@@ -47,6 +48,7 @@ import {
   useQuizFollowupController,
 } from "@/context/QuizFollowupContext";
 import { apiUrl } from "@/lib/api";
+import { isQuoteAttachment, quoteText } from "@/lib/quote-attachments";
 import { getSession } from "@/lib/session-api";
 
 /** Resolve a possibly-relative AttachmentStore URL to an absolute one. */
@@ -58,10 +60,17 @@ function resolveImageSrc(url: string | null | undefined): string {
 
 interface QuizFollowupTabBodyProps {
   context: QuizFollowupTabContext;
+  resourceCatalog?: ComposerResourceCatalog;
+  agents?: { name: string; kind?: string }[];
+  /** Hand a side chat to someone else from its composer. */
+  onResponderChange?: (responder: SideChatResponder) => void;
 }
 
 export default function QuizFollowupTabBody({
   context,
+  resourceCatalog,
+  agents,
+  onResponderChange,
 }: QuizFollowupTabBodyProps) {
   const { t } = useTranslation();
   const controller = useQuizFollowupController();
@@ -110,6 +119,7 @@ export default function QuizFollowupTabBody({
           role: m.role,
           content: m.content || "",
           events: m.events ?? [],
+          quotes: (m.attachments ?? []).filter(isQuoteAttachment).map(quoteText),
         }));
         controller.hydrateThread(
           context.questionKey,
@@ -134,8 +144,9 @@ export default function QuizFollowupTabBody({
 
   const visibleMessages = thread.messages.filter((m) => m.role !== "system");
   const isCoding = context.question.question_type === "coding";
-  const tutor = context.tutorSelection;
-  const isSideChat = tutor?.scope === "conversation";
+  const sideChat = context.sideChat;
+  const responder = sideChat?.responder;
+  const responderName = !responder || responder.kind === "dito" ? "Dito" : responder.name;
 
   // The tab pill already names the thread, so the body opens straight on what
   // it is pinned to — no title strip repeating the tab.
@@ -153,22 +164,21 @@ export default function QuizFollowupTabBody({
         className="flex-1 overflow-y-auto px-4 pb-3 pt-1"
       >
         <div className="mx-auto flex max-w-[640px] flex-col gap-2.5">
-          {isSideChat ? (
+          {sideChat ? (
+            // Beside a draft there is no conversation yet to be about.
+            sideChat.parentSessionId ? (
             <PinnedCard icon={MessagesSquare} label={t("About this conversation")}>
               <div className="truncate text-[13px] font-medium text-[var(--foreground)]">
-                {tutor?.parentTitle || t("This conversation")}
+                {sideChat.parentTitle || t("This conversation")}
               </div>
             </PinnedCard>
+            ) : null
           ) : (
             <PinnedCard
-              icon={tutor ? TextQuote : HelpCircle}
-              label={
-                tutor
-                  ? t("Selected text")
-                  : [t("Question"), context.question.question_type]
-                      .filter(Boolean)
-                      .join(" · ")
-              }
+              icon={HelpCircle}
+              label={[t("Question"), context.question.question_type]
+                .filter(Boolean)
+                .join(" · ")}
             >
               <div className="text-[13px] leading-relaxed text-[var(--foreground)]">
                 <MarkdownRenderer
@@ -179,7 +189,7 @@ export default function QuizFollowupTabBody({
             </PinnedCard>
           )}
 
-          {!tutor && (
+          {!sideChat && (
             <PinnedCard icon={PenLine} label={t("Your Answer")}>
               {context.userAnswer ? (
                 <div className="text-[13px] leading-relaxed text-[var(--foreground)]">
@@ -227,7 +237,7 @@ export default function QuizFollowupTabBody({
             </PinnedCard>
           )}
 
-          {!tutor && context.aiJudgment && (
+          {!sideChat && context.aiJudgment && (
             <PinnedCard icon={Sparkles} label={t("AI Judgment")} tone="primary">
               <div className="text-[12.5px] leading-relaxed text-[var(--foreground)]">
                 <MarkdownRenderer
@@ -243,13 +253,17 @@ export default function QuizFollowupTabBody({
               // What this thread can see, so the first question is asked of
               // the right thing — the composer already says what to type.
               <p className="px-1 text-[12px] leading-[1.6] text-[var(--muted-foreground)]">
-                {t(
-                  isSideChat
-                    ? "The Little Tutor has read the whole conversation. Nothing asked here is added to it."
-                    : tutor
-                      ? "The Little Tutor reads only this passage and the message it came from. Nothing asked here is added to the conversation."
-                      : "Ask why an answer was marked, for another explanation, or for a similar question to try.",
-                )}
+                {!responder
+                  ? t("Ask why an answer was marked, for another explanation, or for a similar question to try.")
+                  : !sideChat?.parentSessionId && responder.kind !== "partner" && responder.kind !== "subagent"
+                    ? responder.kind === "partner_group"
+                      ? t("Dito brings {{name}} into the discussion here, beside the conversation.", { name: responderName })
+                      : t("A conversation with Dito beside the main one. Nothing asked here is added to it.")
+                  : responder.kind === "dito"
+                    ? t("Dito has read the whole conversation. Nothing asked here is added to it.")
+                    : responder.kind === "partner_group"
+                      ? t("Dito has read the whole conversation and brings {{name}} into the discussion. Nothing asked here is added to it.", { name: responderName })
+                      : t("{{name}} answers here, in its own session, from what you send — quote a passage to ask about it. Nothing asked here is added to the conversation.", { name: responderName })}
               </p>
             ) : (
               visibleMessages.map((message, index) => {
@@ -257,6 +271,14 @@ export default function QuizFollowupTabBody({
                   return (
                     <div key={`user-${index}`} className="flex justify-end">
                       <div className="max-w-[88%] whitespace-pre-wrap break-words rounded-[14px] rounded-br-md bg-[var(--primary)] px-3 py-2 text-[13px] leading-[1.6] text-[var(--primary-foreground)]">
+                        {message.quotes?.map((quote, qi) => (
+                          <div
+                            key={qi}
+                            className="mb-1.5 line-clamp-3 border-l-2 border-[color-mix(in_srgb,var(--primary-foreground)_45%,transparent)] pl-2.5 text-[12.5px] opacity-80"
+                          >
+                            {quote}
+                          </div>
+                        ))}
                         {message.content}
                       </div>
                     </div>
@@ -296,8 +318,13 @@ export default function QuizFollowupTabBody({
       {/* Composer — the same ChatComposer used on the main chat page,
           wired through FollowupChatComposer to route sends into the
           QuizFollowupController and keep its own state pool. */}
-      <div className="shrink-0 bg-[var(--card)] px-4 pt-2">
-        <FollowupChatComposer context={context} />
+      <div className="shrink-0 bg-[var(--card)] px-1 pt-1">
+        <FollowupChatComposer
+          context={context}
+          resourceCatalog={resourceCatalog}
+          agents={agents}
+          onResponderChange={onResponderChange}
+        />
       </div>
     </div>
   );
@@ -406,7 +433,7 @@ function AssistantThreadMessage({
               onSubmit={onSubmitUserReply}
             />
           ) : // A mastery question cannot be posed on this surface: the quiz
-          // follow-up chat does not mount the course tools.
+          // follow-up chat does not mount the mastery tools.
           null,
         )
       ) : smoothedContent ? (

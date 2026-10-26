@@ -1,10 +1,10 @@
 'use client'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ComponentType } from 'react'
+import type { NoteCompanionProps } from './note-companion-props'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
-import { ChevronLeft, Pin, Download, PanelRight, FolderTree, X, Bookmark } from 'lucide-react'
 import {
   getNote,
   saveNote,
@@ -22,26 +22,34 @@ import { exportCoWriterDocx } from '@/lib/co-writer-api'
 import { notifyCoWriterChanged } from '@/lib/co-writer-events'
 import { browserStorage } from '@/shared/storage'
 import { useAuthStatus } from '@/hooks/useAuthStatus'
-import Tooltip from '@/shared/ui/Tooltip'
-import { learningMode, type NoteAIRequest } from '../model/ai-request'
 import { researchOutline } from '../model/research'
-import type { NoteEditorHandle } from './NoteEditor'
+import type { NoteAsk, NoteEditorHandle } from './NoteEditor'
 import NotePageTree from './NotePageTree'
+import './note-workspace.css'
+import NotePageHead from './NotePageHead'
+import NoteTopBar, { type NoteSaveStatus } from './NoteTopBar'
+import NoteOutline from './NoteOutline'
+import { blockLineCenter } from './NoteThreadMarkers'
+import { foldIntoOrb } from '../model/fold-motion'
+import { useNoteThreads } from './useNoteThreads'
 import { pageDescendants } from '../model/page-tree'
+import { inlineText } from '../model/threads'
+import { learningKind } from '../model/learning-kinds'
 const Editor = dynamic(() => import('./NoteEditor'), {
   ssr: false,
-  loading: () => <p className="p-10 text-sm">…</p>,
+  loading: () => <div className="dt-note-editor-loading" aria-hidden />,
 })
-const Companion = dynamic(() => import('./NoteCompanion'), { ssr: false })
 const SourcePicker = dynamic(() => import('./NoteSourcePicker'), { ssr: false })
 const FavoritesPicker = dynamic(() => import('./NoteFavoritesPicker'), { ssr: false })
 
 export default function NoteWorkspace({
   docId,
   embedded = false,
+  companion: Companion,
 }: {
   docId: string
   embedded?: boolean
+  companion?: ComponentType<NoteCompanionProps>
 }) {
   const { t } = useTranslation()
   const router = useRouter()
@@ -53,9 +61,18 @@ export default function NoteWorkspace({
   const [pages, setPages] = useState<NoteSummary[]>([])
   const [error, setError] = useState('')
   const [reviewErrors, setReviewErrors] = useState<Record<string, string>>({})
-  const [status, setStatus] = useState('Saved')
-  const [companion, setCompanion] = useState(false)
+  const [status, setStatus] = useState<NoteSaveStatus>('Saved')
   const [tree, setTreeOpen] = useState(false)
+  const [outlineOpen, setOutlineOpenState] = useState(true)
+  const setOutlineOpen = (open: boolean) => {
+    setOutlineOpenState(open)
+    if (owner) browserStorage.writeRaw('local', `deeptutor.notes.outline:${owner}`, String(open))
+  }
+  const [mainEl, setMainEl] = useState<HTMLElement | null>(null)
+  // How much margin the page column leaves: room for the open outline, for
+  // its folded rail, or for neither.
+  const [margin, setMargin] = useState<'wide' | 'rail' | 'none'>('none')
+  const slot = useRef<HTMLDivElement>(null)
   const setTree = (open: boolean) => {
     setTreeOpen(open)
     if (owner) browserStorage.writeRaw('local', `deeptutor.notes.tree:${owner}`, String(open))
@@ -63,7 +80,6 @@ export default function NoteWorkspace({
   const [sources, setSources] = useState(false)
   const [favorites, setFavorites] = useState(false)
   const [suggestions, setSuggestions] = useState<NoteSuggestion[]>([])
-  const [request, setRequest] = useState<NoteAIRequest | null>(null)
   const [backlinks, setBacklinks] = useState<NoteSummary[]>([])
   const [recovery, setRecovery] = useState<{ title: string; blocks: NoteBlock[] } | null>(null)
   const editor = useRef<NoteEditorHandle | null>(null)
@@ -186,8 +202,9 @@ export default function NoteWorkspace({
         latest.current = doc
         setPage(doc)
         setTreeOpen(browserStorage.readRaw('local', `deeptutor.notes.tree:${owner}`) === 'true')
-        if (browserStorage.readRaw('local', `deeptutor.notes.chat:${owner}:${docId}:generation`))
-          setCompanion(true)
+        setOutlineOpenState(
+          browserStorage.readRaw('local', `deeptutor.notes.outline:${owner}`) !== 'false'
+        )
         refreshPages()
         refreshSuggestions()
         void noteRequest<{ pages: NoteSummary[] }>(`/${docId}/backlinks`).then(r => {
@@ -226,32 +243,171 @@ export default function NoteWorkspace({
       window.removeEventListener('deeptutor:before-workspace-switch', saveBeforeSwitch)
     }
   }, [flush])
-  const ask = useCallback((prompt: string, blockId?: string) => {
-    setCompanion(true)
-    setRequest({
-      id: Date.now(),
-      prompt,
-      instructions: blockId ? `Target block: ${blockId}` : undefined,
-    })
+  const threads = useNoteThreads({
+    pageId: docId,
+    owner,
+    embedded,
+    flush,
+    onSuggestions: refreshSuggestions,
+    onError: message => setError(message),
+  })
+  const findBlock = useCallback((blockId: string) => {
+    const walk = (blocks: NoteBlock[]): NoteBlock | undefined => {
+      for (const block of blocks) {
+        if (block.id === blockId) return block
+        const nested = walk(block.children || [])
+        if (nested) return nested
+      }
+    }
+    return walk(latest.current?.blocks || [])
   }, [])
+  /** What kind of block it is: a learning block's kind, or the block type. */
+  const blockKind = useCallback(
+    (blockId: string): string | null => {
+      const block = findBlock(blockId)
+      if (!block) return null
+      return block.type === 'learning' ? `learning:${String(block.props.kind || '')}` : block.type
+    },
+    [findBlock]
+  )
+  /** Plain text of a block on the page, or null once it is gone. */
+  const blockText = useCallback(
+    (blockId: string): string | null => {
+      const block = findBlock(blockId)
+      if (!block) return null
+      if (block.type === 'learning') {
+        const kind = String(block.props.kind || '')
+        const prompt = String(block.props.prompt || '').trim()
+        return `${t(learningKind(kind).label)}${prompt ? ` · ${prompt}` : ''}`
+      }
+      return inlineText(block.content).trim()
+    },
+    [findBlock, t]
+  )
+  const scrollToBlock = useCallback((blockId: string, flash = true) => {
+    const el = root.current?.querySelector<HTMLElement>(
+      `.dt-note-editor .bn-block-outer[data-id="${CSS.escape(blockId)}"]`
+    )
+    if (!el) return
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    if (flash)
+      el.querySelector('.bn-block-content')?.animate(
+        [{ backgroundColor: 'var(--dt-note-anchor-flash)' }, { backgroundColor: 'transparent' }],
+        { duration: 1400, easing: 'ease-out' }
+      )
+  }, [])
+  const notebookLink = useCallback(
+    (sessionId?: string) =>
+      router.push(
+        `/co-writer/${docId}${sessionId ? `?chat=${encodeURIComponent(sessionId)}` : ''}`
+      ),
+    [docId, router]
+  )
+  const ask = useCallback(
+    (request: NoteAsk) => {
+      if (embedded) return notebookLink()
+      threads.startThread(request)
+    },
+    [embedded, notebookLink, threads]
+  )
+  const openThread = useCallback(
+    (sessionId: string) => {
+      if (embedded) return notebookLink(sessionId)
+      const thread = threads.threads.find(item => item.session_id === sessionId)
+      void threads.openThread(sessionId)
+      if (thread) scrollToBlock(thread.block_id)
+    },
+    [embedded, notebookLink, scrollToBlock, threads]
+  )
+  // A block clicked while a conversation is open: a conversation not begun
+  // yet moves to it; one under way offers to ask about it in its own thread.
+  const [focus, setFocus] = useState<{ key: string; blockId: string } | null>(null)
+  const focusBlock = useCallback(
+    (blockId: string) => {
+      const open = threads.open
+      if (!open) return
+      if (blockId === open.blockId || threads.retarget(blockId)) setFocus(null)
+      else
+        setFocus(current =>
+          current?.blockId === blockId && current.key === open.key
+            ? current
+            : { key: open.key, blockId }
+        )
+    },
+    [threads]
+  )
+  const focused = focus && threads.open && focus.key === threads.open.key ? focus.blockId : null
+  const askAtCursor = useCallback(
+    (prompt?: string) => {
+      const blockId = editor.current?.cursorBlockId() || latest.current?.blocks?.[0]?.id
+      if (blockId) ask({ blockId, prompt })
+    },
+    [ask]
+  )
+  /* Closing the panel folds the conversation into its orb on the line: a
+     ghost of the panel shrinks into the orb, which then takes a breath. */
+  const foldPanel = useCallback(() => {
+    const open = threads.open
+    const panel = slot.current
+    const host = root.current
+    const keep = Boolean(open && (open.sessionId || threads.hasMessages))
+    const still = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!open || !panel || !host || !keep || still) {
+      threads.close()
+      return
+    }
+    // The clone is taken before the panel unmounts; it unmounts once the
+    // collapse is under way.
+    foldIntoOrb(
+      panel,
+      host,
+      () => {
+        const orb = open.sessionId
+          ? host.querySelector<HTMLElement>(`[data-thread-orb="${CSS.escape(open.sessionId)}"]`)
+          : null
+        if (orb) return { rect: orb.getBoundingClientRect(), orb }
+        const editorEl = host.querySelector<HTMLElement>('.dt-note-editor')
+        const center = editorEl ? blockLineCenter(editorEl, open.blockId) : null
+        if (!editorEl || center === null) return null
+        const box = editorEl.getBoundingClientRect()
+        return {
+          rect: new DOMRect(box.right - 31, box.top + center - 4, 8, 8),
+          orb: host.querySelector<HTMLElement>('.dt-note-orbs'),
+        }
+      },
+      threads.close
+    )
+  }, [threads])
   useEffect(() => {
     const el = root.current
     const generate = (event: Event) => {
-      const { kind, prompt, blockId, config } = (event as CustomEvent).detail
-      setCompanion(true)
-      setRequest({
-        id: Date.now(),
-        mode: learningMode(kind),
-        blockId,
-        autoSend: true,
-        config,
-        prompt: prompt?.trim() || t('Generate this learning block from the page'),
-        instructions: `Learning block kind: ${kind}. In your visible reply, describe only the learning material; do not mention block IDs, JSON fields, tool names or implementation details.${learningMode(kind) === 'chat' ? ` Use note_read then note_suggest to replace block ${blockId}. Preserve the rest of the page. Keep its id, kind and prompt. Use the interactive learning schema for flashcards, timeline and concept_map.` : ''}`,
-      })
+      if (embedded) return notebookLink()
+      threads.generateBlock((event as CustomEvent).detail)
+    }
+    const openFromBlock = (event: Event) => openThread((event as CustomEvent).detail.sessionId)
+    const regenerate = (event: Event) => {
+      if (embedded) return notebookLink()
+      threads.regenerateBlock((event as CustomEvent).detail)
     }
     el?.addEventListener('note-generate', generate)
-    return () => el?.removeEventListener('note-generate', generate)
-  }, [ask, t, page])
+    el?.addEventListener('note-open-thread', openFromBlock)
+    el?.addEventListener('note-regenerate', regenerate)
+    return () => {
+      el?.removeEventListener('note-generate', generate)
+      el?.removeEventListener('note-open-thread', openFromBlock)
+      el?.removeEventListener('note-regenerate', regenerate)
+    }
+  }, [embedded, notebookLink, openThread, threads])
+  // The page column's spare margin decides whether the outline can stay open.
+  useEffect(() => {
+    if (!mainEl) return
+    const observer = new ResizeObserver(([entry]) => {
+      const spare = (entry.contentRect.width - 820) / 2
+      setMargin(spare >= 212 ? 'wide' : spare >= 52 ? 'rail' : 'none')
+    })
+    observer.observe(mainEl)
+    return () => observer.disconnect()
+  }, [mainEl])
   const applySuggestion = async (suggestion: NoteSuggestion, accept: boolean) => {
     setMutating(true)
     setReviewErrors(previous => ({ ...previous, [suggestion.id]: '' }))
@@ -345,10 +501,45 @@ export default function NoteWorkspace({
     }
   }
   const invalidParents = pageDescendants(pages, docId)
+  const createPage = async (parentId: string | null = null) => {
+    setMutating(true)
+    try {
+      await flush()
+      const doc = await createNote('', parentId)
+      refreshPages()
+      router.push(`/co-writer/${doc.id}`)
+    } catch (err) {
+      setError(String(err))
+    } finally {
+      setMutating(false)
+    }
+  }
+  const openPage = async (id: string) => {
+    if (id === docId) return
+    try {
+      await flush()
+      router.push(`/co-writer/${id}`)
+    } catch {
+      /* Keep the unsaved page visible. */
+    }
+  }
+  const navigate = async (event: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return
+    if (id === docId || version.current !== savedVersion.current) {
+      event.preventDefault()
+      if (id === docId) return
+      try {
+        await flush()
+        router.push(`/co-writer/${id}`)
+      } catch {
+        /* Keep the unsaved page visible. */
+      }
+    }
+  }
   return (
     <div
       ref={root}
-      className="relative flex h-full min-h-0 flex-col bg-[var(--secondary)]"
+      className="dt-note-workspace"
       onClickCapture={event => {
         const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[data-note-source]')
         if (
@@ -376,77 +567,27 @@ export default function NoteWorkspace({
           })
       }}
     >
-      <header className="flex shrink-0 flex-wrap items-center gap-1 px-3 py-2 text-[var(--muted-foreground)]">
-        {!embedded && (
-          <Link href="/co-writer" className="dt-note-button" aria-label={t('Learning notebook')}>
-            <ChevronLeft size={16} />
-            {t('Learning notebook')}
-          </Link>
-        )}
-        <Tooltip label={t('Page tree')} suppressed={tree}>
-          <button
-            className="dt-note-button"
-            aria-label={t('Page tree')}
-            aria-expanded={tree}
-            aria-controls="note-page-tree"
-            onClick={() => setTree(!tree)}
-          >
-            <FolderTree size={16} />
-          </button>
-        </Tooltip>
-        <span className="ml-auto text-xs">{t(status)}</span>
-        <Tooltip label={t('Pin')}>
-          <button
-            className={`dt-note-button ${page?.pinned ? 'text-[var(--primary)]' : ''}`}
-            aria-label={t('Pin')}
-            onClick={() => void metadata({ pinned: !page?.pinned })}
-          >
-            <Pin size={15} />
-          </button>
-        </Tooltip>
-        <Tooltip label={t('Insert favorite')}>
-          <button
-            className="dt-note-button"
-            aria-label={t('Insert favorite')}
-            onClick={() => setFavorites(true)}
-          >
-            <Bookmark size={15} />
-          </button>
-        </Tooltip>
-        <Tooltip label={t('Export Markdown')}>
-          <button
-            className="dt-note-button"
-            aria-label={t('Export Markdown')}
-            onClick={() => void exportFile('md')}
-          >
-            <Download size={15} />
-          </button>
-        </Tooltip>
-        <Tooltip
-          label={t(
-            'Word export includes text and source links; interactive blocks become static content.'
-          )}
-        >
-          <button className="dt-note-button" onClick={() => void exportFile('docx')}>
-            {t('Word')}
-          </button>
-        </Tooltip>
-        <Tooltip label={t('Ask Dito')}>
-          <button
-            className="dt-note-button"
-            aria-label={t('Ask Dito')}
-            onClick={() => setCompanion(!companion)}
-          >
-            <PanelRight size={16} />
-          </button>
-        </Tooltip>
-      </header>
+      <NoteTopBar
+        page={page}
+        pages={pages}
+        invalidParents={invalidParents}
+        status={status}
+        busy={mutating}
+        embedded={embedded}
+        treeOpen={tree}
+        companionOpen={Boolean(threads.open)}
+        onToggleTree={() => setTree(!tree)}
+        onToggleCompanion={() => (threads.open ? foldPanel() : askAtCursor())}
+        onNavigate={navigate}
+        onOpenPage={id => void openPage(id)}
+        onCreatePage={() => void createPage()}
+        onMetadata={patch => void metadata(patch)}
+        onInsertFavorite={() => setFavorites(true)}
+        onExport={format => void exportFile(format)}
+      />
       {error && (
-        <div
-          role="alert"
-          className="flex flex-wrap items-center gap-2 px-4 py-2 text-sm text-red-600"
-        >
-          {error}
+        <div role="alert" className="dt-note-banner is-error">
+          <span className="flex-1">{error}</span>
           <button className="dt-note-button" onClick={() => void flush().catch(() => {})}>
             {t('Retry')}
           </button>
@@ -469,8 +610,8 @@ export default function NoteWorkspace({
         </div>
       )}
       {recovery && (
-        <div className="px-4 py-2 text-sm">
-          {t('A local draft differs from this page.')}
+        <div className="dt-note-banner">
+          <span className="flex-1">{t('A local draft differs from this page.')}</span>
           <button
             className="dt-note-button"
             onClick={async () => {
@@ -486,111 +627,39 @@ export default function NoteWorkspace({
           </button>
         </div>
       )}
-      <div className="flex min-h-0 flex-1 gap-2 px-2 pb-2">
+      <div className="dt-note-body">
         {tree && (
           <NotePageTree
             pages={pages}
             currentId={docId}
             busy={mutating}
-            onClose={() => setTree(false)}
-            onNavigate={async (event, id) => {
-              if (id === docId || version.current !== savedVersion.current) {
-                event.preventDefault()
-                if (id === docId) return
-                try {
-                  await flush()
-                  router.push(`/co-writer/${id}`)
-                } catch {
-                  /* Keep the unsaved page visible. */
-                }
-              }
-            }}
-            onCreate={async () => {
-              setMutating(true)
-              try {
-                await flush()
-                const doc = await createNote(t('Untitled page'), docId)
-                refreshPages()
-                router.push(`/co-writer/${doc.id}`)
-              } catch (err) {
-                setError(String(err))
-              } finally {
-                setMutating(false)
-              }
-            }}
+            embedded={embedded}
+            onNavigate={navigate}
+            onCreate={createPage}
           />
         )}
-        <main className="min-w-0 flex-1 overflow-y-auto rounded-md bg-[var(--card)]">
+        <main className="dt-note-main" ref={setMainEl}>
+          {page && margin !== 'none' && (
+            <NoteOutline
+              blocks={page.blocks}
+              scroller={mainEl}
+              open={outlineOpen}
+              roomy={margin === 'wide'}
+              onToggle={() => setOutlineOpen(!outlineOpen)}
+              onJump={id => scrollToBlock(id, false)}
+            />
+          )}
           {page && (
-            <div className="mx-auto max-w-4xl py-6 sm:py-10">
-              {page.cover && (
-                <div className="mx-4 mb-4 h-28 rounded-lg" style={{ background: page.cover }} />
-              )}
-              <div className="px-8 sm:px-12">
-                <div className="flex items-center gap-2">
-                  <input
-                    aria-label={t('Page icon')}
-                    className="w-10 bg-transparent text-2xl outline-none"
-                    value={page.icon}
-                    placeholder="▤"
-                    maxLength={10}
-                    onChange={e => setPage({ ...page, icon: e.target.value })}
-                    onBlur={() => void metadata({ icon: page.icon })}
-                  />
-                  <select
-                    aria-label={t('Move page')}
-                    disabled={mutating}
-                    className="max-w-48 bg-transparent text-xs text-[var(--muted-foreground)]"
-                    value={page.parent_id || ''}
-                    onChange={e => void metadata({ parent_id: e.target.value || null })}
-                  >
-                    <option value="">{t('Top level')}</option>
-                    {pages
-                      .filter(p => !invalidParents.has(p.id))
-                      .map(p => (
-                        <option key={p.id} value={p.id}>
-                          {p.title}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-                <div className="flex gap-1 py-2" aria-label={t('Page cover')}>
-                  {['', '#e6e4dc', '#dce5dd', '#dce3eb', '#eee0d6', '#e6deeb'].map(color => (
-                    <button
-                      key={color}
-                      className="h-4 w-4 rounded-full border border-[var(--border)]"
-                      disabled={mutating}
-                      aria-label={color ? t('Set cover color', { color }) : t('Remove cover')}
-                      style={{ background: color || 'var(--card)' }}
-                      onClick={() => void metadata({ cover: color })}
-                    />
-                  ))}
-                </div>
-                <textarea
-                  rows={1}
-                  disabled={mutating}
-                  aria-label={t('Page title')}
-                  className="dt-note-page-title mt-3 w-full bg-transparent font-serif text-3xl font-semibold outline-none sm:text-4xl"
-                  value={page.title}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-                      e.preventDefault()
-                      e.currentTarget.blur()
-                    }
-                  }}
-                  onChange={e => {
-                    setPage({ ...page, title: e.target.value })
-                    changed({ title: e.target.value })
-                  }}
-                />
-                <div className="mt-3 flex flex-wrap gap-1 text-[var(--muted-foreground)]">
-                  {['Review my notes', 'Quiz me', 'Check the facts'].map(label => (
-                    <button key={label} className="dt-note-button" onClick={() => ask(t(label))}>
-                      {t(label)}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            <div className="dt-note-document">
+              <NotePageHead
+                page={page}
+                disabled={mutating}
+                onTitle={title => {
+                  setPage({ ...page, title })
+                  changed({ title })
+                }}
+                onMetadata={patch => void metadata(patch)}
+              />
               <Editor
                 key={docId}
                 page={page}
@@ -600,10 +669,12 @@ export default function NoteWorkspace({
                 onContinueResearch={suggestion => void continueResearch(suggestion)}
                 onReview={(suggestion, accept) => void applySuggestion(suggestion, accept)}
                 onDiscuss={suggestion =>
-                  ask(
-                    `${t('Discuss this feedback')}: ${suggestion.explanation}`,
-                    suggestion.block_id
-                  )
+                  suggestion.block_id
+                    ? ask({
+                        blockId: suggestion.block_id,
+                        prompt: `${t('Discuss this feedback')}: ${suggestion.explanation}`,
+                      })
+                    : askAtCursor(`${t('Discuss this feedback')}: ${suggestion.explanation}`)
                 }
                 onChange={blocks => changed({ blocks })}
                 onReady={handle => {
@@ -611,34 +682,85 @@ export default function NoteWorkspace({
                   if (version.current !== savedVersion.current) void flush().catch(() => {})
                 }}
                 onAI={ask}
+                threads={threads.threads}
+                activeThread={threads.open}
+                threadsInteractive={!embedded}
+                onOpenThread={openThread}
+                onDeleteThread={threads.removeThread}
+                onFocusBlock={threads.open && !embedded ? focusBlock : undefined}
               />
               {!!backlinks.length && (
-                <div className="mx-12 border-t border-[var(--border)] pt-4 text-sm">
-                  <p>{t('Linked from')}</p>
+                <section className="dt-note-backlinks" aria-label={t('Linked from')}>
+                  <h2>{t('Linked from')}</h2>
                   {backlinks.map(p => (
-                    <Link key={p.id} href={`/co-writer/${p.id}`} className="dt-note-button">
-                      ↗ {p.title}
+                    <Link key={p.id} href={`/co-writer/${p.id}`} onClick={e => navigate(e, p.id)}>
+                      <span aria-hidden>{p.icon || '↗'}</span>
+                      {p.title || t('Untitled')}
                     </Link>
                   ))}
-                </div>
+                </section>
               )}
             </div>
           )}
         </main>
-        {companion && owner && (
-          <div className="w-[360px] min-w-0 shrink-0 max-md:absolute max-md:inset-2 max-md:z-40 max-md:w-auto">
+        {threads.open && owner && Companion && (
+          <div ref={slot} className="dt-note-companion-slot">
             <Companion
+              key={threads.open.key}
               pageId={docId}
-              scope={owner}
-              request={request}
-              beforeSend={flush}
-              onSuggestions={refreshSuggestions}
-              onRequestConsumed={id =>
-                setRequest(current =>
-                  current?.id === id ? { ...current, autoSend: false } : current
+              pageTitle={page?.title || ''}
+              thread={threads.open}
+              bound={threads.bound}
+              threads={threads.threads}
+              blockText={blockText}
+              blockKind={blockKind}
+              focus={focused}
+              onAskFocus={draft => {
+                if (!focused) return
+                setFocus(null)
+                ask({ blockId: focused, prompt: draft || undefined })
+                scrollToBlock(focused, false)
+              }}
+              onDismissFocus={() => setFocus(null)}
+              prefill={threads.prefill}
+              onSend={threads.send}
+              onMake={(kind, prompt, again) => {
+                const anchor = threads.open?.blockId
+                const redo = threads.open?.regenerate
+                if (again && anchor && redo) {
+                  // Another version of the block itself, filed for review.
+                  if (!editor.current?.hasBlock(anchor)) {
+                    setError(t('The line this conversation was about has been deleted.'))
+                    return
+                  }
+                  editor.current.updateLearningPrompt(anchor, prompt)
+                  threads.send(
+                    `${t('Regenerate')} · ${t(learningKind(redo.kind).label)} · ${prompt || t('Generate this learning block from the page')}`,
+                    { generate: { blockId: anchor, kind: redo.kind, config: redo.config } }
+                  )
+                  return
+                }
+                const blockId =
+                  anchor && editor.current?.hasBlock(anchor)
+                    ? editor.current.insertLearningAfter(anchor, kind, prompt)
+                    : null
+                if (!blockId) {
+                  setError(t('The line this conversation was about has been deleted.'))
+                  return
+                }
+                threads.send(
+                  `${t(learningKind(kind).label)} · ${prompt || t('Generate this learning block from the page')}`,
+                  { generate: { blockId, kind } }
                 )
+              }}
+              onRegenerate={threads.regenerate}
+              onSelect={openThread}
+              onNewHere={() =>
+                threads.open && ask({ blockId: threads.open.blockId, quote: threads.open.quote })
               }
-              onClose={() => setCompanion(false)}
+              onJump={() => threads.open && scrollToBlock(threads.open.blockId)}
+              onSuggestions={refreshSuggestions}
+              onClose={foldPanel}
             />
           </div>
         )}
@@ -650,19 +772,20 @@ export default function NoteWorkspace({
             editor.current?.insertClip(title, markdown, url, id)
           }
           onKnowledge={name => {
-            setCompanion(true)
-            setRequest({
-              id: Date.now(),
-              prompt: `${t('Find source passages in this knowledge base and suggest cited notes')}: ${name}`,
-              knowledgeRef: name,
-            })
+            const blockId = editor.current?.cursorBlockId() || latest.current?.blocks?.[0]?.id
+            if (blockId)
+              ask({
+                blockId,
+                knowledgeRef: name,
+                prompt: `${t('Find source passages in this knowledge base and suggest cited notes')}: ${name}`,
+              })
           }}
         />
       )}
       {favorites && (
         <FavoritesPicker
           onSynthesize={sources =>
-            ask(
+            askAtCursor(
               `${t('Organize these favorites into a coherent note. Cite the source of each section.')}\n\n${sources}`
             )
           }

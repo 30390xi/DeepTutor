@@ -326,15 +326,6 @@ export interface NotebookEntryFilter {
   sort?: "recent" | "oldest";
   limit?: number;
   offset?: number;
-  /**
-   * Restrict to questions produced by one course's conversations.
-   *
-   * The server resolves course membership through real conversation sessions;
-   * independent document/import origins stay outside that scope until they
-   * gain an explicit course association. A course with no sessions correctly
-   * yields nothing rather than falling back to everything.
-   */
-  course_id?: string;
 }
 
 export async function listNotebookEntries(
@@ -366,7 +357,6 @@ export async function listNotebookEntries(
   if (filter.sort) params.set("sort", filter.sort);
   if (filter.limit !== undefined) params.set("limit", String(filter.limit));
   if (filter.offset !== undefined) params.set("offset", String(filter.offset));
-  if (filter.course_id) params.set("course_id", filter.course_id);
   const query = params.toString();
   const response = await apiFetch(
     apiUrl(`/api/question-notebook/entries${query ? `?${query}` : ""}`),
@@ -576,19 +566,11 @@ export interface QuestionBankStats {
   uncategorized: number;
 }
 
-/**
- * Counts behind the scope rail.
- *
- * Takes the same course scope as the entry list: showing this course's
- * questions next to whole-library counts would make the rail lie about how
- * much is there.
- */
+/** Counts behind the scope rail. */
 export async function getQuestionBankStats(
-  courseId = "",
 ): Promise<QuestionBankStats> {
-  const query = courseId ? `?course_id=${encodeURIComponent(courseId)}` : "";
   const response = await apiFetch(
-    apiUrl(`/api/question-notebook/stats${query}`),
+    apiUrl(`/api/question-notebook/stats`),
     {
       cache: "no-store",
     },
@@ -597,11 +579,9 @@ export async function getQuestionBankStats(
 }
 
 export async function listQuestionBankMaterials(
-  courseId = "",
 ): Promise<QuestionBankMaterial[]> {
-  const query = courseId ? `?course_id=${encodeURIComponent(courseId)}` : "";
   const response = await apiFetch(
-    apiUrl(`/api/question-notebook/materials${query}`),
+    apiUrl(`/api/question-notebook/materials`),
     {
       cache: "no-store",
     },
@@ -625,11 +605,9 @@ export async function removeEntryFromCategory(
 // ── Categories ──────────────────────────────────────────────────
 
 export async function listCategories(
-  courseId = "",
 ): Promise<NotebookCategory[]> {
-  const query = courseId ? `?course_id=${encodeURIComponent(courseId)}` : "";
   const response = await apiFetch(
-    apiUrl(`/api/question-notebook/categories${query}`),
+    apiUrl(`/api/question-notebook/categories`),
     {
       cache: "no-store",
     },

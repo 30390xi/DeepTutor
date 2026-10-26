@@ -33,7 +33,7 @@ export const noteUpload = createReactBlockSpec(
           </div>
           {!pending && (
             <button
-              className="dt-note-button"
+              className="dt-note-action"
               onClick={e =>
                 e.currentTarget.dispatchEvent(
                   new CustomEvent('note-upload-retry', {

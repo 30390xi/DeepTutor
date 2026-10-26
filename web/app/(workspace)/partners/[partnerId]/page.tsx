@@ -5,6 +5,7 @@
  * Header carries identity + run state; everything else lives in the tabs.
  */
 
+import { PartnerCrumb } from "@/components/layout/instance-crumbs";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
@@ -16,6 +17,7 @@ import {
   Link2,
   Loader2,
   MessageCircle,
+  MonitorSmartphone,
   Play,
   Radio,
   Settings2,
@@ -24,6 +26,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Tooltip from "@/shared/ui/Tooltip";
+import { PageBarSlot, usePageBarOffers } from "@/components/layout/PageChrome";
 import {
   archivePartnerSession,
   destroyPartner,
@@ -77,6 +80,8 @@ function PartnerDetail() {
   // A partner shared with you is a companion, not a project: you talk to it and
   // read your own history, but its soul, channels and library stay its owner's.
   const canManage = partner?.can_manage !== false;
+  // With the page bar above, the header folds into it: one row, not two.
+  const inBar = usePageBarOffers("instance");
   // ``?tab=`` is user-supplied, so a management tab on a shared partner (or
   // before the partner has loaded) resolves to Chat rather than an empty pane.
   const activeTab: Tab =
@@ -495,171 +500,239 @@ function PartnerDetail() {
           { key: "channels", label: t("Channels"), icon: Radio },
         ] as const)
       : []),
-    { key: "archive", label: t("Conversations"), icon: Archive },
+    { key: "archive", label: t("History"), icon: Archive },
   ];
+
+  // The same buttons in the bar and in the header that stands in for it.
+  const actions = (
+    <>
+      {(activeTab === "chat" || activeTab === "archive") && (
+        <>
+          {activeTab === "chat" ? (
+            <Tooltip label={t("Archive")}>
+              <button
+                type="button"
+                onClick={() => void handleArchiveConversation()}
+                disabled={!chatMessages.length || archiveBusy || switchingSession || chatBusy}
+                aria-label={t("Archive")}
+                className="rounded-md p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {archiveBusy ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Archive className="h-4 w-4" />
+                )}
+              </button>
+            </Tooltip>
+          ) : null}
+          <Tooltip label={t("Save to Notebook")}>
+            <button
+              type="button"
+              onClick={() => setShowSaveModal(true)}
+              disabled={!canExport}
+              aria-label={t("Save to Notebook")}
+              className="rounded-md p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <BookmarkPlus className="h-4 w-4" />
+            </button>
+          </Tooltip>
+          <Tooltip label={t("Download chat history as Markdown")}>
+            <button
+              type="button"
+              onClick={handleDownload}
+              disabled={!canExport}
+              aria-label={t("Download Markdown")}
+              className="rounded-md p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Download className="h-4 w-4" />
+            </button>
+          </Tooltip>
+        </>
+      )}
+      <Tooltip label={t("Link a chat account")}>
+        <button
+          type="button"
+          onClick={() => setShowLinkModal(true)}
+          aria-label={t("Link a chat account")}
+          className="rounded-md p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+        >
+          <Link2 className="h-4 w-4" />
+        </button>
+      </Tooltip>
+      {canManage ? (
+        <>
+          <Tooltip label={partner.running ? t("Stop") : t("Start")}>
+            <button
+              type="button"
+              onClick={() => void toggleRunning()}
+              disabled={lifecycleBusy}
+              aria-label={partner.running ? t("Stop") : t("Start")}
+              className="rounded-md p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] disabled:opacity-40"
+            >
+              {lifecycleBusy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : partner.running ? (
+                <Square className="h-4 w-4" />
+              ) : (
+                <Play className="h-4 w-4" />
+              )}
+            </button>
+          </Tooltip>
+          <Tooltip label={t("Delete partner")}>
+            <button
+              type="button"
+              onClick={() => void handleDestroy()}
+              aria-label={t("Delete partner")}
+              className="rounded-md p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-red-500"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </Tooltip>
+        </>
+      ) : null}
+    </>
+  );
 
   return (
     <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="grid min-h-[64px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-b border-[var(--border)] px-5 py-3">
-        <div className="flex min-w-0 items-center gap-3">
-          <Link
-            href="/partners"
-            aria-label={t("Back to Partners")}
-            className="rounded-md p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-          <PartnerAvatar
-            name={partner.name}
-            emoji={partner.emoji}
-            color={partner.color}
-            image={partner.avatar}
-            size={32}
-          />
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="truncate text-[14px] font-medium text-[var(--foreground)]">
-                {partner.name}
-              </span>
-              <span className="inline-flex shrink-0 items-center gap-1 text-[10px] text-[var(--muted-foreground)]">
+      {inBar ? (
+        <>
+          <PageBarSlot name="instance">
+            <PartnerCrumb
+              bare
+              id={partner.partner_id}
+              label={partner.name}
+              lead={
+                <PartnerAvatar
+                  name={partner.name}
+                  emoji={partner.emoji}
+                  color={partner.color}
+                  image={partner.avatar}
+                  size={20}
+                />
+              }
+              trail={
                 <span
-                  aria-hidden
-                  className={`h-1.5 w-1.5 rounded-full ${
+                  role="img"
+                  aria-label={partner.running ? t("Running") : t("Stopped")}
+                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${
                     partner.running ? "bg-emerald-500" : "bg-[var(--border)]"
                   }`}
                 />
-                {partner.running ? t("Running") : t("Stopped")}
-              </span>
+              }
+            />
+            <div role="tablist" aria-label={partner.name} className="dt-bar-tabs">
+              {tabs.map(({ key, label, icon: Icon }) => (
+                <button
+                  key={key}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === key}
+                  onClick={() => setTab(key)}
+                  className="dt-bar-tab"
+                >
+                  <Icon size={14} strokeWidth={1.7} />
+                  {label}
+                </button>
+              ))}
             </div>
-            {partner.description ? (
-              <p className="truncate text-[11.5px] text-[var(--muted-foreground)]">
-                {partner.description}
-              </p>
-            ) : null}
+          </PageBarSlot>
+          <PageBarSlot name="actions">
+            <Tooltip label={t("Share this conversation across browsers")}>
+              <button
+                type="button"
+                aria-pressed={continuityEnabled}
+                aria-label={t("Sync browsers")}
+                disabled={continuityBusy || switchingSession || runtimeContinuityError || chatBusy}
+                onClick={() => void toggleContinuity()}
+              >
+                <MonitorSmartphone />
+                <span className="hidden whitespace-nowrap xl:inline">{t("Sync browsers")}</span>
+              </button>
+            </Tooltip>
+            <span aria-hidden className="mx-1 h-4 w-px bg-[var(--border)]" />
+            {actions}
+          </PageBarSlot>
+        </>
+      ) : (
+        /* Header */
+        <div className="grid min-h-[64px] grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 border-b border-[var(--border)] px-5 py-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <Link
+              href="/partners"
+              aria-label={t("Back to Partners")}
+              className="dt-section-back rounded-md p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+            <PartnerAvatar
+              name={partner.name}
+              emoji={partner.emoji}
+              color={partner.color}
+              image={partner.avatar}
+              size={32}
+            />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="truncate text-[14px] font-medium text-[var(--foreground)]">
+                  {partner.name}
+                </span>
+                <span className="inline-flex shrink-0 items-center gap-1 text-[10px] text-[var(--muted-foreground)]">
+                  <span
+                    aria-hidden
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      partner.running ? "bg-emerald-500" : "bg-[var(--border)]"
+                    }`}
+                  />
+                  {partner.running ? t("Running") : t("Stopped")}
+                </span>
+              </div>
+              {partner.description ? (
+                <p className="truncate text-[11.5px] text-[var(--muted-foreground)]">
+                  {partner.description}
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <nav className="flex justify-self-center gap-0.5 rounded-lg bg-[var(--muted)] p-0.5">
+            {tabs.map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
+                className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] transition-colors ${
+                  activeTab === key
+                    ? "bg-[var(--background)] font-medium text-[var(--foreground)] shadow-sm"
+                    : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+              </button>
+            ))}
+          </nav>
+
+          <div className="flex min-w-0 items-center justify-end gap-0.5">
+            <Tooltip label={t("Share this conversation across browsers")}>
+              <label className="mr-1 inline-flex cursor-pointer items-center gap-1.5 text-[11px] text-[var(--muted-foreground)]">
+                <input
+                  type="checkbox"
+                  aria-label={t("Sync browsers")}
+                  checked={continuityEnabled}
+                  disabled={continuityBusy || switchingSession || runtimeContinuityError || chatBusy}
+                  onChange={() => void toggleContinuity()}
+                  className="h-3.5 w-3.5 accent-[var(--primary)]"
+                />
+                <span className="hidden whitespace-nowrap xl:inline">
+                  {t("Sync browsers")}
+                </span>
+              </label>
+            </Tooltip>
+            {actions}
           </div>
         </div>
-
-        <nav className="flex justify-self-center gap-0.5 rounded-lg bg-[var(--muted)] p-0.5">
-          {tabs.map(({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setTab(key)}
-              className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12px] transition-colors ${
-                activeTab === key
-                  ? "bg-[var(--background)] font-medium text-[var(--foreground)] shadow-sm"
-                  : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {label}
-            </button>
-          ))}
-        </nav>
-
-        <div className="flex min-w-0 items-center justify-end gap-0.5">
-          <Tooltip label={t("Share this conversation across browsers")}>
-            <label className="mr-1 inline-flex cursor-pointer items-center gap-1.5 text-[11px] text-[var(--muted-foreground)]">
-              <input
-                type="checkbox"
-                aria-label={t("Sync browsers")}
-                checked={continuityEnabled}
-                disabled={continuityBusy || switchingSession || runtimeContinuityError || chatBusy}
-                onChange={() => void toggleContinuity()}
-                className="h-3.5 w-3.5 accent-[var(--primary)]"
-              />
-              <span className="hidden whitespace-nowrap xl:inline">
-                {t("Sync browsers")}
-              </span>
-            </label>
-          </Tooltip>
-          {(activeTab === "chat" || activeTab === "archive") && (
-            <>
-              {activeTab === "chat" ? (
-                <Tooltip label={t("Archive")}>
-                  <button
-                    type="button"
-                    onClick={() => void handleArchiveConversation()}
-                    disabled={!chatMessages.length || archiveBusy || switchingSession || chatBusy}
-                    aria-label={t("Archive")}
-                    className="rounded-md p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    {archiveBusy ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Archive className="h-4 w-4" />
-                    )}
-                  </button>
-                </Tooltip>
-              ) : null}
-              <Tooltip label={t("Save to Notebook")}>
-                <button
-                  type="button"
-                  onClick={() => setShowSaveModal(true)}
-                  disabled={!canExport}
-                  aria-label={t("Save to Notebook")}
-                  className="rounded-md p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <BookmarkPlus className="h-4 w-4" />
-                </button>
-              </Tooltip>
-              <Tooltip label={t("Download chat history as Markdown")}>
-                <button
-                  type="button"
-                  onClick={handleDownload}
-                  disabled={!canExport}
-                  aria-label={t("Download Markdown")}
-                  className="rounded-md p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <Download className="h-4 w-4" />
-                </button>
-              </Tooltip>
-            </>
-          )}
-          <Tooltip label={t("Link a chat account")}>
-            <button
-              type="button"
-              onClick={() => setShowLinkModal(true)}
-              aria-label={t("Link a chat account")}
-              className="rounded-md p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-            >
-              <Link2 className="h-4 w-4" />
-            </button>
-          </Tooltip>
-          {canManage ? (
-            <>
-              <Tooltip label={partner.running ? t("Stop") : t("Start")}>
-                <button
-                  type="button"
-                  onClick={() => void toggleRunning()}
-                  disabled={lifecycleBusy}
-                  aria-label={partner.running ? t("Stop") : t("Start")}
-                  className="rounded-md p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-[var(--foreground)] disabled:opacity-40"
-                >
-                  {lifecycleBusy ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : partner.running ? (
-                    <Square className="h-4 w-4" />
-                  ) : (
-                    <Play className="h-4 w-4" />
-                  )}
-                </button>
-              </Tooltip>
-              <Tooltip label={t("Delete partner")}>
-                <button
-                  type="button"
-                  onClick={() => void handleDestroy()}
-                  aria-label={t("Delete partner")}
-                  className="rounded-md p-1.5 text-[var(--muted-foreground)] hover:bg-[var(--muted)] hover:text-red-500"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </Tooltip>
-            </>
-          ) : null}
-        </div>
-      </div>
+      )}
 
       {showLinkModal ? (
         <PartnerLinkModal

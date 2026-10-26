@@ -13,6 +13,15 @@ import {
 
 const Markdown = dynamic(() => import('@/components/common/MarkdownRenderer'), { ssr: false })
 
+const ROLE: Record<string, string> = {
+  user: 'user',
+  assistant: 'assistant',
+  system: 'system',
+  用户: 'user',
+  助手: 'assistant',
+  系统: 'system',
+}
+
 /** Read-only source content. Opening a favorite never starts an AI run or changes the archive. */
 export default function NotebookFavoriteContent({
   type,
@@ -61,12 +70,12 @@ export default function NotebookFavoriteContent({
         />
       )}
       {chapters.length > 0 && media?.kind === 'video' && (
-        <div className="mb-4 flex flex-wrap gap-2" aria-label={t('Video chapters')}>
+        <div className="dt-fav-chapters" aria-label={t('Video chapters')}>
           {chapters.map((chapter, index) => (
             <button
               key={index}
               type="button"
-              className="rounded border border-[var(--border)] px-2 py-1 text-xs"
+              className="dt-fav-chapter"
               onClick={() => {
                 if (mediaRef.current)
                   mediaRef.current.currentTime = chapter[1]
@@ -80,15 +89,13 @@ export default function NotebookFavoriteContent({
         </div>
       )}
       {headingLines.length > 2 && (
-        <details className="mb-4 rounded-lg bg-[var(--muted)]/40 px-3 py-2">
-          <summary className="cursor-pointer text-xs text-[var(--muted-foreground)]">
-            {t('Contents')}
-          </summary>
-          <nav className="mt-2 grid gap-1" aria-label={t('Contents')}>
+        <details className="dt-fav-toc">
+          <summary>{t('Contents')}</summary>
+          <nav aria-label={t('Contents')}>
             {headingLines.map((line, i) => (
               <button
                 key={i}
-                className="text-left text-xs text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                type="button"
                 onClick={() => {
                   root.current
                     ?.querySelectorAll(
@@ -105,37 +112,29 @@ export default function NotebookFavoriteContent({
       )}
       <div data-favorite-document>
         {transcript.length ? (
-          <div className="grid gap-4">
-            {transcript.map((turn, i) => (
-              <section key={i} className="rounded-lg border border-[var(--border)] px-4 py-3">
-                {turn.role && (
-                  <div className="mb-2 text-xs font-medium text-[var(--muted-foreground)]">
-                    {t(
-                      (
-                        {
-                          user: 'User',
-                          assistant: 'Assistant',
-                          system: 'System',
-                          用户: 'User',
-                          助手: 'Assistant',
-                          系统: 'System',
-                        } as Record<string, string>
-                      )[turn.role.toLowerCase()] || turn.role
-                    )}
-                  </div>
-                )}
-                <Markdown content={turn.content} />
-              </section>
-            ))}
+          // Drawn the way the conversation looked: the learner's turns as
+          // bubbles on the right, the replies as the page they were.
+          <div className="dt-fav-transcript">
+            {transcript.map((turn, i) => {
+              const role = ROLE[turn.role.toLowerCase()] || ''
+              return role === 'user' ? (
+                <div key={i} className="dt-fav-turn is-user">
+                  <Markdown content={turn.content.trim()} variant="compact" />
+                </div>
+              ) : (
+                <section key={i} className="dt-fav-turn is-assistant">
+                  {role === 'system' && <div className="dt-fav-turn-role">{t('System')}</div>}
+                  <Markdown content={turn.content} />
+                </section>
+              )
+            })}
           </div>
         ) : answer ? (
           <>
             <Markdown content={answer.question} />
-            <details className="mt-4 rounded-lg border border-[var(--border)] px-4 py-3">
-              <summary className="cursor-pointer text-sm font-medium">
-                {t('Show answer and explanation')}
-              </summary>
-              <div className="mt-3">
+            <details className="dt-fav-answer">
+              <summary>{t('Show answer and explanation')}</summary>
+              <div className="dt-fav-answer-body">
                 <Markdown content={answer.answer} />
               </div>
             </details>

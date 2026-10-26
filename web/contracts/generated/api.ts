@@ -1336,144 +1336,6 @@ export interface paths {
     readonly patch?: never;
     readonly trace?: never;
   };
-  readonly "/api/courses": {
-    readonly parameters: {
-      readonly query?: never;
-      readonly header?: never;
-      readonly path?: never;
-      readonly cookie?: never;
-    };
-    /** List Courses */
-    readonly get: operations["list_courses_api_courses_get"];
-    readonly put?: never;
-    /** Create Course */
-    readonly post: operations["create_course_api_courses_post"];
-    readonly delete?: never;
-    readonly options?: never;
-    readonly head?: never;
-    readonly patch?: never;
-    readonly trace?: never;
-  };
-  readonly "/api/courses/{course_id}": {
-    readonly parameters: {
-      readonly query?: never;
-      readonly header?: never;
-      readonly path?: never;
-      readonly cookie?: never;
-    };
-    readonly get?: never;
-    readonly put?: never;
-    readonly post?: never;
-    /** Delete Course */
-    readonly delete: operations["delete_course_api_courses__course_id__delete"];
-    readonly options?: never;
-    readonly head?: never;
-    /** Update Course */
-    readonly patch: operations["update_course_api_courses__course_id__patch"];
-    readonly trace?: never;
-  };
-  readonly "/api/courses/{course_id}/resources": {
-    readonly parameters: {
-      readonly query?: never;
-      readonly header?: never;
-      readonly path?: never;
-      readonly cookie?: never;
-    };
-    readonly get?: never;
-    readonly put?: never;
-    /** Attach Course Resource */
-    readonly post: operations["attach_course_resource_api_courses__course_id__resources_post"];
-    readonly delete?: never;
-    readonly options?: never;
-    readonly head?: never;
-    readonly patch?: never;
-    readonly trace?: never;
-  };
-  readonly "/api/courses/{course_id}/resources/{resource_id}": {
-    readonly parameters: {
-      readonly query?: never;
-      readonly header?: never;
-      readonly path?: never;
-      readonly cookie?: never;
-    };
-    readonly get?: never;
-    readonly put?: never;
-    readonly post?: never;
-    /** Detach Course Resource */
-    readonly delete: operations["detach_course_resource_api_courses__course_id__resources__resource_id__delete"];
-    readonly options?: never;
-    readonly head?: never;
-    readonly patch?: never;
-    readonly trace?: never;
-  };
-  readonly "/api/courses/{course_id}/state": {
-    readonly parameters: {
-      readonly query?: never;
-      readonly header?: never;
-      readonly path?: never;
-      readonly cookie?: never;
-    };
-    /** Get Course State */
-    readonly get: operations["get_course_state_api_courses__course_id__state_get"];
-    readonly put?: never;
-    readonly post?: never;
-    readonly delete?: never;
-    readonly options?: never;
-    readonly head?: never;
-    readonly patch?: never;
-    readonly trace?: never;
-  };
-  readonly "/api/courses/{course_id}/syllabus": {
-    readonly parameters: {
-      readonly query?: never;
-      readonly header?: never;
-      readonly path?: never;
-      readonly cookie?: never;
-    };
-    readonly get?: never;
-    /** Set Course Syllabus */
-    readonly put: operations["set_course_syllabus_api_courses__course_id__syllabus_put"];
-    readonly post?: never;
-    readonly delete?: never;
-    readonly options?: never;
-    readonly head?: never;
-    readonly patch?: never;
-    readonly trace?: never;
-  };
-  readonly "/api/courses/{course_id}/syllabus/{unit_id}": {
-    readonly parameters: {
-      readonly query?: never;
-      readonly header?: never;
-      readonly path?: never;
-      readonly cookie?: never;
-    };
-    readonly get?: never;
-    readonly put?: never;
-    readonly post?: never;
-    readonly delete?: never;
-    readonly options?: never;
-    readonly head?: never;
-    /** Update Syllabus Unit */
-    readonly patch: operations["update_syllabus_unit_api_courses__course_id__syllabus__unit_id__patch"];
-    readonly trace?: never;
-  };
-  readonly "/api/courses/resource-candidates": {
-    readonly parameters: {
-      readonly query?: never;
-      readonly header?: never;
-      readonly path?: never;
-      readonly cookie?: never;
-    };
-    /** List Resource Candidates */
-    readonly get: operations["list_resource_candidates_api_courses_resource_candidates_get"];
-    readonly put?: never;
-    readonly post?: never;
-    readonly delete?: never;
-    readonly options?: never;
-    readonly head?: never;
-    readonly patch?: never;
-    readonly trace?: never;
-  };
   readonly "/api/dashboard/{entry_id}": {
     readonly parameters: {
       readonly query?: never;
@@ -1786,6 +1648,47 @@ export interface paths {
     /** Review Note Suggestion */
     readonly post: operations["review_note_suggestion_api_documents__doc_id__suggestions__suggestion_id__post"];
     readonly delete?: never;
+    readonly options?: never;
+    readonly head?: never;
+    readonly patch?: never;
+    readonly trace?: never;
+  };
+  readonly "/api/documents/{doc_id}/threads": {
+    readonly parameters: {
+      readonly query?: never;
+      readonly header?: never;
+      readonly path?: never;
+      readonly cookie?: never;
+    };
+    /**
+     * Note Threads
+     * @description The page's conversations, each with its anchor and its session's state.
+     */
+    readonly get: operations["note_threads_api_documents__doc_id__threads_get"];
+    readonly put?: never;
+    /** Anchor Note Thread */
+    readonly post: operations["anchor_note_thread_api_documents__doc_id__threads_post"];
+    readonly delete?: never;
+    readonly options?: never;
+    readonly head?: never;
+    readonly patch?: never;
+    readonly trace?: never;
+  };
+  readonly "/api/documents/{doc_id}/threads/{session_id}": {
+    readonly parameters: {
+      readonly query?: never;
+      readonly header?: never;
+      readonly path?: never;
+      readonly cookie?: never;
+    };
+    readonly get?: never;
+    readonly put?: never;
+    readonly post?: never;
+    /**
+     * Delete Note Thread
+     * @description Delete a page conversation: the session goes to the recycle bin with it.
+     */
+    readonly delete: operations["delete_note_thread_api_documents__doc_id__threads__session_id__delete"];
     readonly options?: never;
     readonly head?: never;
     readonly patch?: never;
@@ -6555,10 +6458,7 @@ export interface paths {
     };
     /**
      * List Categories
-     * @description Categories, with their counts scoped the same way the listing is.
-     *
-     *     Without the scope the rail would offer "Address translation 3" inside a
-     *     course holding none of those three.
+     * @description Categories and their question counts.
      */
     readonly get: operations["list_categories_api_question_notebook_categories_get"];
     readonly put?: never;
@@ -6892,9 +6792,6 @@ export interface paths {
     /**
      * Question Bank Stats
      * @description Counts behind the filter chips; also the agent's one-call overview.
-     *
-     *     Takes the same course scope as the listing: showing one course's questions
-     *     next to whole-library counts would make the rail lie about how much is there.
      */
     readonly get: operations["question_bank_stats_api_question_notebook_stats_get"];
     readonly put?: never;
@@ -11505,6 +11402,24 @@ export interface components {
       /** Username */
       readonly username: string;
     };
+    /** AnchorThreadRequest */
+    readonly AnchorThreadRequest: {
+      /** Block Id */
+      readonly block_id: string;
+      /**
+       * Origin
+       * @default ask
+       * @enum {string}
+       */
+      readonly origin: "ask" | "generate";
+      /**
+       * Quote
+       * @default
+       */
+      readonly quote: string;
+      /** Session Id */
+      readonly session_id: string;
+    };
     /** AnnotationInfo */
     readonly AnnotationInfo: {
       /** Annotation Id */
@@ -11696,18 +11611,6 @@ export interface components {
       /** Skills */
       readonly skills?: readonly string[];
     };
-    /** AttachCourseResourceRequest */
-    readonly AttachCourseResourceRequest: {
-      /** Kind */
-      readonly kind: string;
-      /**
-       * Label
-       * @default
-       */
-      readonly label: string;
-      /** Ref Id */
-      readonly ref_id: string;
-    };
     /** AuditRequest */
     readonly AuditRequest: {
       /** Budget */
@@ -11838,10 +11741,7 @@ export interface components {
     };
     /** Body_admin_import_users_api_auth_users_import_post */
     readonly Body_admin_import_users_api_auth_users_import_post: {
-      /**
-       * File
-       * Format: binary
-       */
+      /** File */
       readonly file: string;
     };
     /** Body_create_knowledge_base_api_knowledge_bases_post */
@@ -11885,23 +11785,12 @@ export interface components {
     };
     /** Body_import_docx_api_documents_import_docx_post */
     readonly Body_import_docx_api_documents_import_docx_post: {
-      /**
-       * File
-       * Format: binary
-       */
+      /** File */
       readonly file: string;
     };
     /** Body_import_preview_api_question_notebook_practice_import_preview_post */
     readonly Body_import_preview_api_question_notebook_practice_import_preview_post: {
-      /**
-       * Course Id
-       * @default
-       */
-      readonly course_id: string;
-      /**
-       * File
-       * Format: binary
-       */
+      /** File */
       readonly file: string;
       /**
        * Target
@@ -11912,17 +11801,13 @@ export interface components {
     };
     /** Body_import_visualizer_api_visualizers_import_post */
     readonly Body_import_visualizer_api_visualizers_import_post: {
-      /**
-       * File
-       * Format: binary
-       */
+      /** File */
       readonly file: string;
     };
     /** Body_library_add */
     readonly Body_library_add: {
       /**
        * File
-       * Format: binary
        * @description Raw file bytes
        */
       readonly file: string;
@@ -11939,10 +11824,7 @@ export interface components {
     };
     /** Body_preview_office_upload_api_file_preview_pdf_post */
     readonly Body_preview_office_upload_api_file_preview_pdf_post: {
-      /**
-       * File
-       * Format: binary
-       */
+      /** File */
       readonly file: string;
     };
     /** Body_reindex_knowledge_base_api_knowledge_bases__kb_name__reindex_post */
@@ -11965,20 +11847,14 @@ export interface components {
     };
     /** Body_speech_to_text_api_voice_stt_post */
     readonly Body_speech_to_text_api_voice_stt_post: {
-      /**
-       * File
-       * Format: binary
-       */
+      /** File */
       readonly file: string;
       /** Language */
       readonly language?: string | null;
     };
     /** Body_upload_avatar_api_auth_profile_avatar_put */
     readonly Body_upload_avatar_api_auth_profile_avatar_put: {
-      /**
-       * File
-       * Format: binary
-       */
+      /** File */
       readonly file: string;
     };
     /** Body_upload_files_api_knowledge_bases__kb_name__upload_post */
@@ -11999,18 +11875,12 @@ export interface components {
     };
     /** Body_upload_material_api_reading_materials_post */
     readonly Body_upload_material_api_reading_materials_post: {
-      /**
-       * File
-       * Format: binary
-       */
+      /** File */
       readonly file: string;
     };
     /** Body_upload_note_asset_api_documents__doc_id__assets_post */
     readonly Body_upload_note_asset_api_documents__doc_id__assets_post: {
-      /**
-       * File
-       * Format: binary
-       */
+      /** File */
       readonly file: string;
     };
     /** BookmarkInfo */
@@ -12830,36 +12700,6 @@ export interface components {
       /** Title */
       readonly title: string;
     };
-    /** CreateCourseRequest */
-    readonly CreateCourseRequest: {
-      /**
-       * Color
-       * @default
-       */
-      readonly color: string;
-      /**
-       * Default Capability
-       * @default
-       */
-      readonly default_capability: string;
-      /**
-       * Default Persona
-       * @default
-       */
-      readonly default_persona: string;
-      /**
-       * Description
-       * @default
-       */
-      readonly description: string;
-      /**
-       * Instructions
-       * @default
-       */
-      readonly instructions: string;
-      /** Name */
-      readonly name: string;
-    };
     /** CreateDocumentRequest */
     readonly CreateDocumentRequest: {
       /** Blocks */
@@ -13367,6 +13207,11 @@ export interface components {
     };
     /** DocumentSummaryResponse */
     readonly DocumentSummaryResponse: {
+      /**
+       * Cover
+       * @default
+       */
+      readonly cover: string;
       /** Created At */
       readonly created_at: number;
       /**
@@ -15293,6 +15138,23 @@ export interface components {
       readonly record_ids?: readonly string[];
     };
     /**
+     * NoteGeneration
+     * @description The learning block on the open note page this turn fills in.
+     *
+     *     Sent by the note companion when a block's own "Generate" runs. The server
+     *     owns the instructions that follow from it, so the learner's message stays
+     *     exactly what they see in the conversation.
+     */
+    readonly NoteGeneration: {
+      /** Block Id */
+      readonly block_id: string;
+      /**
+       * Kind
+       * @default
+       */
+      readonly kind: string;
+    };
+    /**
      * Occurrence
      * @description One rendered instance of a stored event.
      */
@@ -16424,8 +16286,6 @@ export interface components {
     readonly SessionOrganizationRequest: {
       /** Archived */
       readonly archived?: boolean | null;
-      /** Course Id */
-      readonly course_id?: string | null;
       /** Parent Session Id */
       readonly parent_session_id?: string | null;
       /** Pinned */
@@ -16491,11 +16351,6 @@ export interface components {
     readonly SetSessionModeRequest: {
       /** Mode */
       readonly mode: string;
-    };
-    /** SetSyllabusRequest */
-    readonly SetSyllabusRequest: {
-      /** Units */
-      readonly units: readonly components["schemas"]["SyllabusUnitRequest"][];
     };
     /**
      * SettingsDraftPayload
@@ -16682,20 +16537,6 @@ export interface components {
       readonly max_bytes: number;
       /** Raw View Extensions */
       readonly raw_view_extensions: readonly string[];
-    };
-    /** SyllabusUnitRequest */
-    readonly SyllabusUnitRequest: {
-      /**
-       * Covered
-       * @default false
-       */
-      readonly covered: boolean;
-      /** Id */
-      readonly id?: string | null;
-      /** Title */
-      readonly title: string;
-      /** Topics */
-      readonly topics?: readonly string[];
     };
     /**
      * SyncFolderResponse
@@ -17141,11 +16982,6 @@ export interface components {
       /** Content */
       readonly content: string;
       /**
-       * Course Id
-       * @default null
-       */
-      readonly course_id: string | null;
-      /**
        * Followup Question Context
        * @default null
        */
@@ -17194,6 +17030,8 @@ export interface components {
        * @default null
        */
       readonly note_document_id: string | null;
+      /** @default null */
+      readonly note_generation: components["schemas"]["NoteGeneration"] | null;
       /** Notebook References */
       readonly notebook_references?: readonly components["schemas"]["NotebookReference"][];
       /**
@@ -17464,23 +17302,6 @@ export interface components {
       /** Workspace Id */
       readonly workspace_id?: string | null;
     };
-    /** UpdateCourseRequest */
-    readonly UpdateCourseRequest: {
-      /** Color */
-      readonly color?: string | null;
-      /** Default Capability */
-      readonly default_capability?: string | null;
-      /** Default Persona */
-      readonly default_persona?: string | null;
-      /** Description */
-      readonly description?: string | null;
-      /** Instructions */
-      readonly instructions?: string | null;
-      /** Name */
-      readonly name?: string | null;
-      /** Status */
-      readonly status?: string | null;
-    };
     /** UpdateDocumentRequest */
     readonly UpdateDocumentRequest: {
       /** Blocks */
@@ -17648,11 +17469,6 @@ export interface components {
       readonly rename_to?: string | null;
       /** Tags */
       readonly tags?: readonly string[] | null;
-    };
-    /** UpdateSyllabusUnitRequest */
-    readonly UpdateSyllabusUnitRequest: {
-      /** Covered */
-      readonly covered: boolean;
     };
     /** UpdateVideoNoteRequest */
     readonly UpdateVideoNoteRequest: {
@@ -18212,6 +18028,8 @@ export type SchemaAdminBatchDeleteRequest =
   components["schemas"]["AdminBatchDeleteRequest"];
 export type SchemaAdminCreateUserRequest =
   components["schemas"]["AdminCreateUserRequest"];
+export type SchemaAnchorThreadRequest =
+  components["schemas"]["AnchorThreadRequest"];
 export type SchemaAnnotationInfo = components["schemas"]["AnnotationInfo"];
 export type SchemaAnnotationPayload =
   components["schemas"]["AnnotationPayload"];
@@ -18223,8 +18041,6 @@ export type SchemaApplyOpsRequest = components["schemas"]["ApplyOpsRequest"];
 export type SchemaApprovalRequest = components["schemas"]["ApprovalRequest"];
 export type SchemaAssetAddRequest = components["schemas"]["AssetAddRequest"];
 export type SchemaAssetSpec = components["schemas"]["AssetSpec"];
-export type SchemaAttachCourseResourceRequest =
-  components["schemas"]["AttachCourseResourceRequest"];
 export type SchemaAuditRequest = components["schemas"]["AuditRequest"];
 export type SchemaAuthStatusResponse =
   components["schemas"]["AuthStatusResponse"];
@@ -18346,8 +18162,6 @@ export type SchemaCreateBookRequest =
   components["schemas"]["CreateBookRequest"];
 export type SchemaCreateCalendar = components["schemas"]["CreateCalendar"];
 export type SchemaCreateCard = components["schemas"]["CreateCard"];
-export type SchemaCreateCourseRequest =
-  components["schemas"]["CreateCourseRequest"];
 export type SchemaCreateDocumentRequest =
   components["schemas"]["CreateDocumentRequest"];
 export type SchemaCreateFolderPayload =
@@ -18560,6 +18374,7 @@ export type SchemaNotebookRecordInput =
   components["schemas"]["NotebookRecordInput"];
 export type SchemaNotebookReference =
   components["schemas"]["NotebookReference"];
+export type SchemaNoteGeneration = components["schemas"]["NoteGeneration"];
 export type SchemaOccurrence = components["schemas"]["Occurrence"];
 export type SchemaOccurrenceList = components["schemas"]["OccurrenceList"];
 export type SchemaOrganizeNotesRequest =
@@ -18686,8 +18501,6 @@ export type SchemaSessionTaskLinks = components["schemas"]["SessionTaskLinks"];
 export type SchemaSetRoleRequest = components["schemas"]["SetRoleRequest"];
 export type SchemaSetSessionModeRequest =
   components["schemas"]["SetSessionModeRequest"];
-export type SchemaSetSyllabusRequest =
-  components["schemas"]["SetSyllabusRequest"];
 export type SchemaSettingsDraftPayload =
   components["schemas"]["SettingsDraftPayload"];
 export type SchemaSettingsPresetDraftRequest =
@@ -18717,8 +18530,6 @@ export type SchemaSupplementRequest =
 export type SchemaSupportedFileTypesInfo =
   components["schemas"]["SupportedFileTypesInfo"];
 export type SchemaSupportedFormats = components["schemas"]["SupportedFormats"];
-export type SchemaSyllabusUnitRequest =
-  components["schemas"]["SyllabusUnitRequest"];
 export type SchemaSyncFolderResponse =
   components["schemas"]["SyncFolderResponse"];
 export type SchemaSyncObjectIn = components["schemas"]["SyncObjectIn"];
@@ -18758,8 +18569,6 @@ export type SchemaUpdateBlockRequest =
   components["schemas"]["UpdateBlockRequest"];
 export type SchemaUpdateCalendar = components["schemas"]["UpdateCalendar"];
 export type SchemaUpdateCard = components["schemas"]["UpdateCard"];
-export type SchemaUpdateCourseRequest =
-  components["schemas"]["UpdateCourseRequest"];
 export type SchemaUpdateDocumentRequest =
   components["schemas"]["UpdateDocumentRequest"];
 export type SchemaUpdateNotebookRequest =
@@ -18779,8 +18588,6 @@ export type SchemaUpdateSettingsRequest =
   components["schemas"]["UpdateSettingsRequest"];
 export type SchemaUpdateSkillRequest =
   components["schemas"]["UpdateSkillRequest"];
-export type SchemaUpdateSyllabusUnitRequest =
-  components["schemas"]["UpdateSyllabusUnitRequest"];
 export type SchemaUpdateVideoNoteRequest =
   components["schemas"]["UpdateVideoNoteRequest"];
 export type SchemaUpdateWorkspacePayload =
@@ -21841,392 +21648,6 @@ export interface operations {
       };
     };
   };
-  readonly list_courses_api_courses_get: {
-    readonly parameters: {
-      readonly query?: never;
-      readonly header?: {
-        readonly Authorization?: string | null;
-      };
-      readonly path?: never;
-      readonly cookie?: {
-        readonly dt_token?: string | null;
-      };
-    };
-    readonly requestBody?: never;
-    readonly responses: {
-      /** @description Successful Response */
-      readonly 200: {
-        headers: {
-          readonly [name: string]: unknown;
-        };
-        content: {
-          readonly "application/json": {
-            readonly [key: string]: unknown;
-          };
-        };
-      };
-      /** @description Validation Error */
-      readonly 422: {
-        headers: {
-          readonly [name: string]: unknown;
-        };
-        content: {
-          readonly "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  readonly create_course_api_courses_post: {
-    readonly parameters: {
-      readonly query?: never;
-      readonly header?: {
-        readonly Authorization?: string | null;
-      };
-      readonly path?: never;
-      readonly cookie?: {
-        readonly dt_token?: string | null;
-      };
-    };
-    readonly requestBody: {
-      readonly content: {
-        readonly "application/json": components["schemas"]["CreateCourseRequest"];
-      };
-    };
-    readonly responses: {
-      /** @description Successful Response */
-      readonly 200: {
-        headers: {
-          readonly [name: string]: unknown;
-        };
-        content: {
-          readonly "application/json": {
-            readonly [key: string]: unknown;
-          };
-        };
-      };
-      /** @description Validation Error */
-      readonly 422: {
-        headers: {
-          readonly [name: string]: unknown;
-        };
-        content: {
-          readonly "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  readonly delete_course_api_courses__course_id__delete: {
-    readonly parameters: {
-      readonly query?: never;
-      readonly header?: {
-        readonly Authorization?: string | null;
-      };
-      readonly path: {
-        readonly course_id: string;
-      };
-      readonly cookie?: {
-        readonly dt_token?: string | null;
-      };
-    };
-    readonly requestBody?: never;
-    readonly responses: {
-      /** @description Successful Response */
-      readonly 200: {
-        headers: {
-          readonly [name: string]: unknown;
-        };
-        content: {
-          readonly "application/json": {
-            readonly [key: string]: unknown;
-          };
-        };
-      };
-      /** @description Validation Error */
-      readonly 422: {
-        headers: {
-          readonly [name: string]: unknown;
-        };
-        content: {
-          readonly "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  readonly update_course_api_courses__course_id__patch: {
-    readonly parameters: {
-      readonly query?: never;
-      readonly header?: {
-        readonly Authorization?: string | null;
-      };
-      readonly path: {
-        readonly course_id: string;
-      };
-      readonly cookie?: {
-        readonly dt_token?: string | null;
-      };
-    };
-    readonly requestBody: {
-      readonly content: {
-        readonly "application/json": components["schemas"]["UpdateCourseRequest"];
-      };
-    };
-    readonly responses: {
-      /** @description Successful Response */
-      readonly 200: {
-        headers: {
-          readonly [name: string]: unknown;
-        };
-        content: {
-          readonly "application/json": {
-            readonly [key: string]: unknown;
-          };
-        };
-      };
-      /** @description Validation Error */
-      readonly 422: {
-        headers: {
-          readonly [name: string]: unknown;
-        };
-        content: {
-          readonly "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  readonly attach_course_resource_api_courses__course_id__resources_post: {
-    readonly parameters: {
-      readonly query?: never;
-      readonly header?: {
-        readonly Authorization?: string | null;
-      };
-      readonly path: {
-        readonly course_id: string;
-      };
-      readonly cookie?: {
-        readonly dt_token?: string | null;
-      };
-    };
-    readonly requestBody: {
-      readonly content: {
-        readonly "application/json": components["schemas"]["AttachCourseResourceRequest"];
-      };
-    };
-    readonly responses: {
-      /** @description Successful Response */
-      readonly 200: {
-        headers: {
-          readonly [name: string]: unknown;
-        };
-        content: {
-          readonly "application/json": {
-            readonly [key: string]: unknown;
-          };
-        };
-      };
-      /** @description Validation Error */
-      readonly 422: {
-        headers: {
-          readonly [name: string]: unknown;
-        };
-        content: {
-          readonly "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  readonly detach_course_resource_api_courses__course_id__resources__resource_id__delete: {
-    readonly parameters: {
-      readonly query?: never;
-      readonly header?: {
-        readonly Authorization?: string | null;
-      };
-      readonly path: {
-        readonly course_id: string;
-        readonly resource_id: string;
-      };
-      readonly cookie?: {
-        readonly dt_token?: string | null;
-      };
-    };
-    readonly requestBody?: never;
-    readonly responses: {
-      /** @description Successful Response */
-      readonly 200: {
-        headers: {
-          readonly [name: string]: unknown;
-        };
-        content: {
-          readonly "application/json": {
-            readonly [key: string]: unknown;
-          };
-        };
-      };
-      /** @description Validation Error */
-      readonly 422: {
-        headers: {
-          readonly [name: string]: unknown;
-        };
-        content: {
-          readonly "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  readonly get_course_state_api_courses__course_id__state_get: {
-    readonly parameters: {
-      readonly query?: never;
-      readonly header?: {
-        readonly Authorization?: string | null;
-      };
-      readonly path: {
-        readonly course_id: string;
-      };
-      readonly cookie?: {
-        readonly dt_token?: string | null;
-      };
-    };
-    readonly requestBody?: never;
-    readonly responses: {
-      /** @description Successful Response */
-      readonly 200: {
-        headers: {
-          readonly [name: string]: unknown;
-        };
-        content: {
-          readonly "application/json": {
-            readonly [key: string]: unknown;
-          };
-        };
-      };
-      /** @description Validation Error */
-      readonly 422: {
-        headers: {
-          readonly [name: string]: unknown;
-        };
-        content: {
-          readonly "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  readonly set_course_syllabus_api_courses__course_id__syllabus_put: {
-    readonly parameters: {
-      readonly query?: never;
-      readonly header?: {
-        readonly Authorization?: string | null;
-      };
-      readonly path: {
-        readonly course_id: string;
-      };
-      readonly cookie?: {
-        readonly dt_token?: string | null;
-      };
-    };
-    readonly requestBody: {
-      readonly content: {
-        readonly "application/json": components["schemas"]["SetSyllabusRequest"];
-      };
-    };
-    readonly responses: {
-      /** @description Successful Response */
-      readonly 200: {
-        headers: {
-          readonly [name: string]: unknown;
-        };
-        content: {
-          readonly "application/json": {
-            readonly [key: string]: unknown;
-          };
-        };
-      };
-      /** @description Validation Error */
-      readonly 422: {
-        headers: {
-          readonly [name: string]: unknown;
-        };
-        content: {
-          readonly "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  readonly update_syllabus_unit_api_courses__course_id__syllabus__unit_id__patch: {
-    readonly parameters: {
-      readonly query?: never;
-      readonly header?: {
-        readonly Authorization?: string | null;
-      };
-      readonly path: {
-        readonly course_id: string;
-        readonly unit_id: string;
-      };
-      readonly cookie?: {
-        readonly dt_token?: string | null;
-      };
-    };
-    readonly requestBody: {
-      readonly content: {
-        readonly "application/json": components["schemas"]["UpdateSyllabusUnitRequest"];
-      };
-    };
-    readonly responses: {
-      /** @description Successful Response */
-      readonly 200: {
-        headers: {
-          readonly [name: string]: unknown;
-        };
-        content: {
-          readonly "application/json": {
-            readonly [key: string]: unknown;
-          };
-        };
-      };
-      /** @description Validation Error */
-      readonly 422: {
-        headers: {
-          readonly [name: string]: unknown;
-        };
-        content: {
-          readonly "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  readonly list_resource_candidates_api_courses_resource_candidates_get: {
-    readonly parameters: {
-      readonly query?: never;
-      readonly header?: {
-        readonly Authorization?: string | null;
-      };
-      readonly path?: never;
-      readonly cookie?: {
-        readonly dt_token?: string | null;
-      };
-    };
-    readonly requestBody?: never;
-    readonly responses: {
-      /** @description Successful Response */
-      readonly 200: {
-        headers: {
-          readonly [name: string]: unknown;
-        };
-        content: {
-          readonly "application/json": {
-            readonly [key: string]: unknown;
-          };
-        };
-      };
-      /** @description Validation Error */
-      readonly 422: {
-        headers: {
-          readonly [name: string]: unknown;
-        };
-        content: {
-          readonly "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
   readonly get_activity_entry_api_dashboard__entry_id__get: {
     readonly parameters: {
       readonly query?: never;
@@ -22941,6 +22362,116 @@ export interface operations {
         };
         content: {
           readonly "application/json": components["schemas"]["DocumentResponse"];
+        };
+      };
+      /** @description Validation Error */
+      readonly 422: {
+        headers: {
+          readonly [name: string]: unknown;
+        };
+        content: {
+          readonly "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  readonly note_threads_api_documents__doc_id__threads_get: {
+    readonly parameters: {
+      readonly query?: never;
+      readonly header?: {
+        readonly Authorization?: string | null;
+      };
+      readonly path: {
+        readonly doc_id: string;
+      };
+      readonly cookie?: {
+        readonly dt_token?: string | null;
+      };
+    };
+    readonly requestBody?: never;
+    readonly responses: {
+      /** @description Successful Response */
+      readonly 200: {
+        headers: {
+          readonly [name: string]: unknown;
+        };
+        content: {
+          readonly "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      readonly 422: {
+        headers: {
+          readonly [name: string]: unknown;
+        };
+        content: {
+          readonly "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  readonly anchor_note_thread_api_documents__doc_id__threads_post: {
+    readonly parameters: {
+      readonly query?: never;
+      readonly header?: {
+        readonly Authorization?: string | null;
+      };
+      readonly path: {
+        readonly doc_id: string;
+      };
+      readonly cookie?: {
+        readonly dt_token?: string | null;
+      };
+    };
+    readonly requestBody: {
+      readonly content: {
+        readonly "application/json": components["schemas"]["AnchorThreadRequest"];
+      };
+    };
+    readonly responses: {
+      /** @description Successful Response */
+      readonly 200: {
+        headers: {
+          readonly [name: string]: unknown;
+        };
+        content: {
+          readonly "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      readonly 422: {
+        headers: {
+          readonly [name: string]: unknown;
+        };
+        content: {
+          readonly "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  readonly delete_note_thread_api_documents__doc_id__threads__session_id__delete: {
+    readonly parameters: {
+      readonly query?: never;
+      readonly header?: {
+        readonly Authorization?: string | null;
+      };
+      readonly path: {
+        readonly doc_id: string;
+        readonly session_id: string;
+      };
+      readonly cookie?: {
+        readonly dt_token?: string | null;
+      };
+    };
+    readonly requestBody?: never;
+    readonly responses: {
+      /** @description Successful Response */
+      readonly 200: {
+        headers: {
+          readonly [name: string]: unknown;
+        };
+        content: {
+          readonly "application/json": unknown;
         };
       };
       /** @description Validation Error */
@@ -33254,9 +32785,7 @@ export interface operations {
   };
   readonly list_categories_api_question_notebook_categories_get: {
     readonly parameters: {
-      readonly query?: {
-        readonly course_id?: string;
-      };
+      readonly query?: never;
       readonly header?: {
         readonly Authorization?: string | null;
       };
@@ -33404,7 +32933,6 @@ export interface operations {
         readonly assessment_type?: string;
         readonly bookmarked?: boolean | null;
         readonly category_id?: number | null;
-        readonly course_id?: string;
         readonly is_correct?: boolean | null;
         readonly knowledge_point_id?: string;
         readonly limit?: number;
@@ -33763,9 +33291,7 @@ export interface operations {
   };
   readonly list_question_bank_materials_api_question_notebook_materials_get: {
     readonly parameters: {
-      readonly query?: {
-        readonly course_id?: string;
-      };
+      readonly query?: never;
       readonly header?: {
         readonly Authorization?: string | null;
       };
@@ -33799,7 +33325,6 @@ export interface operations {
   readonly practice_analytics_api_question_notebook_practice_analytics_get: {
     readonly parameters: {
       readonly query?: {
-        readonly course_id?: string;
         readonly days?: number;
         readonly timezone?: string;
       };
@@ -34059,7 +33584,6 @@ export interface operations {
     readonly parameters: {
       readonly query?: {
         readonly category_id?: number | null;
-        readonly course_id?: string;
         readonly limit?: number;
         readonly timezone?: string;
       };
@@ -34096,7 +33620,6 @@ export interface operations {
   readonly summary_api_question_notebook_practice_summary_get: {
     readonly parameters: {
       readonly query?: {
-        readonly course_id?: string;
         readonly timezone?: string;
       };
       readonly header?: {
@@ -34131,9 +33654,7 @@ export interface operations {
   };
   readonly question_bank_stats_api_question_notebook_stats_get: {
     readonly parameters: {
-      readonly query?: {
-        readonly course_id?: string;
-      };
+      readonly query?: never;
       readonly header?: {
         readonly Authorization?: string | null;
       };

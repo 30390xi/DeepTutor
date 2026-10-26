@@ -104,6 +104,7 @@ async def native_seed(
         "continue_truncated": "loop.continue_truncated",
         "continue_reasoning": "loop.continue_truncated_reasoning",
         "empty_nudge": "loop.finish_empty_nudge",
+        "user_sent_while_working": "loop.user_sent_while_working",
         "context_window_guard": "notices.context_window_guard",
         "output_truncated": "notices.output_truncated",
     }.items():
@@ -143,6 +144,7 @@ async def native_seed(
         "rebindingTools": list(pipeline._capability_rebinding_tools(context)),
         "deferOutput": pipeline._capability_buffers_visible_output(context),
         "policyHooks": bool(pipeline._active_loop_capabilities(context)),
+        "userInputEnabled": context.runtime.drain_user_inputs is not None,
         "initialToolChoice": pipeline.initial_tool_choice,
         "copy": copy,
     }

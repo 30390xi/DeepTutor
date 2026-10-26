@@ -851,3 +851,41 @@ test("provider compatibility keeps tool use required and retries format rejectio
     await new Promise<void>((resolve) => fixture.close(() => resolve()));
   }
 });
+
+
+test("a learner message received during a tool is read once before the next model round", async () => {
+  const fixture = await server((_body, response, count) => {
+    if (count > 1) return answer(response, "Only the discrete case.");
+    frame(response, { tool_calls: [{ index: 0, id: "search-1", function: {
+      name: "search_fixture", arguments: "{}",
+    }}]}, "tool_calls");
+    response.end("data: [DONE]\n\n");
+  });
+  const events: EngineEvent[] = [];
+  let inbox: JsonRecord[] = [];
+  try {
+    const value = input(fixture.endpoint);
+    value.userInputEnabled = true;
+    value.tools = [{ schema: { type: "function", function: {
+      name: "search_fixture", parameters: { type: "object", properties: {} },
+    }}, native: false, sensitive: [] }];
+    await runNative(value, async (op, args) => {
+      if (op === "read_user_inputs") {
+        const pending = inbox; inbox = []; return pending;
+      }
+      if (op === "event") { events.push(args.event as EngineEvent); return null; }
+      if (op === "checkpoint") return null;
+      if (op === "after_tools") return {};
+      assert.equal(op, "legacy_tool");
+      inbox.push({ command_id: "cmd-1", content: "Only cover the discrete case." });
+      return { content: "found", success: true, metadata: {}, sources: [],
+        pause: null, terminate: false, modelMessage: null };
+    }, new AbortController().signal);
+    assert.equal(fixture.requests.length, 2);
+    assert.ok(!JSON.stringify(fixture.requests[0]).includes("Only cover the discrete case."));
+    assert.ok(JSON.stringify(fixture.requests[1]).includes("Only cover the discrete case."));
+    const read = events.filter((event) => event.metadata.trace_kind === "user_input");
+    assert.equal(read.length, 1);
+    assert.deepEqual(read[0]!.metadata.user_inputs, [{ command_id: "cmd-1", content: "Only cover the discrete case." }]);
+  } finally { await fixture.close(); }
+});

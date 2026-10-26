@@ -24,6 +24,23 @@ vi.mock('@/lib/notes-api', () => ({
   noteRequest: vi.fn(),
   reviewSuggestion: vi.fn(),
 }))
+// The page's conversations run in the chat runtime; autosave does not.
+vi.mock('@/features/notes/components/useNoteThreads', () => ({
+  useNoteThreads: () => ({
+    threads: [],
+    open: null,
+    bound: false,
+    hasMessages: false,
+    prefill: null,
+    send: vi.fn(),
+    openThread: vi.fn(),
+    startThread: vi.fn(),
+    generateBlock: vi.fn(),
+    regenerate: vi.fn(),
+    removeThread: vi.fn(),
+    close: vi.fn(),
+  }),
+}))
 vi.mock('@/features/notes/components/NoteEditor', () => ({
   default: function MockEditor({
     onReady,

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { m, type MotionStyle } from "framer-motion";
-import { useEffect, useId, useMemo, useState } from "react";
-import { ArrowUpRight, Plug, Plus, Wand2 } from "lucide-react";
+import { createElement, useEffect, useId, useMemo, useState, type ReactNode } from "react";
+import { ArrowUpRight, Plug, Plus, Shapes, Wand2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Tooltip } from "@/shared/ui/Tooltip";
 import { SPACE_MCP_SURFACE, loadMcpSurface } from "@/components/mcp/surface";
@@ -11,6 +11,8 @@ import { mcpRowStatus, type McpServerStatus, type McpStoreState } from "@/lib/mc
 import type { ComposerResourceCatalog } from "@/hooks/useComposerResources";
 import type { ResourceSelection } from "@/features/chat/ChatStateAdapter";
 import type { WorkspaceResourceOption } from "@/lib/workspaces-api";
+import type { CapabilityDef } from "@/features/capabilities/presentation";
+import { useCapabilityLabel } from "@/features/ui-layout/tokens";
 import {
   TrayFoot,
   TrayList,
@@ -21,7 +23,7 @@ import {
   type TrayPlacement,
 } from "./ComposerTrayMenu";
 import AnswerModeMenu, { PartnerLinkMenu, type AnswerModeProps, type PartnerLinkProps } from "./AnswerModeMenu";
-import { ConnectorHubIcon, SkillDeckIcon } from "./ComposerIcons";
+import { ConnectorHubIcon, SkillDeckIcon, modeIcon } from "./ComposerIcons";
 import { useTrayFold } from "./ComposerTrayFold";
 
 const STATUS_DOT: Record<McpServerStatus, string> = {
@@ -91,9 +93,21 @@ export interface TrayResources {
   onChange: (selection: ResourceSelection) => void;
 }
 
+/** The turn's mode; `""` is a plain conversation, which is no mode at all. */
+export interface TrayMode {
+  capabilities: CapabilityDef[];
+  value: string;
+  onChange: (value: string) => void;
+}
+
 /**
- * The layer under the composer: what Dito can reach in this conversation,
- * and who answers.
+ * The layer under the composer: how Dito works this turn, what it can reach
+ * in this conversation, and who answers.
+ *
+ * A mode comes first. Picking none is plain conversation, so the control
+ * names itself until one is chosen and then folds to two marks — its own and
+ * the mode's — while the mode also opens the message. Skills and connectors
+ * rest as marks from the start; each unfolds while pointed at.
  *
  * Skills and connectors are both narrowing, never granting: the first row of
  * each list is "everything this workspace allows", and picking some limits
@@ -107,15 +121,20 @@ export interface TrayResources {
  */
 export function ComposerTray({
   placement,
+  mode,
   resources,
   partners,
   answer,
+  end,
 }: {
   /** Lists open toward the page's free space: below on the home screen, above in a conversation. */
   placement: TrayPlacement;
+  mode?: TrayMode;
   resources?: TrayResources;
   partners?: PartnerLinkProps;
   answer?: AnswerModeProps;
+  /** A surface's own control for the far end, where who answers sits. */
+  end?: ReactNode;
 }) {
   const { t } = useTranslation();
   const rowId = useId();
@@ -146,12 +165,55 @@ export function ComposerTray({
         />
       </Tooltip>
       <div id={rowId} className="dt-tray-bar" inert={fold.away}>
+        {mode && <ModeMenu {...mode} placement={placement} />}
         {resources && <SkillsMenu {...resources} placement={placement} />}
         {resources && <ConnectorsMenu {...resources} placement={placement} />}
         {partners && <PartnerLinkMenu {...partners} placement={placement} />}
         {answer && <AnswerModeMenu {...answer} placement={placement} />}
+        {end}
       </div>
     </m.div>
+  );
+}
+
+function ModeMenu({ capabilities, value, onChange, placement }: TrayMode & { placement: TrayPlacement }) {
+  const { t } = useTranslation();
+  const capabilityLabel = useCapabilityLabel();
+  const modes = capabilities.filter((cap) => cap.value !== "" && !cap.legacy);
+  const chosen = modes.find((cap) => cap.value === value);
+  const ChosenIcon = chosen && modeIcon(chosen);
+  const row = (cap: CapabilityDef, close: () => void) => {
+    const selected = cap.value === chosen?.value;
+    const Icon = modeIcon(cap);
+    return (
+      <TrayOption
+        key={cap.value}
+        selected={selected}
+        // The chosen mode again is the way back to plain conversation.
+        onSelect={() => {
+          onChange(selected ? "" : cap.value);
+          close();
+        }}
+        leading={<Icon size={22} strokeWidth={1.5} />}
+        title={capabilityLabel(cap)}
+        meta={t(cap.description)}
+      />
+    );
+  };
+  return (
+    <TrayMenu
+      icon={<Shapes size={14} strokeWidth={1.7} className="shrink-0" />}
+      label={t("Mode")}
+      value={chosen ? capabilityLabel(chosen) : undefined}
+      valueIcon={ChosenIcon && createElement(ChosenIcon, { size: 15, strokeWidth: 1.7, className: "shrink-0" })}
+      active={Boolean(chosen)}
+      fold={Boolean(chosen)}
+      placement={placement}
+    >
+      {(close) => (
+        <TrayList label={t("Mode")} bare>{modes.map((cap) => row(cap, close))}</TrayList>
+      )}
+    </TrayMenu>
   );
 }
 
@@ -164,6 +226,7 @@ function SkillsMenu({ catalog, selection, onChange, placement }: TrayResources &
       label={t("Skills")}
       value={count ? t("composer.tray.referenced", { count }) : t("composer.tray.allSkills")}
       active={count > 0}
+      fold
       placement={placement}
     >
       {(close) => (
@@ -260,6 +323,7 @@ function ConnectorsMenu({ catalog, selection, onChange, placement }: TrayResourc
           </span>
         )
       }
+      fold
       placement={placement}
     >
       {(close) => (

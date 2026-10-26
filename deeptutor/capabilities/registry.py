@@ -69,10 +69,6 @@ BUILTIN_LOOP_CAPABILITY_SPECS: tuple[LoopCapabilitySpec, ...] = (
         "deeptutor.capabilities.reading.capability:ReadingCapability",
     ),
     LoopCapabilitySpec(
-        "course_study",
-        "deeptutor.capabilities.course_study.capability:CourseStudyLoopCapability",
-    ),
-    LoopCapabilitySpec(
         "explore_context",
         "deeptutor.capabilities.explore_context.capability:ExploreContextCapability",
     ),

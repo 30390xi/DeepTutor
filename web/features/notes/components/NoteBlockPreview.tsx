@@ -4,7 +4,6 @@ import Image from 'next/image'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowDown,
-  ArrowRight,
   ArrowUpRight,
   BookOpen,
   CalendarDays,
@@ -462,15 +461,14 @@ export default function NoteBlockPreview({
     case 'ai':
       return (
         <div className="dt-note-preview-ai">
-          <div className="dt-note-preview-row">
-            <Sparkles size={15} />
-            <strong>{t('Ask Dito')}</strong>
-          </div>
-          <p>{t('Explain this concept with an example.')}</p>
-          <div className="dt-note-preview-row">
-            <span>{t('Review changes')}</span>
-            <ArrowRight size={14} />
-          </div>
+          <p>{t('Photosynthesis turns light into chemical energy.')}</p>
+          <p className="is-suggested">
+            {t('Plants capture light in chlorophyll, then use it to build sugar from water and carbon dioxide.')}
+          </p>
+          <small className="dt-note-preview-row">
+            <Sparkles size={12} />
+            {t('Dito suggests · you accept or dismiss')}
+          </small>
         </div>
       )
     case 'source':

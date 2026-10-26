@@ -9,7 +9,6 @@ import {
   useParams,
   usePathname,
   useRouter,
-  useSearchParams,
 } from "next/navigation";
 import {
   CircleAlert,
@@ -33,7 +32,6 @@ import {
   PAGE_QUIZ_CAPABILITY,
   PAGE_QUIZ_CONFIG,
 } from "@/lib/reading-passage-prompts";
-import { consumePendingPrompt } from "@/lib/pending-prompt";
 import {
   getMaterial,
   getUnitText,
@@ -50,7 +48,6 @@ import {
 import { mediaTimeFromHref } from "@/lib/reading-media-citations";
 import {
   linkReadingConversation,
-  listReadingConversations,
   retryReadingMaterial,
   unlinkReadingConversation,
   type ReadingLibraryMaterial,
@@ -136,7 +133,6 @@ export function ReadingWorkspacePage() {
   // with the native history API so the workspace is not torn down mid-answer,
   // and `useParams` does not follow that — `usePathname` does.
   const sessionIdParam = readingSessionIdFromPath(usePathname());
-  const courseId = useSearchParams().get("course")?.trim() ?? "";
   const router = useRouter();
   const { t } = useTranslation();
   // The shell only needs to *send* (guided one-click prompts). Rendering the
@@ -152,6 +148,7 @@ export function ReadingWorkspacePage() {
     loading,
     error,
     notice,
+    refreshConversations,
     setNotice,
     material,
     annotations,
@@ -174,7 +171,7 @@ export function ReadingWorkspacePage() {
     buildMasteryPath,
     renameWorkspace,
     reportViewport,
-  } = useReadingWorkspace(workspaceId, sessionIdParam, courseId);
+  } = useReadingWorkspace(workspaceId, sessionIdParam);
 
   // View-only state: what the reader is pointing at and which panels are open.
   const [transcriptSearch, setTranscriptSearch] = useState("");
@@ -186,13 +183,6 @@ export function ReadingWorkspacePage() {
   const [isDesktopWide, setIsDesktopWide] = useState(false);
   // The bar's place for the open document's title row (see ReaderPane).
   const [docSlot, setDocSlot] = useState<HTMLDivElement | null>(null);
-
-  // A Course Study hand-off may have written the opening line before sending
-  // the learner here. Consumed once, so a refresh does not retype it.
-  useEffect(() => {
-    const pending = consumePendingPrompt("immersive_reading");
-    if (pending) prefillInputRef.current?.(pending);
-  }, []);
 
   useEffect(() => {
     const mql = window.matchMedia("(min-width: 1280px)");
@@ -458,10 +448,13 @@ export function ReadingWorkspacePage() {
         <div className={`min-w-0 ${companionDocked ? "[grid-column:1/-3]" : "col-span-full"}`}>
           <ReadingBar
             backHref={readingFolderRoute(workspace.workspace_id)}
+            collectionId={workspace.workspace_id}
             title={workspace.title}
-            renaming={showRename}
             onRename={() => setShowRename(true)}
             onAdd={() => setShowAddSource(true)}
+            documents={workspace.tabs}
+            activeDocumentId={activeTab?.material.material_id ?? null}
+            onSwitchDocument={(tab) => void switchMaterial(tab.material)}
             navigatorOpen={navigatorOpen}
             onToggleNavigator={() => toggleNavigator(!navigatorOpen)}
             docSlot={setDocSlot}
@@ -726,7 +719,7 @@ export function ReadingWorkspacePage() {
                 );
               }
             }
-            setConversations(await listReadingConversations(workspaceId));
+            await refreshConversations();
             setShowLinker(false);
           }}
         />

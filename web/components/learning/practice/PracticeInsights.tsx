@@ -29,7 +29,7 @@ const number = (value: number) => value.toLocaleString();
 const dateLabel = (date: string) =>
   new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
-export function PracticeInsights({ courseId, revision }: { courseId: string; revision: number }) {
+export function PracticeInsights({ revision }: { revision: number }) {
   const { t } = useTranslation();
   const search = useSearchParams();
   const router = useRouter();
@@ -42,7 +42,7 @@ export function PracticeInsights({ courseId, revision }: { courseId: string; rev
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [retry, setRetry] = useState(0);
-  const scope = `${courseId}:${days}`;
+  const scope = String(days);
   const data = result?.scope === scope ? result.data : null;
   function setView(key: string, value: string) {
     const query = new URLSearchParams(search.toString());
@@ -56,7 +56,7 @@ export function PracticeInsights({ courseId, revision }: { courseId: string; rev
       const request = ++sequence;
       setLoading(true);
       try {
-        const next = await getPracticeAnalytics(courseId, days);
+        const next = await getPracticeAnalytics(days);
         if (active && request === sequence) {
           setResult({ scope, data: next });
           setError("");
@@ -79,7 +79,7 @@ export function PracticeInsights({ courseId, revision }: { courseId: string; rev
       window.clearInterval(timer);
       window.removeEventListener("focus", refresh);
     };
-  }, [courseId, days, scope, revision, retry]);
+  }, [days, scope, revision, retry]);
   const total = data?.totals[metric.key] || 0;
   const sources = [...(data?.sources || [])]
     .filter(row => row[metric.key] > 0)

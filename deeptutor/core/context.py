@@ -53,6 +53,9 @@ class TurnRuntimeContext:
 
     turn_id: str = ""
     wait_for_user_reply: Callable[[], Awaitable[dict[str, Any] | None]] | None = None
+    # Takes the messages the learner sent while this turn was running
+    # (``[{command_id, content}]``, oldest first); the loop reads it between steps.
+    drain_user_inputs: Callable[[], list[dict[str, Any]]] | None = None
     provider_response_state: dict[str, Any] | None = None
     # Private model history and this turn's retained protocol. Display history
     # remains separate so non-loop capabilities and public APIs keep their view.

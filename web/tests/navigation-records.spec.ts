@@ -5,7 +5,7 @@ import { categoryForPath, partnerSessionHref, isNavigationTargetActive } from '@
 it('keeps old feature URLs in their new categories', () => {
   for (const path of ['/chat/old-session', '/co-writer/old-document', '/kanban'])
     expect(categoryForPath(path)).toBe('home')
-  for (const path of ['/learning/books/old-book', '/learning/reading/old-material', '/courses/a'])
+  for (const path of ['/learning/books/old-book', '/learning/reading/old-material'])
     expect(categoryForPath(path)).toBe('learning')
   for (const path of ['/space', '/space/chat-history', '/knowledge-bases/old-kb', '/notebooks/old-notebook'])
     expect(categoryForPath(path)).toBe('resources')

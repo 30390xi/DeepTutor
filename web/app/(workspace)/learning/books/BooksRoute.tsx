@@ -33,6 +33,7 @@ import BookLibrary from './components/BookLibrary'
 import BookPausedBanner from './components/BookPausedBanner'
 import BookGenerationActivity from './components/BookGenerationActivity'
 import BookSidebar from './components/BookSidebar'
+import { BookCrumb } from '@/components/layout/instance-crumbs'
 import PageReader from './components/PageReader'
 import LearningCapturePanel from './components/LearningCapturePanel'
 import SpineEditor from './components/SpineEditor'
@@ -1014,8 +1015,13 @@ function BookPageInner() {
   const displayView = requestedBookId && (selectedBookId !== requestedBookId || detail?.book.id !== requestedBookId)
     ? 'opening' : view
 
+  const openBook = detail?.book || pendingBook || null
   return (
     <div className="flex h-full w-full">
+      {/* 「书 / this book」: the book switches to the others from the bar. */}
+      {requestedBookId && openBook && (
+        <BookCrumb id={openBook.id} label={openBook.title || t('Untitled book')} />
+      )}
       {displayView !== 'list' && displayView !== 'creator' && displayView !== 'opening' && (
         <BookSidebar
           book={detail?.book || pendingBook || null}

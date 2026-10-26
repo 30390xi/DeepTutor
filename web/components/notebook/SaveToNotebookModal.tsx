@@ -465,7 +465,7 @@ export default function SaveToNotebookModal({
           sourceUrl={String(
             payload?.metadata?.source_url ||
               (payload?.metadata?.session_id
-                ? `/home?session=${payload.metadata.session_id}`
+                ? `/chat/${encodeURIComponent(String(payload.metadata.session_id))}`
                 : ""),
           )}
         />

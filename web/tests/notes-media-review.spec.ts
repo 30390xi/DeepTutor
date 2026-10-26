@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { Schema } from '@tiptap/pm/model'
 import { reviewPosition } from '@/features/notes/model/review-placement'
 import { noteMediaType } from '@/features/notes/model/media'
-import { visibleNotePrompt } from '@/features/notes/model/ai-request'
+import { learningConfig, learningMode, visibleNotePrompt } from '@/features/notes/model/ai-request'
 import { resultLearningBlock } from '@/features/notes/model/results'
 import { noteConceptMap } from '@/features/notes/model/concept-map'
 
@@ -14,6 +14,29 @@ const schema = new Schema({
     paragraph: { content: 'text*' },
     text: {},
   },
+})
+
+it('sends note animations through Visualize with explicit Manim settings', () => {
+  expect(learningMode('animation')).toBe('visualize')
+  expect(learningConfig('animation')).toEqual({ render_mode: 'manim_video' })
+  expect(learningConfig('animation', { output_mode: 'image', quality: 'high', style_hint: 'blue' }))
+    .toEqual({ render_mode: 'manim_image', quality: 'high', style_hint: 'blue' })
+  expect(learningConfig('animation', { render_mode: 'manim_image' }))
+    .toEqual({ render_mode: 'manim_image' })
+  expect(learningConfig('audio', { target_minutes: 2 })).toEqual({ target_minutes: 2 })
+  expect(learningMode('audio')).toBe('audio_overview')
+})
+
+it('keeps rendered Visualize Manim artifacts as animation learning blocks', () => {
+  const payload = {
+    render_type: 'manim_video',
+    output_mode: 'video',
+    artifacts: [{ type: 'video', url: '/files/animation.mp4' }],
+    response: 'A rotating vector traces a sine wave.',
+  }
+  const block = resultLearningBlock(payload)!
+  expect(block.props.kind).toBe('animation')
+  expect(JSON.parse(String(block.props.data))).toEqual(payload)
 })
 const block = (id: string, children?: ReturnType<typeof schema.node>) =>
   schema.node('blockContainer', { id }, [

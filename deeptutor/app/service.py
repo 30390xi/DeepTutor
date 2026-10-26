@@ -509,6 +509,7 @@ class TurnApplicationService:
         content: str,
         *,
         command_id: str | None = None,
+        withdraw: str | None = None,
     ) -> bool:
         store, _runtime = self._resolve()
         if (
@@ -519,7 +520,7 @@ class TurnApplicationService:
         await self.coordinator.submit_command(
             turn_id,
             "user_input",
-            {"content": content},
+            {"content": content, "withdraw": withdraw},
             command_id=command_id,
         )
         return True

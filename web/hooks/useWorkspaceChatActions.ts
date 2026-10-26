@@ -29,9 +29,7 @@ export function useWorkspaceChatActions(
         ? catalogCapabilities.filter(
             (capability) => capability.value === pinnedCapability,
           )
-        : catalogCapabilities.filter(
-            (capability) => capability.value !== "course_study",
-          ),
+        : catalogCapabilities,
     [catalogCapabilities, pinnedCapability],
   );
   const [enabledOptionalTools, setEnabledOptionalTools] = useState<

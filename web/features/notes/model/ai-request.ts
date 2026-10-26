@@ -23,9 +23,22 @@ export function learningMode(kind: string): string {
       {
         research: 'deep_research',
         quiz: 'deep_question',
-        animation: 'math_animator',
+        animation: 'visualize',
         audio: 'audio_overview',
       } as Record<string, string>
     )[kind] || 'chat'
   )
+}
+
+/** Keep animation blocks explicit even when their prompt only names a topic. */
+export function learningConfig(
+  kind: string,
+  config?: Record<string, unknown>
+): Record<string, unknown> | undefined {
+  if (kind !== 'animation') return config
+  const { output_mode, ...rest } = config || {}
+  return {
+    ...rest,
+    render_mode: rest.render_mode || (output_mode === 'image' ? 'manim_image' : 'manim_video'),
+  }
 }

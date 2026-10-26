@@ -5,7 +5,7 @@
   width: 100%;
 }
 .dt-note-editor .bn-editor {
-  padding: 16px 46px 120px;
+  padding: 14px var(--note-gutter, 46px) 64px;
   background: transparent;
   color: var(--foreground);
   font-family: inherit;
@@ -15,6 +15,12 @@
 }
 .dt-note-editor .bn-block-content {
   padding: 3px 0;
+}
+/* BlockNote italicises its hint; ours is a quiet line of ordinary text. */
+.dt-note-editor .bn-block-content:has(.ProseMirror-trailingBreak:only-child)::after {
+  font-style: normal;
+  color: var(--muted-foreground);
+  opacity: 0.75;
 }
 .dt-note-editor .bn-block-content[data-content-type='heading'] {
   margin-top: 20px;
@@ -48,7 +54,7 @@
   border-radius: 4px;
 }
 .dt-note-menu button:disabled {
-  opacity: .4;
+  opacity: 0.4;
   cursor: default;
 }
 .dt-note-menu button:hover:not(:disabled),
@@ -81,20 +87,50 @@
 .dt-note-handle {
   display: flex;
   position: relative;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 1px;
   color: var(--muted-foreground);
 }
-.dt-note-drag-handle { touch-action: none; cursor: grab; }
-.dt-note-drag-handle:active { cursor: grabbing; }
-.dt-note-drop-line { position: fixed; height: 3px; background: var(--primary); border-radius: 2px; pointer-events: none; z-index: 1000; }
+.dt-note-handle > span {
+  display: flex;
+}
+.dt-note-drag-handle {
+  touch-action: none;
+  cursor: grab;
+}
+.dt-note-drag-handle:active {
+  cursor: grabbing;
+}
+.dt-note-drop-line {
+  position: fixed;
+  height: 3px;
+  background: var(--primary);
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 1000;
+}
 .dt-note-handle > button,
 .dt-note-handle > span button {
-  padding: 2px;
-  border-radius: 3px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 24px;
+  border-radius: 5px;
+  opacity: 0.7;
+  transition:
+    background-color 120ms,
+    opacity 120ms;
+}
+.dt-note-handle > button:hover,
+.dt-note-handle > span button:hover {
+  background: var(--accent, var(--secondary));
+  opacity: 1;
 }
 .dt-note-handle .dt-note-menu {
   position: absolute;
   left: 0;
-  top: 24px;
+  top: calc(100% + 2px);
 }
 .dt-note-clip {
   padding: 10px 14px;
@@ -129,9 +165,26 @@
 .dt-note-learning {
   width: 100%;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px;
+  border-radius: 12px;
+  padding: 14px 16px;
   margin: 8px 0;
+  transition:
+    border-color 160ms,
+    box-shadow 160ms;
+}
+/* Generated material sits in the page like any other block. */
+.dt-note-learning[data-state='filled'] {
+  border-color: transparent;
+  padding: 0;
+  margin: 6px 0;
+}
+.dt-note-bare > div {
+  padding: 4px 0;
+  background: none;
+}
+.dt-note-learning[data-state='pending'] {
+  border-color: color-mix(in srgb, var(--primary) 32%, var(--border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 6%, transparent);
 }
 .dt-note-learning input:not([type='checkbox']):not([type='date']) {
   background: transparent;
@@ -196,24 +249,27 @@
 /* Insertion palette: readable groups, quiet chrome and a separate example. */
 .dt-note-insert-menu {
   position: relative;
-  width: 316px;
+  width: 300px;
   max-width: calc(100vw - 32px);
   color: var(--foreground);
   background: var(--card);
-  border: 1px solid var(--border);
+  border: 0;
   border-radius: 12px;
-  box-shadow:
-    0 10px 40px #00000018,
-    0 2px 6px #00000008;
+  box-shadow: var(
+    --dt-shadow-md,
+    0 0 0 1px rgb(15 15 15 / 0.05),
+    0 3px 6px rgb(15 15 15 / 0.08),
+    0 9px 24px rgb(15 15 15 / 0.14)
+  );
   font-family: var(--font-geist-sans), sans-serif;
-  font-size: 14px;
+  font-size: 13.5px;
   z-index: 70;
 }
 .dt-note-menu-hint {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 12px 14px 7px;
+  padding: 10px 13px 4px;
   color: var(--muted-foreground);
   font-size: 12px;
 }
@@ -225,46 +281,53 @@
   scrollbar-width: thin;
 }
 .dt-note-menu-group {
-  padding: 13px 10px 6px;
-  font-size: 11px;
-  font-weight: 600;
+  padding: 10px 8px 4px;
+  font-size: 11.5px;
+  font-weight: 500;
   color: var(--muted-foreground);
 }
 .dt-note-menu-items > div:has(.dt-note-menu-group):not(:first-child) {
   border-top: 1px solid var(--border);
-  margin-top: 6px;
+  margin-top: 4px;
 }
 .dt-note-menu-items button {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 37px;
-  padding: 7px 10px;
+  gap: 9px;
+  min-height: 32px;
+  padding: 4px 8px;
   width: 100%;
   text-align: left;
   border-radius: 6px;
 }
 .dt-note-menu-items button.selected {
-  background: var(--secondary);
+  background: var(--accent, var(--secondary));
 }
 .dt-note-menu-icon {
   display: flex;
-  width: 23px;
+  width: 22px;
+  height: 22px;
   flex-shrink: 0;
+  align-items: center;
   justify-content: center;
   color: var(--foreground);
+  opacity: 0.85;
+}
+.dt-note-menu-icon svg {
+  width: 17px;
+  height: 17px;
 }
 .dt-note-menu-items kbd {
   margin-left: auto;
-  font: 12px inherit;
+  font: 11.5px inherit;
   color: var(--muted-foreground);
 }
 .dt-note-insert-menu footer {
   display: flex;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: 7px 12px;
   border-top: 1px solid var(--border);
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--muted-foreground);
 }
 .dt-note-insert-menu footer button,
@@ -281,13 +344,17 @@
 }
 .dt-note-menu-preview {
   position: absolute;
-  bottom: 36px;
-  width: 224px;
-  padding: 10px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: 0 6px 28px #0000001a;
+  top: 0;
+  width: 236px;
+  padding: 6px 6px 12px;
+  background: var(--popover, var(--card));
+  border-radius: 12px;
+  box-shadow: var(
+    --dt-shadow-md,
+    0 0 0 1px rgb(15 15 15 / 0.05),
+    0 3px 6px rgb(15 15 15 / 0.08),
+    0 9px 24px rgb(15 15 15 / 0.14)
+  );
   pointer-events: none;
 }
 .dt-note-menu-preview.right {
@@ -299,20 +366,21 @@
 .dt-note-menu-preview > strong {
   display: block;
   font-size: 13px;
-  margin: 10px 3px 4px;
+  font-weight: 600;
+  margin: 10px 8px 2px;
 }
 .dt-note-menu-preview > p {
   font-size: 12px;
-  line-height: 1.6;
+  line-height: 1.55;
   color: var(--muted-foreground);
-  margin: 0 3px 3px;
+  margin: 0 8px;
 }
 .dt-note-preview-example {
-  background: var(--background);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  min-height: 115px;
-  padding: 15px;
+  background: var(--secondary);
+  border: 0;
+  border-radius: 8px;
+  min-height: 112px;
+  padding: 14px 16px;
   font-size: 12px;
   display: flex;
   flex-direction: column;
@@ -746,9 +814,8 @@
   }
 }
 .dt-note-generation-preview {
-  border-left: 2px solid var(--primary);
-  padding: 8px 14px;
-  margin: 10px 0;
+  padding: 2px 0;
+  margin: 4px 0 6px;
   max-height: 420px;
   overflow: auto;
   font-size: 14px;
@@ -833,19 +900,6 @@
   > [data-node-view-content-react]
   > .bn-block-group {
   display: none;
-}
-
-.dt-note-page-title {
-  field-sizing: content;
-  resize: none;
-  overflow: hidden;
-  line-height: 1.3;
-  text-wrap: wrap;
-}
-@media (max-width: 640px) {
-  .dt-note-page-title {
-    min-height: 2.6em;
-  }
 }
 
 /* The same math renderer serves inline, display and insertion previews. */
@@ -1311,53 +1365,231 @@
   font-size: 10px;
   color: var(--muted-foreground);
 }
-.dt-note-preview-ai p {
-  padding: 7px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  margin: 8px 0;
-  font-size: 11px;
+.dt-note-preview-ai {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.55;
 }
-.dt-note-preview-ai > div:last-child {
-  font-size: 10px;
+.dt-note-preview-ai p.is-suggested {
+  padding: 4px 8px;
+  margin-left: -8px;
+  border-left: 2px solid var(--primary);
+  background: color-mix(in srgb, var(--primary) 7%, transparent);
+  border-radius: 0 4px 4px 0;
+}
+.dt-note-preview-ai small {
+  font-size: 10.5px;
   color: var(--primary);
 }
 
-.dt-note-generation-form {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 8px 12px;
+/* ---- Learning blocks: kind, request, generate ------------------------- */
+.dt-note-learning-head {
+  display: flex;
   align-items: center;
-  margin-bottom: 12px;
+  gap: 6px;
+  min-height: 28px;
+  margin: -4px 0 10px;
+}
+.dt-note-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  margin-left: -6px;
+  padding: 0 8px 0 7px;
+  border-radius: 8px;
   font-size: 13px;
+  font-weight: 500;
+  color: var(--foreground);
+  transition: background-color 120ms;
+}
+.dt-note-kind > svg:first-child {
+  color: var(--primary);
+}
+.dt-note-kind:hover:not(:disabled),
+.dt-note-kind[aria-expanded='true'] {
+  background: var(--secondary);
+}
+.dt-note-kind:disabled {
+  cursor: default;
+}
+.dt-note-kind-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: -6px;
+  z-index: 40;
+  min-width: 210px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 4px;
+}
+.dt-note-kind-menu.is-up {
+  top: auto;
+  bottom: calc(100% + 6px);
+  left: 0;
+}
+.dt-note-kind-menu-title {
+  padding: 6px 8px 4px;
+  font-size: 11.5px;
   color: var(--muted-foreground);
 }
-.dt-note-generation-form > span {
-  font-weight: 500;
+.dt-note-learning-prompt {
+  min-width: 0;
+  max-width: 60%;
+  height: 26px;
+  overflow: hidden;
+  padding: 0 7px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--muted-foreground);
+  text-overflow: ellipsis;
   white-space: nowrap;
+  transition:
+    background-color 120ms,
+    color 120ms;
+}
+.dt-note-learning-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 9%, transparent);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 500;
+}
+.dt-note-learning-status:hover {
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+}
+.dt-note-generation-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 4px;
 }
 .dt-note-generation-form > textarea {
-  grid-row: 2;
-  grid-column: 1 / -1;
   width: 100%;
   min-width: 0;
+  min-height: 64px;
   resize: vertical;
-  padding: 9px 10px;
+  padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 10px;
   background: var(--background);
   color: var(--foreground);
-  line-height: 1.5;
-  font-size: 13px;
+  line-height: 1.55;
+  font-size: 13.5px;
+  transition:
+    border-color 120ms,
+    box-shadow 120ms;
+}
+.dt-note-generation-form > textarea::placeholder {
+  color: var(--muted-foreground);
+  opacity: 0.7;
 }
 .dt-note-generation-form > textarea:focus {
-  outline: 2px solid var(--primary);
-  outline-offset: 1px;
+  outline: none;
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 14%, transparent);
 }
-.dt-note-generation-form > button {
-  grid-column: 2;
-  grid-row: 1;
+.dt-note-generation-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.dt-note-generation-hint {
+  margin-right: auto;
+  font-size: 11.5px;
+  color: var(--muted-foreground);
+  opacity: 0.85;
+}
+/* A real button: bordered secondary, filled primary. Text-only ghosts read
+   as labels inside a card, so a card's actions use these. */
+.dt-note-action {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 12.5px;
+  font-weight: 500;
   white-space: nowrap;
+  transition:
+    background-color 120ms,
+    filter 120ms,
+    transform 120ms,
+    opacity 120ms;
+}
+.dt-note-action:hover:not(:disabled) {
+  background: var(--secondary);
+}
+.dt-note-action:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.dt-note-action.is-primary {
+  border-color: transparent;
+  background: var(--primary);
+  color: var(--primary-foreground, #fff);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.14),
+    inset 0 1px 0 rgb(255 255 255 / 0.14);
+}
+.dt-note-action.is-primary:hover:not(:disabled) {
+  background: var(--primary);
+  filter: brightness(1.07);
+}
+.dt-note-action:disabled {
+  opacity: 0.45;
+}
+.dt-note-generation-shimmer {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 4px 0;
+}
+.dt-note-generation-shimmer span {
+  height: 10px;
+  border-radius: 5px;
+  background: linear-gradient(
+    90deg,
+    var(--secondary) 0%,
+    color-mix(in srgb, var(--primary) 12%, var(--secondary)) 50%,
+    var(--secondary) 100%
+  );
+  background-size: 200% 100%;
+  animation: dt-note-shimmer 1.4s linear infinite;
+}
+.dt-note-generation-shimmer span:nth-child(2) {
+  width: 86%;
+  animation-delay: 0.12s;
+}
+.dt-note-generation-shimmer span:nth-child(3) {
+  width: 62%;
+  animation-delay: 0.24s;
+}
+@keyframes dt-note-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dt-note-generation-shimmer span {
+    animation: none;
+  }
 }
 .dt-note-upload {
   display: flex;
@@ -1449,30 +1681,6 @@
   padding: 8px 0 18px;
   white-space: normal;
 }
-.dt-note-page-tree {
-  width: 240px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  padding: 4px;
-  font-size: 13px;
-}
-.dt-note-tree-heading { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 8px; color: var(--muted-foreground); font-size: 12px; }
-.dt-note-tree-scroll { overflow: auto; flex: 1; min-height: 0; }
-.dt-note-page-tree ul { list-style: none; margin: 0; padding: 0; }
-.dt-note-page-tree .dt-note-tree-children { margin-left: 14px; padding-left: 6px; border-left: 1px solid var(--border); }
-.dt-note-tree-row { display: flex; align-items: center; min-height: 34px; border-radius: 6px; margin: 2px 0; }
-.dt-note-tree-row:hover { background: var(--secondary); }
-.dt-note-tree-row.is-current { background: color-mix(in srgb, var(--primary) 9%, transparent); color: var(--primary); font-weight: 500; }
-.dt-note-tree-row a { display: flex; align-items: center; gap: 7px; min-width: 0; flex: 1; padding: 7px 6px 7px 0; }
-.dt-note-tree-toggle { display: flex; align-items: center; justify-content: center; width: 24px; height: 26px; flex-shrink: 0; border-radius: 4px; color: var(--muted-foreground); }
-button.dt-note-tree-toggle:hover { background: var(--border); }
-.dt-note-tree-icon { display: inline-flex; width: 17px; flex-shrink: 0; align-items: center; justify-content: center; }
-.dt-note-tree-create { margin-top: 8px; border-top: 1px solid var(--border); border-radius: 0; padding-top: 12px; }
-@media (max-width: 767px) {
-  .dt-note-page-tree { position: absolute; top: 48px; bottom: 8px; left: 8px; z-index: 30; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px; box-shadow: 0 8px 30px #0002; max-width: calc(100% - 16px); }
-}
 .dt-note-review-original {
   background: color-mix(in srgb, var(--primary) 4%, transparent);
   border-radius: 6px;
@@ -1537,9 +1745,15 @@ button.dt-note-tree-toggle:hover { background: var(--border); }
   font-family: var(--font-serif), Georgia, serif;
   font-weight: 600;
 }
-.dt-note-review-content .md-renderer h1 { font-size: 28px; }
-.dt-note-review-content .md-renderer h2 { font-size: 23px; }
-.dt-note-review-content .md-renderer h3 { font-size: 19px; }
+.dt-note-review-content .md-renderer h1 {
+  font-size: 28px;
+}
+.dt-note-review-content .md-renderer h2 {
+  font-size: 23px;
+}
+.dt-note-review-content .md-renderer h3 {
+  font-size: 19px;
+}
 .dt-note-review-error {
   color: var(--destructive, #b42318);
   background: color-mix(in srgb, var(--destructive, #b42318) 6%, transparent);
@@ -1549,20 +1763,197 @@ button.dt-note-tree-toggle:hover { background: var(--border); }
   line-height: 1.6;
 }
 
-/* Archived favorites keep a compact, recognizable identity within a page. */
-.dt-note-favorite { width: 100%; border: 1px solid var(--border); border-radius: 12px; background: var(--card); overflow: hidden; }
-.dt-note-favorite-toggle { display: flex; align-items: center; gap: 12px; width: 100%; padding: 16px; color: var(--foreground); }
-.dt-note-favorite-toggle:hover { background: color-mix(in srgb, var(--muted) 45%, transparent); }
-.dt-note-favorite-toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: -3px; border-radius: 10px; }
-.dt-note-favorite-toggle strong { font-family: var(--font-sans); font-size: 15px; line-height: 1.5; }
-.dt-note-favorite-icon { display: grid; place-items: center; width: 38px; height: 42px; flex-shrink: 0; border-radius: 8px; color: var(--muted-foreground); background: var(--muted); }
-.dt-note-favorite-kind { display: block; margin-bottom: 3px; font-size: 11px; color: var(--muted-foreground); }
-.dt-note-favorite-body { max-height: min(65vh, 640px); overflow: auto; overscroll-behavior: contain; border-top: 1px solid var(--border); padding: 18px; font-family: var(--font-sans); }
-.dt-note-favorite-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 16px; background: color-mix(in srgb, var(--muted) 25%, transparent); color: var(--muted-foreground); font-size: 11px; }
-.dt-note-favorite-footer a { color: var(--primary); text-decoration: none; font-size: 12px; }
-.dt-note-favorite-footer a:hover { text-decoration: underline; }
-.dt-favorite-content { min-width: 0; font-size: 14px; line-height: 1.75; }
-.dt-favorite-content h1, .dt-favorite-content h2, .dt-favorite-content h3 { font-family: var(--font-sans); }
-.dt-favorite-content video, .dt-favorite-content audio { display: block; max-height: 320px; margin-bottom: 16px; }
-.dt-favorite-content pre, .dt-favorite-content table { max-width: 100%; overflow-x: auto; }
-.dt-favorite-content img { max-height: 420px; object-fit: contain; }
+/* Selection toolbar: Dito first, then marks; every choice opens below. */
+.dt-note-toolbar {
+  gap: 1px;
+  padding: 3px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--popover, var(--card));
+  box-shadow: var(
+    --dt-shadow-md,
+    0 0 0 1px rgb(15 15 15 / 0.05),
+    0 3px 6px rgb(15 15 15 / 0.08),
+    0 9px 24px rgb(15 15 15 / 0.14)
+  );
+}
+.dt-note-toolbar > button,
+.dt-note-toolbar > span > button {
+  height: 28px;
+  min-width: 28px;
+  justify-content: center;
+  padding: 0 6px;
+  border-radius: 6px;
+  color: var(--foreground);
+}
+.dt-note-toolbar button:hover,
+.dt-note-toolbar button[aria-expanded='true'] {
+  background: var(--accent, var(--secondary));
+}
+.dt-note-toolbar button[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
+}
+.dt-note-toolbar-ai {
+  gap: 5px !important;
+  padding: 0 7px 0 8px !important;
+  font-size: 13px !important;
+  font-weight: 500;
+}
+.dt-note-toolbar-ai > svg:first-child {
+  color: var(--primary);
+}
+.dt-note-toolbar-sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 3px;
+  background: var(--border);
+}
+.dt-note-color-glyph {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+.dt-note-color-glyph[data-color='gray'] {
+  color: #9b9a97;
+}
+.dt-note-color-glyph[data-color='red'] {
+  color: #e03e3e;
+}
+.dt-note-color-glyph[data-color='orange'] {
+  color: #d9730d;
+}
+.dt-note-color-glyph[data-color='yellow'] {
+  color: #cb912f;
+}
+.dt-note-color-glyph[data-color='green'] {
+  color: #448361;
+}
+.dt-note-color-glyph[data-color='blue'] {
+  color: #337ea9;
+}
+.dt-note-color-glyph[data-color='purple'] {
+  color: #9065b0;
+}
+.dt-note-toolbar-panel,
+.dt-note-toolbar .dt-note-link-form {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 2;
+  min-width: 210px;
+  padding: 5px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--popover, var(--card));
+  box-shadow: var(
+    --dt-shadow-md,
+    0 0 0 1px rgb(15 15 15 / 0.05),
+    0 3px 6px rgb(15 15 15 / 0.08),
+    0 9px 24px rgb(15 15 15 / 0.14)
+  );
+  animation: dt-pop-in 140ms var(--dt-ease, ease-out);
+}
+.dt-note-toolbar-panel.is-colors {
+  left: auto;
+  right: 0;
+  min-width: 160px;
+}
+.dt-note-toolbar-panel button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--foreground);
+}
+.dt-note-toolbar-panel button > svg {
+  color: var(--muted-foreground);
+}
+.dt-note-toolbar-panel button .dt-note-color-glyph {
+  width: 16px;
+  text-align: center;
+}
+.dt-note-toolbar-divider {
+  height: 1px;
+  margin: 4px 2px;
+  background: var(--border);
+}
+.dt-note-toolbar .dt-note-link-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 300px;
+  padding: 6px;
+}
+.dt-note-toolbar .dt-note-link-form input {
+  flex: 1;
+  width: auto;
+  height: 30px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--secondary);
+  outline: none;
+}
+.dt-note-toolbar .dt-note-link-form button[type='submit'] {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: var(--foreground);
+  color: var(--background);
+  font-size: 12.5px;
+}
+.dt-note-toolbar .dt-note-link-form p {
+  width: 100%;
+  padding: 0 4px;
+  font-size: 12px;
+  color: #dc2626;
+}
+.dt-note-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+/* Two-way switch inside a card header (HTML: edit / preview). */
+.dt-note-segment {
+  display: inline-flex;
+  margin-left: auto;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--secondary);
+}
+.dt-note-segment button {
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+  transition:
+    background-color 120ms,
+    color 120ms;
+}
+.dt-note-segment button[aria-pressed='true'] {
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+}
+.dt-note-segment button:disabled {
+  opacity: 0.45;
+}
+.dt-note-block-label .dt-note-segment button {
+  margin-left: 0;
+}
+.dt-note-upload[aria-busy='false'] > svg {
+  color: var(--muted-foreground);
+}
+.dt-note-upload p[role='alert'] {
+  color: var(--destructive, #dc2626);
+}

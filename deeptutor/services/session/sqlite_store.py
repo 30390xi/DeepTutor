@@ -2514,6 +2514,7 @@ class SQLiteSessionStore:
             OR json_extract(metadata_json, '$.tool_metadata.ask_user') IS NOT NULL
             OR json_extract(metadata_json, '$.mastery_question') IS NOT NULL
             OR json_extract(metadata_json, '$.tool_metadata.mastery_question') IS NOT NULL
+            OR json_extract(metadata_json, '$.trace_kind') = 'user_input'
         """
         conditions = (
             f"type IN ('done', 'error', 'cancelled', 'result') OR {cards}",

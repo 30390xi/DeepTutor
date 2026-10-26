@@ -62,6 +62,8 @@ export function TrayMenu({
   value,
   active = false,
   dots,
+  valueIcon,
+  fold,
   placement,
   align = "start",
   open: openProp,
@@ -75,6 +77,14 @@ export function TrayMenu({
   /** The choice differs from the default, so the value takes the accent. */
   active?: boolean;
   dots?: ReactNode;
+  /** Shown after the label, and kept when the button folds: what is chosen, as a mark. */
+  valueIcon?: ReactNode;
+  /**
+   * Rest as marks only, unfolding while pointed at, focused or open. `false`
+   * shows the words for now, built the same way, so a button that starts
+   * folding mid-session — a mode just chosen — folds in place.
+   */
+  fold?: boolean;
   placement: TrayPlacement;
   /** Which edge of the button the list lines up with. */
   align?: "start" | "end";
@@ -160,12 +170,13 @@ export function TrayMenu({
       className={`dt-tray-menu is-${align}`}
       onKeyDown={open ? onKeyDown : undefined}
     >
-      {/* Named on hover too: in a narrow column the tray keeps only icons. */}
+      {/* Named on hover too: in a narrow column the tray keeps only icons.
+          A folding button names itself by unfolding instead. */}
       <Tooltip
         label={label}
         description={value}
         side={placement === "up" ? "top" : "bottom"}
-        suppressed={open}
+        suppressed={open || fold !== undefined}
         className="min-w-0"
       >
       <button
@@ -180,13 +191,30 @@ export function TrayMenu({
           if (!open) setRoom(roomFor(event.currentTarget.getBoundingClientRect(), placement));
           setOpen(!open);
         }}
+        data-fold={fold || undefined}
         className="dt-tray-button"
       >
         {icon}
-        <span className="dt-tray-label">{label}</span>
-        {dots}
-        {value && <span className="dt-tray-value">{value}</span>}
-        <ChevronDown size={12} strokeWidth={2} aria-hidden className="dt-tray-chevron" />
+        {fold === undefined ? (
+          <>
+            <span className="dt-tray-label">{label}</span>
+            {dots}
+            {value && <span className="dt-tray-value">{value}</span>}
+            <ChevronDown size={12} strokeWidth={2} aria-hidden className="dt-tray-chevron" />
+          </>
+        ) : (
+          <>
+            <TrayReveal>
+              <span className="dt-tray-label">{label}</span>
+              {dots}
+            </TrayReveal>
+            {valueIcon && <span className="dt-tray-value-icon">{valueIcon}</span>}
+            <TrayReveal>
+              {value && <span className="dt-tray-value">{value}</span>}
+              <ChevronDown size={12} strokeWidth={2} aria-hidden className="dt-tray-chevron" />
+            </TrayReveal>
+          </>
+        )}
       </button>
       </Tooltip>
       <AnimatePresence>
@@ -220,18 +248,42 @@ export function TrayMenu({
   );
 }
 
+/**
+ * Words a folding tray button can put away. The outer span animates its one
+ * grid column between nothing and its content's width; the middle one clips;
+ * the inner one carries the spacing, so a folded run leaves no gap behind.
+ */
+function TrayReveal({ children }: { children: ReactNode }) {
+  return (
+    <span className="dt-tray-reveal">
+      <span>
+        <span className="dt-tray-reveal-run">{children}</span>
+      </span>
+    </span>
+  );
+}
+
 /** The options of one list; `multi` when several can be chosen at once. */
 export function TrayList({
   label,
   multi = false,
+  bare = false,
   children,
 }: {
   label: string;
   multi?: boolean;
+  /** Marks drawn to stand alone: larger, without the tile behind them. */
+  bare?: boolean;
   children: ReactNode;
 }) {
   return (
-    <div role="listbox" aria-label={label} aria-multiselectable={multi || undefined} className="dt-tray-list">
+    <div
+      role="listbox"
+      aria-label={label}
+      aria-multiselectable={multi || undefined}
+      data-bare={bare || undefined}
+      className="dt-tray-list"
+    >
       {children}
     </div>
   );

@@ -15,7 +15,6 @@ export function LearningShell({
   title,
   subtitle,
   action,
-  scopeChip,
   tabs,
   children,
   back = true,
@@ -27,7 +26,6 @@ export function LearningShell({
   title: ReactNode
   subtitle: ReactNode
   action?: ReactNode
-  scopeChip?: ReactNode
   tabs?: ReactNode
   children: ReactNode
   back?: boolean
@@ -56,7 +54,7 @@ export function LearningShell({
           {learningLabel}
         </Link>
       )}
-      <PageHeader title={title} description={subtitle} action={action} meta={scopeChip} icon={icon ?? surfaceIcon ?? BookOpen} />
+      <PageHeader title={title} description={subtitle} action={action} icon={icon ?? surfaceIcon ?? BookOpen} />
       {tabs}
       <div className={tabs ? 'mt-6' : ''}>{children}</div>
     </FeaturePage>

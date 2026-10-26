@@ -23,14 +23,17 @@ describe('page sections', () => {
     expect(locatePage('/notebooks/abc', sections())?.page.href).toBe('/notebooks')
   })
 
-  it('leaves full-screen views and account detail views to their own headers', () => {
-    expect(locatePage('/chat', sections())).toBeNull()
-    expect(locatePage('/chat/s1', sections())).toBeNull()
+  it('locates conversations, study sessions and account detail views too', () => {
+    expect(locatePage('/chat', sections())?.page.href).toBe('/chat')
+    expect(locatePage('/chat/s1', sections())?.page.href).toBe('/chat')
+    expect(locatePage('/learning/mastery/path_1/sessions/s1', sections())?.page.href).toBe('/learning/mastery')
+    expect(locatePage('/partners/frank', sections())?.page.href).toBe('/partners')
+    expect(locatePage('/memory/l1', sections())?.page.href).toBe('/memory')
+  })
+
+  it('leaves views that draw the crumbs in their own toolbar alone', () => {
     expect(locatePage('/co-writer/doc', sections())).toBeNull()
     expect(locatePage('/learning/reading/rw_1', sections())).toBeNull()
-    expect(locatePage('/learning/mastery/path_1/sessions/s1', sections())).toBeNull()
-    expect(locatePage('/partners/frank', sections())).toBeNull()
-    expect(locatePage('/memory/l1', sections())).toBeNull()
   })
 
   it('switches workspace onto the same page, or the list a record lives in', () => {

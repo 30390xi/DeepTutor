@@ -84,8 +84,48 @@ it('opens the exact source and keeps it visible even with a previous filter', as
   })
   expect(screen.getByRole('button', { name: 'Beta' })).toBeVisible()
   fireEvent.click(screen.getByRole('button', { name: 'Beta' }))
-  expect(mocks.router.replace).toHaveBeenCalledWith('/notebooks/inbox')
+  expect(mocks.router.replace).toHaveBeenCalledWith('/notebooks/inbox', { scroll: false })
   expect(mocks.locate).not.toHaveBeenCalled()
+})
+it('expands and collapses in place while keeping the record in the URL', () => {
+  const { rerender } = render(<NotebookConsole initialNotebookId="inbox" />)
+  fireEvent.click(screen.getByRole('button', { name: 'Alpha' }))
+  expect(mocks.router.replace).toHaveBeenLastCalledWith('/notebooks/inbox?record=a', {
+    scroll: false,
+  })
+  rerender(<NotebookConsole initialNotebookId="inbox" initialRecordId="a" />)
+  expect(screen.getByRole('button', { name: 'Alpha' })).toHaveAttribute('aria-expanded', 'true')
+  expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled()
+
+  fireEvent.click(screen.getByRole('button', { name: 'Beta' }))
+  rerender(<NotebookConsole initialNotebookId="inbox" initialRecordId="b" />)
+  expect(screen.getByRole('button', { name: 'Beta' })).toHaveAttribute('aria-expanded', 'true')
+  expect(screen.getByRole('button', { name: 'Alpha' })).toHaveAttribute('aria-expanded', 'false')
+  expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled()
+
+  fireEvent.click(screen.getByRole('button', { name: 'Beta' }))
+  expect(mocks.router.replace).toHaveBeenLastCalledWith('/notebooks/inbox', { scroll: false })
+  rerender(<NotebookConsole initialNotebookId="inbox" />)
+  expect(screen.getByRole('button', { name: 'Beta' })).toHaveAttribute('aria-expanded', 'false')
+  expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled()
+})
+it('locates incoming source links once, including navigation after a local toggle', () => {
+  const { rerender } = render(<NotebookConsole initialNotebookId="inbox" initialRecordId="b" />)
+  expect(Element.prototype.scrollIntoView).toHaveBeenCalledTimes(1)
+
+  const collection = mocks.collection
+  mocks.collection = { ...collection }
+  rerender(<NotebookConsole initialNotebookId="inbox" initialRecordId="b" />)
+  expect(Element.prototype.scrollIntoView).toHaveBeenCalledTimes(1)
+  mocks.collection = collection
+
+  fireEvent.click(screen.getByRole('button', { name: 'Alpha' }))
+  rerender(<NotebookConsole initialNotebookId="inbox" initialRecordId="a" />)
+  expect(Element.prototype.scrollIntoView).toHaveBeenCalledTimes(1)
+
+  rerender(<NotebookConsole initialNotebookId="inbox" initialRecordId="b" />)
+  expect(Element.prototype.scrollIntoView).toHaveBeenCalledTimes(2)
+  expect(screen.getByRole('button', { name: 'Beta' })).toHaveAttribute('aria-expanded', 'true')
 })
 it('redirects an old source link after moving the favorite', async () => {
   mocks.locate.mockResolvedValue('archive')
@@ -105,8 +145,6 @@ it('inserts original text with its exact source link and closes the picker', asy
   const insert = vi.fn(),
     close = vi.fn()
   render(<NoteFavoritesPicker onInsert={insert} onClose={close} onSynthesize={vi.fn()} />)
-  await screen.findByRole('option', { name: 'Inbox' })
-  fireEvent.change(screen.getByLabelText('Favorites'), { target: { value: 'inbox' } })
   fireEvent.click(await screen.findByRole('checkbox', { name: /Alpha.*Saved source/ }))
   fireEvent.click(screen.getByRole('button', { name: 'Insert' }))
   expect(insert).toHaveBeenCalledWith([
@@ -115,34 +153,37 @@ it('inserts original text with its exact source link and closes the picker', asy
       markdown: '**Original**',
       sourceUrl: '/notebooks/inbox?record=a',
       sourceId: 'a',
-      favorite: { type: 'chat', summary: 'Saved source', metadata: {} },
+      favorite: {
+        type: 'chat',
+        summary: 'Saved source',
+        metadata: { favorite_collection: 'Inbox' },
+      },
     },
   ])
   expect(close).toHaveBeenCalledOnce()
 })
-it('submits a filtered multi-selection as one batch in collection order', async () => {
+it('inserts a filtered multi-selection as one batch in the order it was picked', async () => {
   const insert = vi.fn()
   render(<NoteFavoritesPicker onInsert={insert} onClose={vi.fn()} onSynthesize={vi.fn()} />)
-  await screen.findByRole('option', { name: 'Inbox' })
-  fireEvent.change(screen.getByLabelText('Favorites'), { target: { value: 'inbox' } })
   fireEvent.click(await screen.findByRole('checkbox', { name: 'Beta' }))
   fireEvent.change(screen.getByLabelText('Search favorites'), { target: { value: 'Alpha' } })
+  expect(screen.queryByRole('checkbox', { name: 'Beta' })).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole('checkbox', { name: /Alpha.*Saved source/ }))
-  fireEvent.click(screen.getByRole('button', { name: 'Insert' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Insert {{count}}' }))
   expect(insert).toHaveBeenCalledOnce()
   expect(insert.mock.calls[0][0].map((clip: { sourceId: string }) => clip.sourceId)).toEqual([
-    'a',
     'b',
+    'a',
   ])
 })
-it('clears selection when switching collections and displays empty state', async () => {
+it('browses one collection at a time and shows its empty state', async () => {
   mocks.list.mockResolvedValue([mocks.collection, { id: 'empty', name: 'Empty' }])
+  mocks.get.mockImplementation((id: string) =>
+    Promise.resolve(id === 'empty' ? { records: [] } : mocks.collection)
+  )
   render(<NoteFavoritesPicker onInsert={vi.fn()} onClose={vi.fn()} onSynthesize={vi.fn()} />)
-  await screen.findByRole('option', { name: 'Inbox' })
-  fireEvent.change(screen.getByLabelText('Favorites'), { target: { value: 'inbox' } })
-  fireEvent.click(await screen.findByRole('checkbox', { name: /Alpha.*Saved source/ }))
-  mocks.get.mockResolvedValue({ records: [] })
-  fireEvent.change(screen.getByLabelText('Favorites'), { target: { value: 'empty' } })
+  await screen.findByRole('checkbox', { name: /Alpha.*Saved source/ })
+  fireEvent.click(screen.getByRole('button', { name: /^Empty/ }))
   await waitFor(() =>
     expect(screen.getByText('No favorites in this collection yet.')).toBeVisible()
   )

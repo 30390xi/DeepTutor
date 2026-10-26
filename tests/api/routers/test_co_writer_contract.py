@@ -196,10 +196,31 @@ def test_list_documents_returns_summary_views_without_content(client, storage):
             "preview",
             "parent_id",
             "icon",
+            "cover",
             "pinned",
             "revision",
         }
         assert "content" not in summary
+
+
+def test_list_documents_previews_readable_text_not_markdown(client, storage):
+    storage.create_document(
+        title="Water cycle",
+        content=(
+            "# Water cycle\n"
+            "## Evidence\n"
+            "Heat drives **evaporation**; see [the source](/notebooks/x?record=y).\n"
+            "![chart](/api/documents/a/assets/b.png)\n"
+            "| Stage | Energy |\n| --- | --- |\n| Evaporation | absorbs |\n"
+            "```python\nprint('hidden')\n```\n"
+            "- [ ] Check the units"
+        ),
+    )
+    preview = client.get("/documents").json()["documents"][0]["preview"]
+    assert preview == (
+        "Evidence  Heat drives evaporation; see the source.  "
+        "Stage · Energy  Evaporation · absorbs  Check the units"
+    )
 
 
 def test_list_documents_truncates_preview_at_160_chars(client, storage):

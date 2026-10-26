@@ -1,5 +1,6 @@
 'use client'
 
+import { browserStorage } from '@/shared/storage'
 import { useEffect, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuthStatus } from '@/hooks/useAuthStatus'
@@ -49,7 +50,7 @@ export default function CalendarRuntime({ children }: { children: ReactNode }) {
               const key = 'deeptutor.calendar.reminders'
               let seen: Record<string, number> = {}
               try {
-                seen = JSON.parse(localStorage.getItem(key) ?? '{}')
+                seen = JSON.parse(browserStorage.readRaw('local', key) ?? '{}')
               } catch {}
               const id = `${occurrence.id}:${occurrence.start}:${minutes}`
               if (seen[id]) return
@@ -58,7 +59,7 @@ export default function CalendarRuntime({ children }: { children: ReactNode }) {
               )
               seen[id] = now
               try {
-                localStorage.setItem(key, JSON.stringify(seen))
+                browserStorage.writeRaw('local', key, JSON.stringify(seen))
               } catch {}
               const title = occurrence.title || t('(No title)')
               const message = occurrence.all_day

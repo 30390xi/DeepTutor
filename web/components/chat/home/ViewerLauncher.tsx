@@ -5,10 +5,11 @@
  * everything the panel can hold.
  *
  * - A web address bar on top, browser-style.
- * - Tools: what can be opened from nothing — a side chat with the Little
- *   Tutor, a Markdown note, a local file, a blank GeoGebra board.
+ * - Tools: what can be opened from nothing — a side chat (with Dito, or
+ *   whoever the menu beside it names), a Markdown note, a local file, a
+ *   blank GeoGebra board.
  * - This conversation: what it already has that is not on screen — its
- *   Little Tutor threads and the tabs closed a moment ago.
+ *   side chats and the tabs closed a moment ago.
  * - A closing line for what only ever opens on its own (a quiz follow-up, a
  *   subagent run, a figure, a file or link in a reply, a selected passage),
  *   so those are discoverable without pretending they can start from here.
@@ -16,16 +17,18 @@
 
 import {
   useCallback,
+  useEffect,
   useRef,
   useState,
   type ChangeEvent,
 } from "react";
 import {
   ArrowRight,
+  ChevronDown,
   Compass,
   FileUp,
   Globe,
-  GraduationCap,
+  MessagesSquare,
   NotebookPen,
   type LucideIcon,
 } from "lucide-react";
@@ -36,16 +39,19 @@ import {
   ACTIVITY_ROW_HOVER,
   ACTIVITY_TILE,
 } from "@/components/chat/home/SessionActivityPanel";
+import ResponderList from "@/components/chat/home/ResponderList";
 import { RecordTime } from "@/components/sidebar/RecordList";
+import { DITO, type SideChatResponder } from "@/lib/side-chat";
 import { isMacPlatform, shortcutKeys, type Shortcut } from "@/lib/shortcuts";
 import Tooltip from "@/shared/ui/Tooltip";
 
-/** A Little Tutor thread of this conversation that is not open as a tab. */
+/** A side chat of this conversation that is not open as a tab. */
 export interface LauncherThread {
   id: string;
   title: string;
-  /** What it is pinned to: a passage excerpt, or "the whole conversation". */
+  /** Who answers it. */
   detail: string;
+  icon: LucideIcon;
   /** Seconds since the epoch. */
   updatedAt: number;
 }
@@ -62,8 +68,12 @@ interface ViewerLauncherProps {
   onOpenLocalFile: (file: File) => void;
   onOpenMarkdownNote: () => void;
   onOpenGeogebraBoard: () => void;
-  /** Absent while the conversation has nothing to talk about yet. */
-  onOpenSideChat?: () => void;
+  /** Open a side chat with whoever is picked (Dito from the tile itself). */
+  onOpenSideChat: (responder: SideChatResponder) => void;
+  /** There is a conversation for the side chat to be about yet. */
+  sideChatAboutConversation?: boolean;
+  /** Connected agents a side chat can be opened with. */
+  sideChatAgents?: { name: string; kind?: string }[];
   sideChatShortcut?: Shortcut;
   threads: LauncherThread[];
   onOpenThread: (id: string) => void;
@@ -80,6 +90,8 @@ export default function ViewerLauncher({
   onOpenMarkdownNote,
   onOpenGeogebraBoard,
   onOpenSideChat,
+  sideChatAboutConversation = true,
+  sideChatAgents = [],
   sideChatShortcut,
   threads,
   onOpenThread,
@@ -107,16 +119,16 @@ export default function ViewerLauncher({
       <section>
         <h2 className={ACTIVITY_LABEL}>{t("Tools")}</h2>
         <div className="grid grid-cols-2 gap-1.5">
-          <ToolTile
-            icon={GraduationCap}
-            label={t("Ask Little Tutor")}
+          <SideChatTile
             description={
-              onOpenSideChat
+              sideChatAboutConversation
                 ? t("A side chat about this conversation. Nothing asked there is added to it.")
-                : t("Available after the first message is sent.")
+                : t("A conversation of its own, beside this one.")
             }
+            aboutConversation={sideChatAboutConversation}
+            agents={sideChatAgents}
             shortcut={sideChatShortcut}
-            onClick={onOpenSideChat}
+            onOpen={onOpenSideChat}
           />
           <ToolTile
             icon={NotebookPen}
@@ -150,7 +162,7 @@ export default function ViewerLauncher({
                   onClick={() => onOpenThread(thread.id)}
                   className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left transition-colors ${ACTIVITY_ROW_HOVER} ${ROW_FOCUS}`}
                 >
-                  <GraduationCap
+                  <thread.icon
                     size={15}
                     strokeWidth={1.7}
                     aria-hidden="true"
@@ -199,7 +211,7 @@ export default function ViewerLauncher({
 
       <p className="px-1.5 text-[11.5px] leading-[1.65] text-[var(--muted-foreground)]">
         {t(
-          "Quiz follow-ups, subagent runs, figures, and the files and links in a reply open here on their own. Select text in a reply to ask the Little Tutor about just that passage.",
+          "Quiz follow-ups, subagent runs, figures, and the files and links in a reply open here on their own. Select text in a reply to ask Dito, a partner or an agent about just that passage.",
         )}
       </p>
 
@@ -303,6 +315,103 @@ function ToolTile({
         {shortcut ? <ShortcutChip shortcut={shortcut} /> : null}
       </button>
     </Tooltip>
+  );
+}
+
+/**
+ * "Ask Dito", with everyone else a side chat can be opened with one click
+ * away: the tile itself opens Dito, the chevron on its edge lists partners,
+ * partner groups and agents.
+ */
+function SideChatTile({
+  description,
+  aboutConversation,
+  agents,
+  shortcut,
+  onOpen,
+}: {
+  description: string;
+  aboutConversation: boolean;
+  agents: { name: string; kind?: string }[];
+  shortcut?: Shortcut;
+  onOpen: (responder: SideChatResponder) => void;
+}) {
+  const { t } = useTranslation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const away = (event: PointerEvent) => {
+      if (!boxRef.current?.contains(event.target as Node)) setMenuOpen(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", away);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", away);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [menuOpen]);
+  return (
+    <div ref={boxRef} className="relative flex min-w-0">
+      <div
+        className={`flex min-h-11 w-full min-w-0 items-stretch rounded-xl ${ACTIVITY_TILE}`}
+      >
+        <Tooltip
+          label={t("Ask Dito")}
+          description={description}
+          shortcut={shortcut}
+          as="div"
+          className="flex min-w-0 flex-1"
+        >
+          <button
+            type="button"
+            onClick={() => onOpen(DITO)}
+            className={`flex w-full min-w-0 items-center gap-2.5 rounded-l-xl pl-3 pr-1 text-left text-[12.5px] font-medium text-[var(--foreground)] transition-colors ${ACTIVITY_ROW_HOVER} ${ROW_FOCUS}`}
+          >
+            <MessagesSquare
+              size={15}
+              strokeWidth={1.7}
+              aria-hidden="true"
+              className="shrink-0 text-[var(--muted-foreground)]"
+            />
+            <span className="min-w-0 flex-1 truncate">{t("Ask Dito")}</span>
+          </button>
+        </Tooltip>
+        <button
+          type="button"
+          aria-label={t("Ask someone else")}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((value) => !value)}
+          className={`flex w-8 shrink-0 items-center justify-center rounded-r-xl text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)] ${ACTIVITY_ROW_HOVER} ${ROW_FOCUS}`}
+        >
+          <ChevronDown
+            size={14}
+            strokeWidth={1.8}
+            aria-hidden="true"
+            className={`transition-transform ${menuOpen ? "rotate-180" : ""}`}
+          />
+        </button>
+      </div>
+      {menuOpen ? (
+        <div
+          role="menu"
+          className="absolute left-0 top-full z-20 mt-1.5 max-h-[320px] w-[248px] overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--popover,var(--card))] p-1 text-[var(--foreground)] shadow-lg"
+        >
+          <ResponderList
+            agents={agents}
+            aboutConversation={aboutConversation}
+            onPick={(responder) => {
+              setMenuOpen(false);
+              onOpen(responder);
+            }}
+          />
+        </div>
+      ) : null}
+    </div>
   );
 }
 

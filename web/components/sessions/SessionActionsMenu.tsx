@@ -14,7 +14,6 @@ import {
   Check,
   Folder,
   FolderOpen,
-  GraduationCap,
   Pencil,
   Pin,
   PinOff,
@@ -23,7 +22,6 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import type { StudyCourse } from "@/lib/courses-api";
 import type {
   SessionOrganizationPatch,
   SessionSummary,
@@ -39,7 +37,6 @@ export const SESSION_MENU_WIDTH = 240;
 export function SessionMenuItem({
   icon: Icon,
   label,
-  color,
   checked = false,
   danger = false,
   disabled = false,
@@ -47,7 +44,6 @@ export function SessionMenuItem({
 }: {
   icon?: LucideIcon;
   label: string;
-  color?: string;
   checked?: boolean;
   danger?: boolean;
   disabled?: boolean;
@@ -63,12 +59,7 @@ export function SessionMenuItem({
         danger ? "text-[var(--destructive)]" : "text-[var(--foreground)]"
       }`}
     >
-      {color ? (
-        <span
-          className="h-3 w-1 rounded-full"
-          style={{ backgroundColor: color }}
-        />
-      ) : Icon ? (
+      {Icon ? (
         <Icon size={13} strokeWidth={1.7} />
       ) : (
         <span className="w-3" />
@@ -100,7 +91,6 @@ export type SessionMenuTarget = Pick<
 
 export function SessionActionsMenuItems({
   session,
-  courses,
   workspaces,
   live = false,
   moving = false,
@@ -114,7 +104,6 @@ export function SessionActionsMenuItems({
   footer,
 }: {
   session: SessionMenuTarget;
-  courses: StudyCourse[];
   workspaces: ChatWorkspaceRegistration[];
   /** A turn is streaming: the conversation cannot change stores mid-turn. */
   live?: boolean;
@@ -166,29 +155,6 @@ export function SessionActionsMenuItems({
         onClick={act(() => onOrganize({ archived: !archived }))}
       />
       {extra}
-      {courses.length > 0 ? (
-        <>
-          <SessionMenuDivider />
-          <SessionMenuCaption>{t("Move to course")}</SessionMenuCaption>
-          <SessionMenuItem
-            icon={GraduationCap}
-            label={t("Unclassified")}
-            checked={!session.preferences?.course_id}
-            onClick={act(() => onOrganize({ course_id: "" }))}
-          />
-          <div>
-            {courses.map((course) => (
-              <SessionMenuItem
-                key={course.id}
-                color={course.color}
-                label={course.name}
-                checked={session.preferences?.course_id === course.id}
-                onClick={act(() => onOrganize({ course_id: course.id }))}
-              />
-            ))}
-          </div>
-        </>
-      ) : null}
       {/* Filing a conversation from the list it is filed in. Archived
           workspaces are left out: they keep the conversations they have and
           stop taking new ones. */}

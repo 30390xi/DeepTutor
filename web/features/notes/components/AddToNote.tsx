@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import type { FavoriteSnapshot } from '@/lib/favorite-content'
 import { useState } from 'react'
+import { FilePlus2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import {
   listNotes,
@@ -19,6 +20,7 @@ export default function AddToNote({
   sourceId = '',
   onSaved,
   favorite,
+  className = 'px-5 py-3 text-sm',
 }: {
   title: string
   markdown: string
@@ -26,6 +28,8 @@ export default function AddToNote({
   sourceId?: string
   onSaved?: () => void
   favorite?: FavoriteSnapshot
+  /** The wrapper's box; a toolbar passes its own. */
+  className?: string
 }) {
   const { t } = useTranslation()
   const [pages, setPages] = useState<NoteSummary[] | null>(null)
@@ -71,16 +75,17 @@ export default function AddToNote({
     }
   }
   return (
-    <div className="px-5 py-3 text-sm">
+    <div className={className}>
       {pages === null ? (
         <button
-          className="rounded px-2 py-1.5 hover:bg-[var(--secondary)]"
+          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 hover:bg-[var(--secondary)]"
           onClick={() => {
             void listNotes()
               .then(r => setPages(r.documents))
               .catch(e => setError(String(e)))
           }}
         >
+          <FilePlus2 size={14} strokeWidth={1.7} />
           {t('Add to a note')}
         </button>
       ) : (

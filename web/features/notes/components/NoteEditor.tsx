@@ -48,6 +48,7 @@ import {
   Plus,
   Trash2,
   Copy,
+  RefreshCcw,
   Upload,
   Link as LinkIcon,
   Info,
@@ -73,6 +74,12 @@ import {
   Layers,
   Play,
   ListOrdered,
+  ChevronDown,
+  PenLine,
+  Minimize2,
+  Maximize2,
+  Languages,
+  MessageSquareText,
 } from 'lucide-react'
 import Tooltip from '@/shared/ui/Tooltip'
 import { subscribeToThemeChanges } from '@/lib/theme'
@@ -96,6 +103,9 @@ import {
   type BlockPreviewKind,
 } from '../model/block-previews'
 import NoteInsertMenu, { type NoteMenuItem } from './NoteInsertMenu'
+import NoteThreadMarkers from './NoteThreadMarkers'
+import { LEARNING_KINDS, learningGenerationConfig } from '../model/learning-kinds'
+import type { NoteThreadView } from '../model/threads'
 import {
   callout,
   toggleHeading,
@@ -310,6 +320,20 @@ const schema = BlockNoteSchema.create({
   },
   inlineContentSpecs: { ...defaultInlineContentSpecs, pageLink, inlineMath, noteDate },
 })
+/** Drop inline content a block type cannot hold. A stray string there (a model
+ *  echoing "timeline" into a learning block) makes the editor reject the page. */
+export function fitSchema(blocks: NoteBlock[]): NoteBlock[] {
+  return blocks.map(block => {
+    const spec = (schema.blockSchema as Record<string, { content?: string } | undefined>)[
+      block.type
+    ]
+    const { content, ...rest } = block
+    return {
+      ...(spec?.content === 'none' ? rest : { ...rest, content }),
+      children: fitSchema(block.children || []),
+    } as NoteBlock
+  })
+}
 /** Reuse the notebook's normal migration before clipping into an unopened legacy page. */
 export function parseLegacyNoteContent(markdown: string): NoteBlock[] {
   const editor = BlockNoteEditor.create({ schema })
@@ -334,7 +358,30 @@ export interface NoteEditorHandle {
   ) => void
   insertClips: (clips: NoteClipInput[]) => void
   focusBlock: (id: string) => void
+  /** A learning block of ``kind`` right after ``blockId``; its id, or null. */
+  insertLearningAfter: (blockId: string, kind: string, prompt: string) => string | null
+  /** Keep the request a learning block is regenerated from as its prompt. */
+  updateLearningPrompt: (blockId: string, prompt: string) => void
+  /** The block the caret is in, for "ask Dito" from outside the page. */
+  cursorBlockId: () => string | null
+  hasBlock: (id: string) => boolean
 }
+
+/** Where a conversation is opened from, and what it starts with. */
+export interface NoteAsk {
+  blockId: string
+  quote?: string
+  prompt?: string
+  /** Send the prompt straight away (a toolbar action) instead of drafting it. */
+  autoSend?: boolean
+  /** A knowledge base to search in this conversation. */
+  knowledgeRef?: string
+}
+
+/** BlockNote nudges the side menu down by a guess at each heading level's
+ *  line; the notebook's own type scale differs, so the handles measure the
+ *  line themselves from the block's top instead. */
+const SIDE_MENU_FLOATING = { useFloatingOptions: { middleware: [] } }
 
 function Handles({ editor }: { editor: NotesEditor }) {
   const { t } = useTranslation()
@@ -343,6 +390,53 @@ function Handles({ editor }: { editor: NotesEditor }) {
   const block = useExtensionState(SideMenuExtension, { selector: state => state?.block })
   const [open, setOpen] = useState(false)
   const drag = useNoteBlockDrag(editor)
+  const blockId = block?.id
+  // Centre the handles on the block's first line of text, whatever its type
+  // and font; a card without text keeps them level with its top edge. The
+  // side menu sits at the block's top (see SIDE_MENU_FLOATING), so the
+  // offset is measured from there. Written onto the node rather than kept in
+  // state: it is a measurement of the DOM, and the menu re-renders on hover.
+  useLayoutEffect(() => {
+    const root = handleRoot.current
+    if (!blockId || !root) return
+    root.style.transform = ''
+    const outer = editor.domElement?.querySelector<HTMLElement>(
+      `.bn-block-outer[data-id="${CSS.escape(blockId)}"]`
+    )
+    const content = outer?.querySelector<HTMLElement>(':scope > .bn-block > .bn-block-content')
+    if (!outer || !content) return
+    const top = outer.getBoundingClientRect().top
+    const inline = content.querySelector<HTMLElement>('.bn-inline-content')
+    let center = content.getBoundingClientRect().top - top + root.offsetHeight / 2
+    if (inline) {
+      const range = document.createRange()
+      range.selectNodeContents(inline)
+      const line = [...range.getClientRects()].find(rect => rect.height > 0)
+      const box = inline.getBoundingClientRect()
+      const style = getComputedStyle(inline)
+      const lineHeight = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.5
+      center = line ? line.top + line.height / 2 - top : box.top + lineHeight / 2 - top
+    }
+    root.style.transform = `translateY(${center - root.offsetHeight / 2}px)`
+  }, [blockId, editor])
+  // A menu left open by a click elsewhere would keep the handles frozen on
+  // this block, and no other block would show its own.
+  useEffect(() => {
+    if (!open) return
+    const close = (event: Event) => {
+      if (event instanceof KeyboardEvent && event.key !== 'Escape') return
+      if (event instanceof PointerEvent && handleRoot.current?.contains(event.target as Node))
+        return
+      setOpen(false)
+      menu.unfreezeMenu()
+    }
+    document.addEventListener('pointerdown', close, true)
+    document.addEventListener('keydown', close, true)
+    return () => {
+      document.removeEventListener('pointerdown', close, true)
+      document.removeEventListener('keydown', close, true)
+    }
+  }, [menu, open])
   if (!block) return null
   return (
     <div ref={handleRoot} className="dt-note-handle">
@@ -390,6 +484,33 @@ function Handles({ editor }: { editor: NotesEditor }) {
             menu.unfreezeMenu()
           }}
         >
+          {block.type === 'learning' && block.props.kind !== 'task' && (
+            // A generated block shows only its material; asking for another
+            // version opens a conversation with the old request to edit.
+            <button
+              onClick={() => {
+                const props = block.props as { kind: string; prompt: string; data: string }
+                editor.domElement
+                  ?.querySelector(`[data-id="${CSS.escape(block.id)}"]`)
+                  ?.dispatchEvent(
+                    new CustomEvent('note-regenerate', {
+                      bubbles: true,
+                      detail: {
+                        blockId: block.id,
+                        kind: props.kind,
+                        prompt: props.prompt,
+                        config: learningGenerationConfig(props.kind, props.data),
+                      },
+                    })
+                  )
+                setOpen(false)
+                menu.unfreezeMenu()
+              }}
+            >
+              <RefreshCcw size={14} />
+              {t('Regenerate…')}
+            </button>
+          )}
           {(['up', 'down'] as const).map(direction => (
             <button
               key={direction}
@@ -584,6 +705,12 @@ export default function NoteEditor({
   onReview,
   onDiscuss,
   onContinueResearch,
+  threads,
+  activeThread,
+  threadsInteractive,
+  onOpenThread,
+  onDeleteThread,
+  onFocusBlock,
 }: {
   page: NotePage
   suggestions: NoteSuggestion[]
@@ -594,7 +721,14 @@ export default function NoteEditor({
   onDiscuss: (suggestion: NoteSuggestion) => void
   onChange: (blocks: NoteBlock[]) => void
   onReady: (handle: NoteEditorHandle) => void
-  onAI: (prompt: string, blockId?: string) => void
+  onAI: (ask: NoteAsk) => void
+  threads: NoteThreadView[]
+  activeThread: { sessionId: string | null; blockId: string } | null
+  threadsInteractive: boolean
+  onOpenThread: (sessionId: string) => void
+  onDeleteThread: (sessionId: string) => Promise<void>
+  /** The block the learner clicked or moved the cursor into. */
+  onFocusBlock?: (blockId: string) => void
 }) {
   const { t, i18n } = useTranslation()
   const theme = useSyncExternalStore<'light' | 'dark'>(
@@ -604,22 +738,69 @@ export default function NoteEditor({
   )
   const ready = useRef(false)
   const container = useRef<HTMLDivElement>(null)
+  const [containerEl, setContainerEl] = useState<HTMLDivElement | null>(null)
+  const attachContainer = useCallback((el: HTMLDivElement | null) => {
+    container.current = el
+    setContainerEl(el)
+  }, [])
+  // BlockNote hides the block handles whenever the page scrolls and shows
+  // them again only on the next mouse move; once the scroll settles, show
+  // them for the block under a pointer that has not moved.
+  useEffect(() => {
+    if (!containerEl) return
+    let pointer: { x: number; y: number } | null = null
+    let timer = 0
+    const track = (event: PointerEvent) => {
+      if (event.pointerType === 'mouse') pointer = { x: event.clientX, y: event.clientY }
+    }
+    const settle = () => {
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => {
+        if (!pointer) return
+        const box = containerEl.getBoundingClientRect()
+        if (pointer.y < box.top || pointer.y > box.bottom) return
+        document.elementFromPoint(pointer.x, pointer.y)?.dispatchEvent(
+          new MouseEvent('mousemove', {
+            bubbles: true,
+            clientX: pointer.x,
+            clientY: pointer.y,
+          })
+        )
+      }, 140)
+    }
+    window.addEventListener('pointermove', track, { passive: true })
+    document.addEventListener('scroll', settle, { capture: true, passive: true })
+    return () => {
+      window.clearTimeout(timer)
+      window.removeEventListener('pointermove', track)
+      document.removeEventListener('scroll', settle, { capture: true })
+    }
+  }, [containerEl])
   const uploadInput = useRef<HTMLInputElement>(null)
   const uploadAnchor = useRef<string | null>(null)
   const uploadRetry = useRef<string | null>(null)
   const initialized = useRef(false)
-  const latest = useRef({ onChange, onReady, onAI })
+  const latest = useRef({ onChange, onReady, onAI, onFocusBlock })
   useLayoutEffect(() => {
-    latest.current = { onChange, onReady, onAI }
-  }, [onChange, onReady, onAI])
+    latest.current = { onChange, onReady, onAI, onFocusBlock }
+  }, [onChange, onReady, onAI, onFocusBlock])
   const editor = useCreateBlockNote(
     {
       schema,
       tables: { headers: true },
       extensions: [noteInputRules],
-      dictionary: i18n.language.startsWith('zh') ? zh : en,
+      dictionary: (() => {
+        const base = i18n.language.startsWith('zh') ? zh : en
+        return {
+          ...base,
+          placeholders: {
+            ...base.placeholders,
+            default: t('Write, press / to insert, or Space to ask Dito'),
+          },
+        }
+      })(),
       initialContent: page.blocks?.length
-        ? (page.blocks as PartialBlock<
+        ? (fitSchema(page.blocks) as PartialBlock<
             typeof schema.blockSchema,
             typeof schema.inlineContentSchema,
             typeof schema.styleSchema
@@ -685,7 +866,9 @@ export default function NoteEditor({
           editor.transact(tr => closeHistory(tr))
           editor.replaceBlocks(
             editor.document,
-            blocks.length ? (blocks as typeof editor.document) : [{ type: 'paragraph' }]
+            blocks.length
+              ? (fitSchema(blocks as NoteBlock[]) as typeof editor.document)
+              : [{ type: 'paragraph' }]
           )
           editor.transact(tr => closeHistory(tr))
         },
@@ -693,6 +876,29 @@ export default function NoteEditor({
         insertClip: (title, markdown, sourceUrl, sourceId = '', favorite) =>
           insertClips([{ title, markdown, sourceUrl, sourceId, favorite }]),
         insertClips,
+        insertLearningAfter: (blockId, kind, prompt) => {
+          const anchor = editor.getBlock(blockId)
+          if (!anchor) return null
+          const [created] = editor.insertBlocks(
+            [{ type: 'learning', props: { kind, prompt } }],
+            anchor,
+            'after'
+          )
+          return created?.id ?? null
+        },
+        updateLearningPrompt: (blockId, prompt) => {
+          const target = editor.getBlock(blockId)
+          if (target?.type === 'learning' && target.props.prompt !== prompt)
+            editor.updateBlock(target, { props: { prompt } })
+        },
+        cursorBlockId: () => {
+          try {
+            return editor.getTextCursorPosition().block.id
+          } catch {
+            return (editor.document[0] as NoteBlock | undefined)?.id ?? null
+          }
+        },
+        hasBlock: id => Boolean(editor.getBlock(id)),
         focusBlock: id => {
           if (editor.getBlock(id)) {
             editor.setTextCursorPosition(id, 'start')
@@ -718,14 +924,17 @@ export default function NoteEditor({
       cancelled = true
     }
   }, [editor, page.blocks, page.content, parseMarkdown])
+  /** Open a conversation on the caret's line; with a selection, about it. */
   const ai = useCallback(
     (instruction: string) => {
-      const selection = editor.getSelectedText()
+      const quote = editor.getSelectedText().trim()
       const block = editor.getTextCursorPosition().block
-      latest.current.onAI(
-        `${instruction}${selection ? `\nSelected text: ${selection}` : ''}`,
-        block.id
-      )
+      latest.current.onAI({
+        blockId: block.id,
+        quote: quote || undefined,
+        prompt: instruction || undefined,
+        autoSend: Boolean(instruction && quote),
+      })
     },
     [editor]
   )
@@ -828,7 +1037,7 @@ export default function NoteEditor({
         'Write, explain or improve this part of your note.',
         ['ai', '生成', '续写'],
         Sparkles,
-        () => ai(t('Continue writing here')),
+        () => ai(''),
         'ai'
       ),
       item(
@@ -1004,30 +1213,17 @@ export default function NoteEditor({
         'inlineMath',
         '$…$'
       ),
-      ...[
-        ['mermaid', 'Diagram', '图解', Network],
-        ['quiz', 'Quiz me', '测验', CheckSquare],
-        ['flashcards', 'Flash Cards', '闪卡', Layers],
-        ['timeline', 'Timeline', '时间线', ListOrdered],
-        ['research', 'Research', '研究', BookOpen],
-        ['task', 'Task', '任务', CheckSquare],
-        ['animation', 'Animation', '动画', Play],
-        ['concept_map', 'Concept map', '概念图', Network],
-        ['geogebra', 'Geometry', '几何', Sigma],
-        ['image', 'Generate image', '生成图片', ImageIcon],
-        ['audio', 'Podcast', '播客', Music],
-      ].map(([kind, label, alias, Icon]) =>
+      ...LEARNING_KINDS.map(({ kind, label, alias, Icon }) =>
         item(
-          label as string,
+          label,
           'Learning',
           'Create learning material grounded in this page.',
-          [kind as string, alias as string],
-          Icon as typeof Info,
+          [kind, alias],
+          Icon,
           () => {
             insert({ type: 'learning', props: { kind } })
           },
-          ({ image: 'generated_image', audio: 'podcast' }[kind as string] ||
-            kind) as BlockPreviewKind
+          ({ image: 'generated_image', audio: 'podcast' }[kind] || kind) as BlockPreviewKind
         )
       ),
     ]
@@ -1056,56 +1252,33 @@ export default function NoteEditor({
   }
   const Toolbar = () => {
     const activeStyles = useActiveStyles(editor)
-    const [linkOpen, setLinkOpen] = useState(false)
+    const [panel, setPanel] = useState<'link' | 'ai' | 'color' | null>(null)
     const [linkUrl, setLinkUrl] = useState('')
     const [linkError, setLinkError] = useState('')
     // Atomic source/media blocks cannot receive inline formatting. BlockNote
     // also selects these on interaction; only offer tools for selected text.
     if (!editor.getSelectedText().trim()) return null
+    const keep = (e: React.MouseEvent) => e.preventDefault()
+    const color = activeStyles.textColor || 'default'
     return (
-      <div className="dt-note-toolbar">
-        <Tooltip label={t('Link')}>
-          <button
-            aria-label={t('Link')}
-            onMouseDown={e => e.preventDefault()}
-            onClick={() => {
-              setLinkOpen(!linkOpen)
-            }}
-          >
-            <LinkIcon size={15} />
-          </button>
-        </Tooltip>
-        {linkOpen && (
-          <form
-            className="dt-note-link-form"
-            onSubmit={e => {
-              e.preventDefault()
-              if (!/^(https?:\/\/|mailto:|\/(?!\/)|#)/i.test(linkUrl.trim())) {
-                setLinkError(t('Enter a valid link'))
-                return
-              }
-              editor.createLink(linkUrl.trim())
-              setLinkOpen(false)
-              editor.focus()
-            }}
-          >
-            <input
-              autoFocus
-              aria-label={t('Link URL')}
-              placeholder={t('Paste a link…')}
-              value={linkUrl}
-              onChange={e => setLinkUrl(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Escape') {
-                  setLinkOpen(false)
-                  editor.focus()
-                }
-              }}
-            />
-            {linkError && <p role="alert">{linkError}</p>}
-            <button type="submit">{t('Apply')}</button>
-          </form>
-        )}
+      <div
+        className="dt-note-toolbar"
+        onMouseDown={e => {
+          if (!(e.target as HTMLElement).closest('input')) e.preventDefault()
+        }}
+      >
+        <button
+          className={`dt-note-toolbar-ai ${panel === 'ai' ? 'is-open' : ''}`}
+          aria-haspopup="menu"
+          aria-expanded={panel === 'ai'}
+          onMouseDown={keep}
+          onClick={() => setPanel(panel === 'ai' ? null : 'ai')}
+        >
+          <Sparkles size={14} />
+          {t('Ask Dito')}
+          <ChevronDown size={12} className="opacity-60" />
+        </button>
+        <span className="dt-note-toolbar-sep" aria-hidden />
         {(
           [
             ['bold', Bold, 'Bold'],
@@ -1119,63 +1292,152 @@ export default function NoteEditor({
             <button
               aria-label={t(label)}
               aria-pressed={!!activeStyles[style]}
-              onMouseDown={e => e.preventDefault()}
+              onMouseDown={keep}
               onClick={() => editor.toggleStyles({ [style]: true })}
             >
               <Icon size={15} />
             </button>
           </Tooltip>
         ))}
-        <select
-          aria-label={t('Text color')}
-          onChange={e => editor.addStyles({ textColor: e.target.value })}
-          value={activeStyles.textColor || 'default'}
-        >
-          {['default', 'red', 'blue', 'green', 'orange', 'purple'].map(color => (
-            <option key={color} value={color}>
-              {t(color)}
-            </option>
-          ))}
-        </select>
-        <button
-          onMouseDown={e => e.preventDefault()}
-          onClick={() => ai(t('Rewrite the selected text; preserve the rest of the block'))}
-        >
-          <Sparkles size={14} />
-          {t('Rewrite')}
-        </button>
-        <select
-          aria-label={t('AI writing actions')}
-          defaultValue=""
-          onChange={e => {
-            if (e.target.value) ai(t(e.target.value))
-            e.target.value = ''
-          }}
-        >
-          <option value="">{t('More')}</option>
-          {[
-            'Shorten the selected text',
-            'Expand the selected text',
-            'Translate the selected text',
-          ].map(action => (
-            <option key={action} value={action}>
-              {t(action)}
-            </option>
-          ))}
-        </select>
-        <button
-          onMouseDown={e => e.preventDefault()}
-          onClick={() => ai(t('Explain this passage in a comment'))}
-        >
-          {t('Explain')}
-        </button>
+        <Tooltip label={t('Link')}>
+          <button
+            aria-label={t('Link')}
+            aria-expanded={panel === 'link'}
+            onMouseDown={keep}
+            onClick={() => setPanel(panel === 'link' ? null : 'link')}
+          >
+            <LinkIcon size={15} />
+          </button>
+        </Tooltip>
+        <Tooltip label={t('Text color')}>
+          <button
+            aria-label={t('Text color')}
+            aria-haspopup="menu"
+            aria-expanded={panel === 'color'}
+            onMouseDown={keep}
+            onClick={() => setPanel(panel === 'color' ? null : 'color')}
+          >
+            <span className="dt-note-color-glyph" data-color={color}>
+              A
+            </span>
+            <ChevronDown size={11} className="opacity-60" />
+          </button>
+        </Tooltip>
+        {panel === 'ai' && (
+          <div className="dt-note-toolbar-panel" role="menu">
+            {(
+              [
+                ['Rewrite', 'Rewrite the selected text; preserve the rest of the block', PenLine],
+                ['Make shorter', 'Shorten the selected text', Minimize2],
+                ['Make longer', 'Expand the selected text', Maximize2],
+                ['Translate', 'Translate the selected text', Languages],
+                ['Explain in a comment', 'Explain this passage in a comment', MessageSquareText],
+              ] as const
+            ).map(([label, prompt, Icon]) => (
+              <button
+                key={label}
+                role="menuitem"
+                onMouseDown={keep}
+                onClick={() => {
+                  setPanel(null)
+                  ai(t(prompt))
+                }}
+              >
+                <Icon size={14} />
+                {t(label)}
+              </button>
+            ))}
+            <div className="dt-note-toolbar-divider" />
+            <button
+              role="menuitem"
+              onMouseDown={keep}
+              onClick={() => {
+                setPanel(null)
+                ai('')
+              }}
+            >
+              <Sparkles size={14} />
+              {t('Ask about the selection…')}
+            </button>
+          </div>
+        )}
+        {panel === 'color' && (
+          <div className="dt-note-toolbar-panel is-colors" role="menu">
+            {Object.entries({
+              default: t('Default color'),
+              gray: t('Gray color'),
+              red: t('Red color'),
+              orange: t('Orange color'),
+              yellow: t('Yellow color'),
+              green: t('Green color'),
+              blue: t('Blue color'),
+              purple: t('Purple color'),
+            }).map(([c, name]) => (
+              <button
+                key={c}
+                role="menuitemradio"
+                aria-checked={color === c}
+                onMouseDown={keep}
+                onClick={() => {
+                  setPanel(null)
+                  if (c === 'default') editor.removeStyles({ textColor: color })
+                  else editor.addStyles({ textColor: c })
+                }}
+              >
+                <span className="dt-note-color-glyph" data-color={c}>
+                  A
+                </span>
+                {name}
+              </button>
+            ))}
+          </div>
+        )}
+        {panel === 'link' && (
+          <form
+            className="dt-note-link-form"
+            onSubmit={e => {
+              e.preventDefault()
+              if (!/^(https?:\/\/|mailto:|\/(?!\/)|#)/i.test(linkUrl.trim())) {
+                setLinkError(t('Enter a valid link'))
+                return
+              }
+              editor.createLink(linkUrl.trim())
+              setPanel(null)
+              editor.focus()
+            }}
+          >
+            <input
+              autoFocus
+              aria-label={t('Link URL')}
+              placeholder={t('Paste a link…')}
+              value={linkUrl}
+              onChange={e => setLinkUrl(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Escape') {
+                  setPanel(null)
+                  editor.focus()
+                }
+              }}
+            />
+            <button type="submit">{t('Apply')}</button>
+            {linkError && <p role="alert">{linkError}</p>}
+          </form>
+        )}
       </div>
     )
   }
   return (
     <div
-      ref={container}
+      ref={attachContainer}
       className="dt-note-editor"
+      onPointerDownCapture={e => {
+        // Cards (learning blocks, embeds) take no text cursor, so a click on
+        // one is the only sign the learner is looking at it.
+        const target = e.target as HTMLElement
+        if (target.closest('.bn-side-menu, .dt-note-orbs, .dt-note-ask-orb')) return
+        const id = target.closest<HTMLElement>('.bn-block-outer[data-id]')?.dataset.id
+        if (id) latest.current.onFocusBlock?.(id)
+      }}
       onKeyDownCapture={e => {
         // Read-only card controls stop ProseMirror's key handling. Keep the
         // document history accessible while a card button or source has focus.
@@ -1209,7 +1471,7 @@ export default function NoteEditor({
           const content = editor.getTextCursorPosition().block.content
           if (Array.isArray(content) && content.length === 0) {
             e.preventDefault()
-            ai(t('Continue writing here'))
+            ai('')
           }
         }
       }}
@@ -1273,7 +1535,30 @@ export default function NoteEditor({
         onChange={() => {
           if (ready.current) latest.current.onChange(editor.document as NoteBlock[])
         }}
+        onSelectionChange={() => {
+          if (!ready.current || !latest.current.onFocusBlock) return
+          try {
+            latest.current.onFocusBlock(editor.getTextCursorPosition().block.id)
+          } catch {
+            // No text cursor (a node selection on a card).
+          }
+        }}
       >
+        <NoteThreadMarkers
+          editor={editor}
+          container={containerEl}
+          threads={threads}
+          activeSessionId={activeThread?.sessionId ?? null}
+          activeBlockId={activeThread?.blockId ?? null}
+          interactive={threadsInteractive}
+          onOpen={onOpenThread}
+          onDelete={onDeleteThread}
+          onAsk={blockId => latest.current.onAI({ blockId })}
+        />
+        {activeThread && (
+          // The line the open conversation is about stays marked while it is open.
+          <style>{`.dt-note-editor .bn-block-outer[data-id="${CSS.escape(activeThread.blockId)}"] > .bn-block > .bn-block-content { background: var(--dt-note-anchor-bg); box-shadow: -6px 0 0 var(--dt-note-anchor-bg), 6px 0 0 var(--dt-note-anchor-bg); border-radius: 4px; }`}</style>
+        )}
         <NoteInlineReviews
           editor={editor}
           suggestions={suggestions}
@@ -1284,7 +1569,10 @@ export default function NoteEditor({
           onContinueResearch={onContinueResearch}
         />
         <FormattingToolbarController formattingToolbar={Toolbar} />
-        <SideMenuController sideMenu={() => <Handles editor={editor} />} />
+        <SideMenuController
+          sideMenu={() => <Handles editor={editor} />}
+          floatingUIOptions={SIDE_MENU_FLOATING}
+        />
         {['/', '、'].map(trigger => (
           <SuggestionMenuController
             key={trigger}

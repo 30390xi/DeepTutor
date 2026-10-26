@@ -1,5 +1,5 @@
 {
-  "fingerprint": "56b25b3952c77ff51fd8d9bb3dd42422d630d910342fa022e087c68a5d55f0b9",
+  "fingerprint": "cc3f7e5084ea833e0291b05542e4f4cad85e52271f36b8689ffa5022edb7c3d0",
   "routers": {
     "deeptutor.api.routers.auth:router": [
       {
@@ -1716,6 +1716,30 @@
         "methods": [
           "POST"
         ]
+      },
+      {
+        "path": "/documents/{doc_id}/threads",
+        "name": "note_threads",
+        "kind": "http",
+        "methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/documents/{doc_id}/threads",
+        "name": "anchor_note_thread",
+        "kind": "http",
+        "methods": [
+          "POST"
+        ]
+      },
+      {
+        "path": "/documents/{doc_id}/threads/{session_id}",
+        "name": "delete_note_thread",
+        "kind": "http",
+        "methods": [
+          "DELETE"
+        ]
       }
     ],
     "deeptutor.api.routers.notebook:router": [
@@ -3137,88 +3161,6 @@
         "kind": "http",
         "methods": [
           "POST"
-        ]
-      }
-    ],
-    "deeptutor.api.routers.courses:router": [
-      {
-        "path": "",
-        "name": "list_courses",
-        "kind": "http",
-        "methods": [
-          "GET"
-        ]
-      },
-      {
-        "path": "",
-        "name": "create_course",
-        "kind": "http",
-        "methods": [
-          "POST"
-        ]
-      },
-      {
-        "path": "/resource-candidates",
-        "name": "list_resource_candidates",
-        "kind": "http",
-        "methods": [
-          "GET"
-        ]
-      },
-      {
-        "path": "/{course_id}",
-        "name": "update_course",
-        "kind": "http",
-        "methods": [
-          "PATCH"
-        ]
-      },
-      {
-        "path": "/{course_id}/syllabus",
-        "name": "set_course_syllabus",
-        "kind": "http",
-        "methods": [
-          "PUT"
-        ]
-      },
-      {
-        "path": "/{course_id}/syllabus/{unit_id}",
-        "name": "update_syllabus_unit",
-        "kind": "http",
-        "methods": [
-          "PATCH"
-        ]
-      },
-      {
-        "path": "/{course_id}/resources",
-        "name": "attach_course_resource",
-        "kind": "http",
-        "methods": [
-          "POST"
-        ]
-      },
-      {
-        "path": "/{course_id}/resources/{resource_id}",
-        "name": "detach_course_resource",
-        "kind": "http",
-        "methods": [
-          "DELETE"
-        ]
-      },
-      {
-        "path": "/{course_id}/state",
-        "name": "get_course_state",
-        "kind": "http",
-        "methods": [
-          "GET"
-        ]
-      },
-      {
-        "path": "/{course_id}",
-        "name": "delete_course",
-        "kind": "http",
-        "methods": [
-          "DELETE"
         ]
       }
     ],

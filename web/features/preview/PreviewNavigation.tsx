@@ -303,7 +303,12 @@ export function CategoryBody({
       )}
       {category === 'learning' && (
         <>
-          <SectionLabel label="个性化学习" action="新建学习" onAction={create} />
+          <SidebarRow
+            icon={Plus}
+            label="新建学习"
+            active={view === 'new-learning'}
+            onClick={create}
+          />
           <SidebarRow
             icon={LayoutGrid}
             label="所有学习"
@@ -320,10 +325,6 @@ export function CategoryBody({
               onClick={() => onRecord(r)}
             />
           ))}
-          <button className="preview-sidebar-add" onClick={create}>
-            <Plus size={17} />
-            新建学习
-          </button>
         </>
       )}
       {category === 'library' && (

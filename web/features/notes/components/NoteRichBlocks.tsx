@@ -12,6 +12,7 @@ import {
   ExternalLink,
   Pencil,
   ListTree,
+  FileCode,
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import type { NoteBlock } from '@/lib/notes-api'
@@ -211,14 +212,16 @@ export const webCard = createReactBlockSpec(
                 <input value={description} onChange={e => setDescription(e.target.value)} />
               </label>
               {error && <p role="alert">{error}</p>}
-              <button className="dt-note-button" type="submit">
-                {t('Save')}
-              </button>
-              {block.props.url && (
-                <button className="dt-note-button" type="button" onClick={() => setEdit(false)}>
-                  {t('Cancel')}
+              <div className="dt-note-form-actions">
+                {block.props.url && (
+                  <button className="dt-note-action" type="button" onClick={() => setEdit(false)}>
+                    {t('Cancel')}
+                  </button>
+                )}
+                <button className="dt-note-action is-primary" type="submit">
+                  {t('Save')}
                 </button>
-              )}
+              </div>
             </form>
           ) : (
             <>
@@ -265,8 +268,16 @@ export const htmlEmbed = createReactBlockSpec(
       return (
         <div contentEditable={false} className="dt-note-html">
           <div className="dt-note-block-label">
+            <FileCode size={14} aria-hidden />
             <span>{t('HTML')}</span>
-            <button onClick={() => setEditing(!editing)}>{t(editing ? 'Preview' : 'Edit')}</button>
+            <span className="dt-note-segment" role="group" aria-label={t('HTML')}>
+              <button aria-pressed={editing} onClick={() => setEditing(true)}>
+                {t('Edit')}
+              </button>
+              <button aria-pressed={!editing} disabled={!block.props.source.trim()} onClick={() => setEditing(false)}>
+                {t('Preview')}
+              </button>
+            </span>
           </div>
           {editing ? (
             <textarea

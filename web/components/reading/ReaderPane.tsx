@@ -988,22 +988,29 @@ export function ReaderPane({
   return (
     <div className="dt-reader-pane relative flex h-full min-w-0 flex-col bg-[var(--background)]">
       <ReaderHead slot={headSlot}>
-        <FileText
-          size={14}
-          className="hidden shrink-0 text-[var(--muted-foreground)] md:block"
-        />
-        {/* The title, not the filename. A material saved from the web is
-            stored under its content hash, so this line read
-            "65228f9f372d6e9b.md" for every page the learner opened — the one
-            place in the reader that names what they are reading, spelling it
-            as a checksum. The filename is worth keeping for uploads, where it
-            is what the learner recognises, so it stays as the tooltip. */}
-        <span
-          className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-[var(--foreground)]"
-          title={material?.filename || material?.title}
-        >
-          {material?.title || material?.filename || t("Immersive reading")}
-        </span>
+        {/* Under the workspace's bar the document is a crumb of that bar
+            (it switches between the collection's files), so the head only
+            brings its place, history and bookmark. */}
+        {!headSlot && (
+          <>
+            <FileText
+              size={14}
+              className="hidden shrink-0 text-[var(--muted-foreground)] md:block"
+            />
+            {/* The title, not the filename. A material saved from the web is
+                stored under its content hash, so this line read
+                "65228f9f372d6e9b.md" for every page the learner opened — the one
+                place in the reader that names what they are reading, spelling it
+                as a checksum. The filename is worth keeping for uploads, where it
+                is what the learner recognises, so it stays as the tooltip. */}
+            <span
+              className="min-w-0 flex-1 truncate text-[12.5px] font-medium text-[var(--foreground)]"
+              title={material?.filename || material?.title}
+            >
+              {material?.title || material?.filename || t("Immersive reading")}
+            </span>
+          </>
+        )}
 
         {/* Back and Forward stay in the bar because they are how a learner
             returns from a citation the assistant jumped to. Everything else

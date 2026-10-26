@@ -11,7 +11,7 @@ import {
   type DragEvent,
   type PointerEvent as ReactPointerEvent,
 } from 'react'
-import { Footprints } from 'lucide-react'
+import Tooltip from '@/shared/ui/Tooltip'
 import { useTranslation } from 'react-i18next'
 import {
   addDays,
@@ -40,6 +40,7 @@ import { layoutDay, packLanes } from '../model/layout'
 import type { FootprintDay } from '../transport/api'
 import { anchorOf, type Anchor } from './AnchoredPopover'
 import { ItemChip, itemIcon, itemTitle } from './ItemChip'
+import { footprintSummary } from './AgendaView'
 import { TASK_DRAG_TYPE, readTaskDrag, writeTaskDrag } from './task-drag'
 
 const HOUR = 48
@@ -587,11 +588,16 @@ export function TimeGrid({
       <div ref={scrollRef} className="dt-cal-scroll">
         <div className="dt-cal-body" style={{ height: 24 * HOUR }}>
           <div className="dt-cal-gutter dt-cal-hours" aria-hidden>
-            {Array.from({ length: 23 }, (_, index) => (
-              <span key={index} style={{ top: (index + 1) * HOUR }}>
-                {formatHour(index + 1, locale)}
-              </span>
-            ))}
+            {Array.from({ length: 23 }, (_, index) => {
+              // The current time takes the gutter where it would collide with an hour.
+              const hidden =
+                keys.includes(todayKey) && Math.abs((index + 1) * 60 - nowMinutes) < 15
+              return (
+                <span key={index} style={{ top: (index + 1) * HOUR }} data-hidden={hidden || undefined}>
+                  {formatHour(index + 1, locale)}
+                </span>
+              )
+            })}
             {keys.includes(todayKey) && (
               <span className="dt-cal-now-label" style={{ top: (nowMinutes / 60) * HOUR }}>
                 {formatTime(now, locale)}
@@ -756,6 +762,8 @@ function TimedBlock({
   )
 }
 
+/** A day's learning activity, as one quiet mark: the deeper the tint, the
+ * more happened. The details are a click away. */
 export function FootprintButton({
   day,
   onOpen,
@@ -764,16 +772,20 @@ export function FootprintButton({
   onOpen: (day: FootprintDay, anchor: Anchor) => void
 }) {
   const { t } = useTranslation()
-  const label = t('Footprints: {{count}} conversations', { count: day.session_count })
+  const total = day.session_count + day.practice_reviews + day.mastery_evidence
+  const level = total >= 12 ? 4 : total >= 6 ? 3 : total >= 2 ? 2 : 1
+  const summary = footprintSummary(day, t)
   return (
-    <button
-      type="button"
-      aria-label={label}
-      className="dt-cal-footprint"
-      onClick={event => onOpen(day, anchorOf(event.currentTarget)!)}
-    >
-      <Footprints aria-hidden size={12} strokeWidth={1.8} />
-      {day.session_count > 0 && <span>{day.session_count}</span>}
-    </button>
+    <Tooltip label={t('Learning footprints')} description={summary}>
+      <button
+        type="button"
+        aria-label={`${t('Learning footprints')}: ${summary}`}
+        className="dt-cal-footprint"
+        data-level={level}
+        onClick={event => onOpen(day, anchorOf(event.currentTarget)!)}
+      >
+        <i aria-hidden />
+      </button>
+    </Tooltip>
   )
 }

@@ -175,6 +175,27 @@ export class NativeSession implements LoopHost {
         );
         return null;
       case "call_round": {
+        if (this.input.userInputEnabled) {
+          const raw = await this.legacy("read_user_inputs", {});
+          const inputs = Array.isArray(raw) ? raw.map(record) : [];
+          if (inputs.length) {
+            const lead =
+              this.input.copy.user_sent_while_working ||
+              "[The user sent this while you were working. Take it into account from here on.]";
+            this.conversation.appendInstruction(
+              `${lead}\n${inputs.map((item) => String(item.content || "")).join("\n\n")}`,
+            );
+            await this.emit({
+              type: "progress",
+              content: "",
+              metadata: {
+                trace_kind: "user_input",
+                user_inputs: inputs,
+              },
+            });
+            await this.checkpoint();
+          }
+        }
         this.round = await this.call(
           args.settling === true,
           args.first === true,

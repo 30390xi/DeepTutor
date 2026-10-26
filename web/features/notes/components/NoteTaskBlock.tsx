@@ -96,7 +96,7 @@ export default function NoteTaskBlock({
       ) : (
         <button
           disabled={busy || !!taskId}
-          className="dt-note-button"
+          className="dt-note-action"
           onClick={() => void create()}
         >
           {t(taskId ? 'Task unavailable' : 'Create linked task')}

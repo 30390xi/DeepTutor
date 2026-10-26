@@ -33,6 +33,8 @@ const fixture = vi.hoisted(() => ({
     setResourceSelection: vi.fn(),
     setReplyLanguageOverride: vi.fn(() => Promise.resolve()),
     sendMessage: vi.fn(),
+    queueMessage: vi.fn(),
+    withdrawQueuedMessage: vi.fn(),
     cancelStreamingTurn: vi.fn(),
     submitUserReply: vi.fn(async () => true),
     regenerateLastMessage: vi.fn(),
@@ -46,7 +48,6 @@ const fixture = vi.hoisted(() => ({
     loadMessageTrace: vi.fn(async () => undefined),
     releaseMessageTrace: vi.fn(),
     renameSessionTitle: vi.fn(async () => undefined),
-    setCourseId: vi.fn(),
   },
   routeSessionId: null as string | null,
   composerProps: null as Record<string, unknown> | null,
@@ -136,9 +137,6 @@ vi.mock('@/hooks/useContextBudget', () => ({
   useContextBudget: () => null,
 }))
 
-vi.mock('@/lib/courses-api', () => ({
-  listCourses: vi.fn(async () => []),
-}))
 
 vi.mock('@/lib/session-api', () => ({
   fetchSessionAskHint: vi.fn(async () => ''),
@@ -245,8 +243,8 @@ function emptyChatState(): ChatState {
     llmSelection: null,
     masteryPathId: null,
     masterySessionMode: null,
+    noteDocumentId: null,
     workspaceId: null,
-    courseId: '',
     personaSelection: '',
     answerBy: null,
     resourceSelection: { skills: [], mcp: [] },
@@ -260,6 +258,7 @@ function emptyChatState(): ChatState {
     submissionFailed: false,
     submissionNeedsReview: false,
     submissionNotSaved: false,
+    queuedMessages: [],
   }
 }
 
@@ -296,6 +295,17 @@ describe('ChatWorkspace smoke', () => {
     fixture.adapter.state = emptyChatState()
   })
 
+  it('resumes a saved conversation whose capability is no longer registered as chat', async () => {
+    fixture.routeSessionId = 'old-chat'
+    applyState({ sessionId: 'old-chat', activeCapability: 'removed-capability', isStreaming: true })
+    const view = renderWorkspace()
+    expect(fixture.adapter.setCapability).not.toHaveBeenCalled()
+
+    applyState({ isStreaming: false })
+    view.rerender(<ChatWorkspace />)
+    await waitFor(() => expect(fixture.adapter.setCapability).toHaveBeenCalledWith(null))
+  })
+
   it('renders the empty draft home and bootstraps a new session', async () => {
     const view = renderWorkspace()
 
@@ -329,7 +339,7 @@ describe('ChatWorkspace smoke', () => {
     expect(fixture.adapter.sendMessage).toHaveBeenCalledWith(
       'Explain photosynthesis',
       [],
-      expect.objectContaining({ _course_id: '' }),
+      expect.objectContaining({ _resource_reuse: expect.any(Object) }),
       [],
       [],
       expect.anything(),

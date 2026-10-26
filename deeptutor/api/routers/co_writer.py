@@ -1081,3 +1081,92 @@ async def create_note_suggestion(doc_id: str, request: CreateSuggestionRequest):
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+# ── Threads: conversations held at a line of the page ───────────────────────
+
+_SESSION_ID_RE = r"^[A-Za-z0-9_.:-]{1,128}$"
+
+
+class AnchorThreadRequest(BaseModel):
+    session_id: str = Field(pattern=_SESSION_ID_RE)
+    block_id: str = Field(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
+    quote: str = Field(default="", max_length=4000)
+    origin: Literal["ask", "generate"] = "ask"
+
+
+@router.get("/documents/{doc_id}/threads")
+async def note_threads(doc_id: str):
+    """The page's conversations, each with its anchor and its session's state."""
+    from deeptutor.notes.threads import list_threads, prune_threads
+    from deeptutor.services.session import get_session_store
+
+    storage = get_co_writer_storage()
+    if not storage.doc_exists(_validate_doc_id(doc_id)):
+        raise HTTPException(status_code=404, detail="Page not found")
+    if not (storage.doc_root(doc_id) / "threads.json").exists():
+        from deeptutor.notes.threads import adopt_legacy_threads
+        from deeptutor.services.session.organization import list_all_sessions_snapshot
+
+        legacy = [
+            row["session_id"]
+            for row in await list_all_sessions_snapshot(get_session_store())
+            if str((row.get("preferences") or {}).get("note_document_id") or "") == doc_id
+        ]
+        adopt_legacy_threads(storage, doc_id, legacy)
+    threads = list_threads(storage, doc_id)
+    summaries = {
+        row["session_id"]: row
+        for row in await get_session_store().get_session_summaries(
+            [t["session_id"] for t in threads]
+        )
+    }
+    if threads and len(summaries) < len(threads):
+        prune_threads(storage, doc_id, set(summaries))
+    rows = []
+    for thread in threads:
+        summary = summaries.get(thread["session_id"])
+        if summary is None:
+            continue
+        rows.append(
+            {
+                **thread,
+                "title": summary.get("title") or "",
+                "status": summary.get("status") or "idle",
+                "updated_at": summary.get("updated_at") or thread.get("created_at"),
+                "message_count": summary.get("message_count") or 0,
+                "last_message": str(summary.get("last_message") or "")[:400],
+            }
+        )
+    return {"threads": rows}
+
+
+@router.post("/documents/{doc_id}/threads")
+async def anchor_note_thread(doc_id: str, request: AnchorThreadRequest):
+    from deeptutor.notes.threads import anchor_thread
+
+    try:
+        return anchor_thread(
+            get_co_writer_storage(), _validate_doc_id(doc_id), **request.model_dump()
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.delete("/documents/{doc_id}/threads/{session_id}")
+async def delete_note_thread(doc_id: str, session_id: str):
+    """Delete a page conversation: the session goes to the recycle bin with it."""
+    from deeptutor.api.routers.sessions import delete_session
+    from deeptutor.notes.threads import find_thread, remove_thread
+
+    storage = get_co_writer_storage()
+    _validate_doc_id(doc_id)
+    if find_thread(storage, doc_id, session_id) is None:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    try:
+        await delete_session(session_id)
+    except HTTPException as exc:
+        if exc.status_code != 404:
+            raise
+    remove_thread(storage, doc_id, session_id)
+    return {"deleted": True}

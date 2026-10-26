@@ -11,7 +11,7 @@ import {
   type TaskBoard,
 } from '@/lib/task-board-api'
 import translations from '@/locales/en/app.json'
-import OrganizedSessionList from '@/components/courses/OrganizedSessionList'
+import OrganizedSessionList from '@/components/sessions/OrganizedSessionList'
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -165,7 +165,7 @@ describe('task conversation integration', () => {
               content_workspace_id: 'study',
             },
           ]}
-          courses={[]}
+
           activeSessionId="chat"
           onSelect={vi.fn()}
           onRename={vi.fn()}

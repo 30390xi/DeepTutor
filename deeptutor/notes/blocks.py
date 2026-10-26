@@ -7,6 +7,26 @@ import re
 from typing import Any
 
 MAX_BLOCK_BYTES = 4 * 1024 * 1024
+# Blocks with no inline content of their own (BlockNote ``content: "none"``).
+LEAF_BLOCK_TYPES = frozenset(
+    {
+        "learning",
+        "noteUpload",
+        "clip",
+        "math",
+        "divider",
+        "image",
+        "video",
+        "audio",
+        "file",
+        "noteColumn",
+        "noteColumns",
+        "tableOfContents",
+        "webCard",
+        "htmlEmbed",
+        "taskView",
+    }
+)
 
 
 def safe_link(value: str) -> bool:
@@ -138,6 +158,11 @@ def validate_blocks(blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
                         or any(not isinstance(row, dict) for row in data[name])
                     ):
                         raise ValueError(f"Learning {name} must be a list of objects")
+            if block["type"] in LEAF_BLOCK_TYPES:
+                # Models often echo the kind as text content ("timeline"); a
+                # block without inline content cannot hold it, and the editor
+                # refuses the whole page if it is kept.
+                block.pop("content", None)
             content = block.get("content", [])
             if block["type"] == "table":
                 if not isinstance(content, dict) or not isinstance(content.get("rows"), list):
@@ -147,23 +172,7 @@ def validate_blocks(blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
                         raise ValueError("Invalid table row")
                     for cell in row["cells"]:
                         inline(cell.get("content", []) if isinstance(cell, dict) else cell)
-            elif block["type"] not in {
-                "learning",
-                "noteUpload",
-                "clip",
-                "math",
-                "divider",
-                "image",
-                "video",
-                "audio",
-                "file",
-                "noteColumn",
-                "noteColumns",
-                "tableOfContents",
-                "webCard",
-                "htmlEmbed",
-                "taskView",
-            }:
+            elif block["type"] not in LEAF_BLOCK_TYPES:
                 inline(content)
             if block["type"] == "noteColumns":
                 columns = block.get("children", [])

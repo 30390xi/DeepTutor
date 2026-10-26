@@ -19,6 +19,7 @@ export interface NotePage extends CoWriterDocument {
 export interface NoteSummary extends CoWriterDocumentSummary {
   parent_id: string | null
   icon: string
+  cover?: string
   pinned: boolean
   revision: number
 }
@@ -65,3 +66,26 @@ export const reviewSuggestion = (
   accept: boolean,
   blocks?: NoteBlock[]
 ) => noteRequest<NotePage>(`/${id}/suggestions/${suggestionId}`, { accept, blocks })
+
+/** A conversation held at one line of the page. The session keeps the
+ *  transcript; the page keeps where it belongs. */
+export interface NoteThread {
+  session_id: string
+  block_id: string
+  quote: string
+  origin: 'ask' | 'generate'
+  created_at: number
+  title: string
+  status: 'idle' | 'running' | 'completed' | 'failed' | 'cancelled' | 'rejected'
+  updated_at: number
+  message_count: number
+  last_message: string
+}
+export const listThreads = (id: string) =>
+  noteRequest<{ threads: NoteThread[] }>(`/${id}/threads`)
+export const anchorThread = (
+  id: string,
+  thread: Pick<NoteThread, 'session_id' | 'block_id'> & Partial<Pick<NoteThread, 'quote' | 'origin'>>
+) => noteRequest<NoteThread>(`/${id}/threads`, thread)
+export const deleteThread = (id: string, sessionId: string) =>
+  noteRequest<{ deleted: boolean }>(`/${id}/threads/${encodeURIComponent(sessionId)}`, {}, 'DELETE')

@@ -44,7 +44,7 @@ vi.mock("@/components/space/ArchivedConversations", () => ({
     <button onClick={() => onRestore("older")}>Unarchive</button>
   ),
 }));
-vi.mock("@/components/courses/OrganizedSessionList", () => ({
+vi.mock("@/components/sessions/OrganizedSessionList", () => ({
   default: ({
     sessions,
   }: {

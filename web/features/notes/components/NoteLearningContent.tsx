@@ -1,11 +1,20 @@
 'use client'
 import dynamic from 'next/dynamic'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Check, ChevronDown, LoaderCircle, Sparkles } from 'lucide-react'
+import { useMenuPopover } from '@/shared/ui/useMenuPopover'
 import { upsertNotebookEntry } from '@/lib/notebook-api'
 import NoteAudioOptions from './NoteAudioOptions'
 import { noteConceptMap } from '../model/concept-map'
 import { noteGenerationError } from '../model/generation-error'
+import { generationPreview, subscribeGenerationPreviews } from '../model/generation-previews'
+import {
+  hasLearningContent,
+  learningGenerationConfig,
+  learningKind,
+  LEARNING_KINDS,
+} from '../model/learning-kinds'
 import type { Block, QuizAttempt } from '@/lib/book-types'
 const Geometry = dynamic(() => import('./NoteGeometry'), { ssr: false })
 const Result = dynamic(() => import('./NoteResult'), { ssr: false })
@@ -40,25 +49,17 @@ export default function NoteLearningContent({
   markdown: string
   data: string
   sourceUrl: string
-  onChange: (props: { prompt?: string; data?: string }) => void
+  onChange: (props: { prompt?: string; data?: string; kind?: string; markdown?: string }) => void
 }) {
   const { t } = useTranslation()
   const root = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
   const [error, setError] = useState('')
-  const [preview, setPreview] = useState<{
-    content: string
-    pending: boolean
-    error?: string
-  } | null>(null)
-  useEffect(() => {
-    const update = (e: Event) => {
-      const detail = (e as CustomEvent).detail
-      if (detail.blockId === id) setPreview(detail)
-    }
-    window.addEventListener('note-generation-preview', update)
-    return () => window.removeEventListener('note-generation-preview', update)
-  }, [id])
+  const preview = useSyncExternalStore(
+    subscribeGenerationPreviews,
+    () => generationPreview(id),
+    () => null
+  )
   useEffect(() => {
     const observer = new IntersectionObserver(
       entries => {
@@ -85,75 +86,84 @@ export default function NoteLearningContent({
     status: 'ready',
     payload,
   } as Block
+  const pending = Boolean(preview?.pending)
+  const filled = hasLearningContent(kind, markdown, payload)
+  // A generated block is only its material, part of the page like any other
+  // block: no frame, no request. Another version is asked for from the
+  // block's menu, in a conversation that starts from the old request.
+  const formOpen = !readOnly && !pending && !filled
+  const generate = () =>
+    root.current?.dispatchEvent(
+      new CustomEvent('note-generate', {
+        bubbles: true,
+        detail: { blockId: id, kind, prompt, config: learningGenerationConfig(kind, data) },
+      })
+    )
+  const openThread = () =>
+    preview?.sessionId &&
+    root.current?.dispatchEvent(
+      new CustomEvent('note-open-thread', {
+        bubbles: true,
+        detail: { sessionId: preview.sessionId },
+      })
+    )
   return (
-    <div ref={root} className="dt-note-learning" contentEditable={false}>
-      {!readOnly && (
-        <div className="dt-note-generation-form">
-          <span>
-            {t(
-              (
-                {
-                  mermaid: 'Diagram',
-                  quiz: 'Quiz me',
-                  flashcards: 'Flash Cards',
-                  timeline: 'Timeline',
-                  research: 'Research',
-                  task: 'Task',
-                  animation: 'Animation',
-                  concept_map: 'Concept map',
-                  geogebra: 'Geometry',
-                  image: 'Generate image',
-                  audio: 'Podcast',
-                  media: 'Media',
-                  visualization: 'Visualization',
-                  code: 'Code',
-                } as Record<string, string>
-              )[kind] || kind
-            )}
-          </span>
-          <textarea
-            rows={2}
-            disabled={preview?.pending}
-            aria-label={t('Generation instructions')}
-            placeholder={t('What should this block teach?')}
-            value={prompt}
-            onChange={e => onChange({ prompt: e.target.value })}
+    <div
+      ref={root}
+      className="dt-note-learning"
+      data-state={pending ? 'pending' : filled ? 'filled' : 'empty'}
+      contentEditable={false}
+    >
+      {(!filled || pending) && (
+        <div className="dt-note-learning-head">
+          <KindSwitcher
+            kind={kind}
+            disabled={readOnly || pending}
+            onChange={next => {
+              if (next === kind) return
+              onChange({ kind: next, markdown: '', data: JSON.stringify({ generation }) })
+            }}
           />
-          <button
-            className="dt-note-button"
-            disabled={preview?.pending}
-            onClick={() =>
-              root.current?.dispatchEvent(
-                new CustomEvent('note-generate', {
-                  bubbles: true,
-                  detail: {
-                    blockId: id,
-                    kind,
-                    prompt,
-                    ...(kind === 'audio'
-                      ? {
-                          config: {
-                            target_minutes: Number(generation.target_minutes) || 1,
-                            ...(generation.host_voice ? { host_voice: generation.host_voice } : {}),
-                            ...(generation.expert_voice
-                              ? { expert_voice: generation.expert_voice }
-                              : {}),
-                          },
-                        }
-                      : {}),
-                  },
-                })
-              )
-            }
-          >
-            {t(preview?.pending ? 'Generating…' : 'Generate')}
-          </button>
+          {pending && prompt.trim() && <span className="dt-note-learning-prompt">{prompt}</span>}
+          <span className="flex-1" />
+          {pending && (
+            <button className="dt-note-learning-status" onClick={openThread}>
+              <LoaderCircle size={13} className="animate-spin" aria-hidden />
+              {t('Generating…')}
+            </button>
+          )}
         </div>
       )}
-      {!readOnly && kind === 'audio' && (
+      {formOpen && (
+        <div className="dt-note-generation-form">
+          <textarea
+            rows={2}
+            aria-label={t('Generation instructions')}
+            placeholder={t(learningKind(kind).placeholder)}
+            value={prompt}
+            onChange={e => onChange({ prompt: e.target.value })}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && kind !== 'task') {
+                e.preventDefault()
+                generate()
+              }
+            }}
+          />
+          {kind !== 'task' && (
+            <div className="dt-note-generation-actions">
+              <span className="dt-note-generation-hint">{t('⌘↵ to generate')}</span>
+              <button className="dt-note-action is-primary" onClick={generate}>
+                <Sparkles size={13} aria-hidden />
+                {t('Generate')}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+      {formOpen && kind === 'audio' && (
         <NoteAudioOptions
           value={generation}
-          disabled={preview?.pending}
+          disabled={pending}
           onChange={generation => onChange({ data: JSON.stringify({ ...payload, generation }) })}
         />
       )}
@@ -162,15 +172,19 @@ export default function NoteLearningContent({
           {t(noteGenerationError(preview.error))}
         </p>
       )}
-      {preview && (preview.pending || preview.content) && (
+      {pending && (
         <div className="dt-note-generation-preview" aria-live="polite">
-          <div className="dt-note-block-label">
-            {t(preview.pending ? 'Generating…' : 'Ready for review')}
-          </div>
-          {preview.content ? (
+          {preview?.content ? (
             <Markdown content={preview.content} />
           ) : (
-            <p>{t('Preparing learning material…')}</p>
+            <div
+              className="dt-note-generation-shimmer"
+              aria-label={t('Preparing learning material…')}
+            >
+              <span />
+              <span />
+              <span />
+            </div>
           )}
         </div>
       )}
@@ -247,16 +261,15 @@ export default function NoteLearningContent({
             {markdown && <Markdown content={markdown} />}
           </>
         ) : kind === 'timeline' && Array.isArray(payload.events) ? (
-          <Timeline block={block} />
+          // A timeline reads as part of the page, without the book's panel.
+          <div className="dt-note-bare">
+            <Timeline block={block} />
+          </div>
         ) : kind === 'concept_map' && (Array.isArray(payload.nodes) || payload.graph) ? (
           <Markdown content={noteConceptMap(payload) || markdown} />
         ) : markdown ? (
           <Markdown content={markdown} />
-        ) : (
-          <p className="text-sm text-[var(--muted-foreground)]">
-            {t('Ask Dito to generate this block.')}
-          </p>
-        ))}
+        ) : null)}
       {error && (
         <p role="alert" className="text-sm text-red-600">
           {error}
@@ -266,6 +279,57 @@ export default function NoteLearningContent({
         <a href={sourceUrl} className="text-xs text-[var(--primary)]">
           ↗ {t('Source')}
         </a>
+      )}
+    </div>
+  )
+}
+
+/** The block's kind, as a menu: a block can become any other kind of material. */
+function KindSwitcher({
+  kind,
+  disabled,
+  onChange,
+}: {
+  kind: string
+  disabled: boolean
+  onChange: (kind: string) => void
+}) {
+  const { t } = useTranslation()
+  const [open, setOpen] = useState(false)
+  const menu = useMenuPopover<HTMLDivElement>(open, setOpen)
+  const current = learningKind(kind)
+  return (
+    <div ref={menu} className="relative">
+      <button
+        className="dt-note-kind"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        disabled={disabled}
+        onClick={() => setOpen(!open)}
+      >
+        <current.Icon size={14} strokeWidth={1.8} aria-hidden />
+        {t(current.label)}
+        {!disabled && <ChevronDown size={12} className="opacity-60" aria-hidden />}
+      </button>
+      {open && (
+        <div className="dt-popover dt-note-kind-menu" role="menu">
+          {LEARNING_KINDS.map(option => (
+            <button
+              key={option.kind}
+              role="menuitemradio"
+              aria-checked={option.kind === kind}
+              className="dt-menu-item"
+              onClick={() => {
+                setOpen(false)
+                onChange(option.kind)
+              }}
+            >
+              <option.Icon size={14} strokeWidth={1.8} />
+              <span className="flex-1">{t(option.label)}</span>
+              {option.kind === kind && <Check size={13} />}
+            </button>
+          ))}
+        </div>
       )}
     </div>
   )

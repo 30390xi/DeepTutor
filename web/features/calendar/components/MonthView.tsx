@@ -14,6 +14,7 @@ import {
   addDays,
   dateKey,
   daysBetween,
+  formatDate,
   formatWeekday,
   fromDateKey,
   type DateKey,
@@ -285,6 +286,8 @@ function MonthWeek({
   onTaskDrop: (event: DragEvent<HTMLElement>, day: DateKey) => void
   moreLabel: (count: number) => string
 }) {
+  const { i18n: weekI18n } = useTranslation()
+  const weekLocale = weekI18n.language
   const keys = week.map(dateKey)
   const first = keys[0]
   const last = keys[6]
@@ -355,7 +358,12 @@ function MonthWeek({
           >
             <div className="dt-cal-cell-head">
               <button type="button" className="dt-cal-cell-date" onClick={() => onOpenDay(day)}>
-                {day.getDate() === 1 ? `${day.getMonth() + 1}/${day.getDate()}` : day.getDate()}
+                {day.getDate() === 1
+                  ? formatDate(day, weekLocale, {
+                      month: 'short',
+                      day: 'numeric',
+                    })
+                  : day.getDate()}
               </button>
               {footprint && <FootprintButton day={footprint} onOpen={onOpenFootprint} />}
             </div>

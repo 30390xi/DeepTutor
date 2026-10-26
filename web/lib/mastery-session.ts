@@ -57,6 +57,26 @@ export function bookPageOf(session: SessionSummary): { bookId: string; pageId: s
   return bookId ? { bookId, pageId: String(session.preferences?.book_page_id || "") } : null;
 }
 
+/**
+ * The note page a conversation was held beside, or "".
+ *
+ * The notebook companion's conversations name their page in preferences, the
+ * same way a book page's tutor chat does.
+ */
+export function notePageIdOf(session: SessionSummary): string {
+  return String(session.preferences?.note_document_id || "");
+}
+
+/**
+ * A conversation that belongs to a note page rather than to the history.
+ *
+ * Page conversations are opened on a line, folded back onto it and listed with
+ * the page, so the sidebar's history and the palette leave them out.
+ */
+export function isNoteSession(session: SessionSummary): boolean {
+  return Boolean(notePageIdOf(session));
+}
+
 /** Where clicking this conversation should land. */
 export function sessionRoute(session: SessionSummary): string {
   return scopedUrl(surfaceRoute(session), sessionWorkspaceId(session));
@@ -80,6 +100,11 @@ function surfaceRoute(session: SessionSummary): string {
   if (book) {
     const page = bookRoute(book.bookId, book.pageId || null, sessionWorkspaceId(session));
     return `${page}${page.includes("?") ? "&" : "?"}chat=${sessionId}`;
+  }
+  // Beside the page it was about, with its companion open on this thread.
+  const notePageId = notePageIdOf(session);
+  if (notePageId) {
+    return `/co-writer/${encodeURIComponent(notePageId)}?chat=${sessionId}`;
   }
   if (
     session.preferences?.workspace_mode === "immersive_watching" ||

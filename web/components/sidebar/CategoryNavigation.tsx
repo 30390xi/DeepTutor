@@ -119,8 +119,9 @@ export function CategoryTabs({
         description={item.account ? t('navigation.accountShelf') : undefined}
         side={collapsed ? 'right' : 'bottom'}
         shortcut={SHORTCUTS.category(index)}
-        // The active tab already prints its name.
-        suppressed={!collapsed && active}
+        // The active tab already prints its name — unless an account shelf's
+        // longer label is truncated, so those keep theirs.
+        suppressed={!collapsed && active && !item.account}
       >
         <button
           id={`category-${item.id}`}
@@ -160,7 +161,7 @@ export function CategoryTabs({
               transition={{ duration: reduced ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}
             />
           )}
-          <item.icon size={18} strokeWidth={1.6} />
+          <item.icon size={20} strokeWidth={1.6} />
           <span>{t(item.label)}</span>
         </button>
       </Tooltip>

@@ -4,9 +4,7 @@ from typing import Any
 
 import pytest
 
-from deeptutor.api.routers import courses as courses_router
 from deeptutor.api.routers import sessions as sessions_router
-from deeptutor.services.courses import CourseNotFoundError, CourseService
 from deeptutor.services.session.organization import validate_parent_assignment
 
 
@@ -82,33 +80,6 @@ async def test_parent_assignment_rejects_indirect_cycle() -> None:
             session_id="c",
             parent_session_id="a",
         )
-
-
-@pytest.mark.asyncio
-async def test_course_delete_unclassifies_every_session_before_removing_course(
-    monkeypatch: pytest.MonkeyPatch,
-    tmp_path,
-) -> None:
-    service = CourseService(tmp_path / "courses")
-    course = service.create(name="Operating Systems")
-    store = _ReorderingStore(
-        [
-            {
-                "session_id": f"session-{index}",
-                "updated_at": 300 - index,
-                "preferences": {"course_id": course.id},
-            }
-            for index in range(250)
-        ]
-    )
-    monkeypatch.setattr(courses_router, "get_course_service", lambda: service)
-    monkeypatch.setattr(courses_router, "get_session_store", lambda: store)
-
-    await courses_router.delete_course(course.id)
-
-    assert all(not row["preferences"].get("course_id") for row in store.rows.values())
-    with pytest.raises(CourseNotFoundError):
-        service.get(course.id)
 
 
 @pytest.mark.asyncio

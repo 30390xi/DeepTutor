@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, expect, it, vi } from 'vitest'
 import { ComposerTray } from '@/components/chat/home/ComposerTray'
+import { CHAT_CAPABILITIES } from '@/features/capabilities/presentation'
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }))
 vi.mock('@/lib/personas-api', () => ({ listPersonas: async () => [] }))
@@ -31,6 +32,16 @@ function drag(target: HTMLElement, from: number, to: number) {
 
 beforeEach(() => {
   localStorage.clear()
+})
+
+it('offers Visualize once even when the full catalog includes the legacy animator', () => {
+  const onChange = vi.fn()
+  render(<ComposerTray placement="down" mode={{ capabilities: CHAT_CAPABILITIES, value: '', onChange }} />)
+  fireEvent.click(screen.getByRole('button', { name: 'Mode' }))
+  expect(screen.getAllByText('Visualize')).toHaveLength(1)
+  expect(screen.queryByText('Math Animator')).not.toBeInTheDocument()
+  fireEvent.click(screen.getByText('Visualize'))
+  expect(onChange).toHaveBeenCalledWith('visualize')
 })
 
 it('folds behind the composer from its grip, and opens again from the lip', () => {

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { expect, it, vi } from 'vitest'
-import OrganizedSessionList from '@/components/courses/OrganizedSessionList'
+import OrganizedSessionList from '@/components/sessions/OrganizedSessionList'
 import { buildSidebarEntries } from '@/lib/sidebar-entries'
 import type { SessionSummary } from '@/lib/session-api'
 
@@ -19,7 +19,7 @@ it('files every conversation of the workspace under one Recent heading', () => {
 
 it('shows five recents, expands older chats and preserves their actions', () => {
   const select = vi.fn()
-  const view = render(<OrganizedSessionList sessions={rows} courses={[]} recents
+  const view = render(<OrganizedSessionList sessions={rows} recents
     activeSessionId={null} onSelect={select} onRename={vi.fn()} onDelete={vi.fn()} onOrganize={vi.fn()} />)
   expect(screen.queryByText('Lesson 5')).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: 'Show more' }))
@@ -30,7 +30,7 @@ it('shows five recents, expands older chats and preserves their actions', () => 
 })
 
 it('renders an older active conversation among the recents immediately', () => {
-  const view = render(<OrganizedSessionList sessions={rows} courses={[]} recents
+  const view = render(<OrganizedSessionList sessions={rows} recents
     activeSessionId="chat-7" onSelect={vi.fn()} onRename={vi.fn()} onDelete={vi.fn()} onOrganize={vi.fn()} />)
   expect(within(view.container).getByText('Lesson 7')).toBeInTheDocument()
   expect(within(view.container).getAllByText(/^Lesson /)).toHaveLength(5)
@@ -44,7 +44,7 @@ it('lists conversations by day with pinned ones first and filters them by search
     { ...rows[2], session_id: 'pin', id: 'pin', title: 'Pinned plan', updated_at: now - 40 * 86400, created_at: now - 40 * 86400, preferences: { pinned: true } },
   ]
   const view = { sort: 'updatedAt' as const, query: '', searching: false, limit: 30, setSort: vi.fn(), setQuery: vi.fn(), setSearching: vi.fn(), more: vi.fn() }
-  const props = { sessions, courses: [], activeSessionId: null, onSelect: vi.fn(), onRename: vi.fn(), onDelete: vi.fn(), onOrganize: vi.fn() }
+  const props = { sessions, activeSessionId: null, onSelect: vi.fn(), onRename: vi.fn(), onDelete: vi.fn(), onOrganize: vi.fn() }
   const { container, rerender } = render(<OrganizedSessionList {...props} timeline={view} />)
   const headings = () => [...container.querySelectorAll('.dt-record-group > h2')].map(node => node.textContent)
   expect(headings()).toEqual(['navigation.pinned', 'Today', 'Earlier'])

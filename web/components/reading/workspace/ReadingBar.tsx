@@ -1,22 +1,24 @@
 "use client";
 
-import Link from "next/link";
 import {
-  ChevronRight,
   Expand,
+  FileText,
   Maximize2,
   Minimize2,
   PanelLeftClose,
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
-  Plus,
   SquarePen,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useCallback, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import Tooltip from "@/shared/ui/Tooltip";
+import { FeatureCrumb, InstanceCrumb, type CrumbItem } from "@/components/layout/LocationCrumbs";
+import { useShelfFeature } from "@/components/sidebar/PageBar";
+import { fetchReadingCollectionIndex, type ReadingWorkspaceTab } from "@/lib/reading-workspace-api";
+import { READING_HOME, readingCollectionRoute } from "@/lib/learning-routes";
 import type { WorkspaceMenuItem } from "@/components/reading/workspace-menu-context";
 import { PageToolButtons, ReadAloudButton } from "./ReadAloudButton";
 import { WorkspaceMenu } from "./WorkspaceMenu";
@@ -65,19 +67,25 @@ function BarButton({
 /**
  * The reading workspace's one row of chrome, over the document only.
  *
- * Read left to right it is the path to what is open: back to the folder,
- * the contents switch, the collection (rename, add to it), then the document
- * itself — its title, place and bookmark, which the reader pane hands up
- * into `docSlot` — and last what can be done with it. The companion keeps its
- * own controls on its own sheet; only the switch that brings it back lives
- * here, and only while it is away.
+ * Its left half is the location every page states, 「沉浸式阅读 / the
+ * collection / the document」: the feature opens onto the other features of
+ * the learning shelf, the collection onto the other collections (double-click
+ * renames it, as does its menu; its folder page is at the bottom), the document onto the other
+ * files in it (adding one is at the top). The reader pane hands its place,
+ * history and bookmark up into `docSlot`, after the document. The right half
+ * is what can be done with it. The companion keeps its own controls on its
+ * own sheet; only the switch that brings it back lives here, and only while
+ * it is away.
  */
 export function ReadingBar({
   backHref,
+  collectionId,
   title,
-  renaming,
   onRename,
   onAdd,
+  documents,
+  activeDocumentId,
+  onSwitchDocument,
   navigatorOpen,
   onToggleNavigator,
   docSlot,
@@ -93,10 +101,13 @@ export function ReadingBar({
   onOpenCompanion,
 }: {
   backHref: string;
+  collectionId: string;
   title: string;
-  renaming: boolean;
   onRename: () => void;
   onAdd: () => void;
+  documents: ReadingWorkspaceTab[];
+  activeDocumentId: string | null;
+  onSwitchDocument: (tab: ReadingWorkspaceTab) => void;
   navigatorOpen: boolean;
   onToggleNavigator: () => void;
   docSlot: (node: HTMLDivElement | null) => void;
@@ -112,15 +123,28 @@ export function ReadingBar({
   onOpenCompanion: () => void;
 }) {
   const { t } = useTranslation();
+  const feature = useShelfFeature(READING_HOME);
+  const loadCollections = useCallback(
+    async (): Promise<CrumbItem[]> =>
+      (await fetchReadingCollectionIndex()).map((collection) => ({
+        id: collection.workspace_id,
+        label: collection.title || t("Untitled collection"),
+        href: readingCollectionRoute(collection.workspace_id),
+      })),
+    [t],
+  );
+  const documentItems = useCallback(
+    async (): Promise<CrumbItem[]> =>
+      documents.map((tab) => ({
+        id: tab.material.material_id,
+        label: tab.material.title || tab.material.filename,
+        icon: FileText,
+      })),
+    [documents],
+  );
+  const activeDocument = documents.find((tab) => tab.material.material_id === activeDocumentId);
   return (
     <header className="dt-reading-bar flex h-12 min-w-0 shrink-0 items-center gap-1 bg-[var(--background)] px-3">
-      <Link
-        href={backHref}
-        className={`${ICON_BUTTON} text-[var(--muted-foreground)] hover:text-[var(--foreground)]`}
-        aria-label={t("Back to folder")}
-      >
-        <ChevronRight size={15} className="rotate-180" />
-      </Link>
       {/* The outline opens on the left, so its switch lives on the left. */}
       <BarButton
         label={navigatorOpen ? t("Collapse contents") : t("Expand contents")}
@@ -130,27 +154,37 @@ export function ReadingBar({
       >
         {navigatorOpen ? <PanelLeftClose size={14} /> : <PanelLeftOpen size={14} />}
       </BarButton>
-      <span className="ml-1 hidden min-w-0 max-w-[200px] shrink-[2] items-center md:inline-flex">
-        <Tooltip label={t("Rename collection")} suppressed={renaming} className="min-w-0">
-          <button
-            type="button"
-            onClick={onRename}
-            className="min-w-0 truncate rounded-md px-1.5 py-1 text-[13px] font-medium text-[var(--muted-foreground)] transition hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-          >
-            {title}
-          </button>
-        </Tooltip>
-      </span>
-      <BarButton label={t("Add material")} onClick={onAdd}>
-        <Plus size={14} />
-      </BarButton>
-      <span aria-hidden className="dt-reading-crumb-sep hidden text-[var(--muted-foreground)]/50 md:inline">
-        /
-      </span>
-      {/* The open document's title, place and bookmark render here. */}
-      <div ref={docSlot} className="dt-reader-head-slot flex min-w-0 flex-1 items-center gap-1" />
+      <nav aria-label={t("navigation.location")} className="dt-reading-crumbs ml-0.5 flex min-w-0 shrink items-center">
+        {feature && <span className="hidden md:contents"><FeatureCrumb section={feature.section} page={feature.page} /></span>}
+        <span className="hidden min-w-[72px] max-w-[220px] shrink-[2] items-center md:inline-flex">
+          <InstanceCrumb
+            label={title || t("Untitled collection")}
+            menuLabel={t("Collections")}
+            currentId={collectionId}
+            load={loadCollections}
+            onRename={onRename}
+            all={{ label: t("Open folder"), href: backHref }}
+          />
+        </span>
+        <span className="flex min-w-[96px] shrink items-center">
+          <InstanceCrumb
+            label={activeDocument?.material.title || activeDocument?.material.filename || t("Immersive reading")}
+            icon={FileText}
+            menuLabel={t("Materials in this collection")}
+            currentId={activeDocumentId}
+            load={documentItems}
+            onSelect={(item) => {
+              const tab = documents.find((candidate) => candidate.material.material_id === item.id);
+              if (tab) onSwitchDocument(tab);
+            }}
+            create={{ label: t("Add material"), onSelect: onAdd }}
+          />
+        </span>
+      </nav>
+      {/* The open document's place, history and bookmark render here. */}
+      <div ref={docSlot} className="dt-reader-head-slot ml-1 flex shrink-0 items-center gap-1" />
 
-      <div className="flex shrink-0 items-center gap-0.5">
+      <div className="ml-auto flex shrink-0 items-center gap-0.5">
         {notice && (
           <span className="hidden max-w-[220px] truncate px-2 text-[10px] text-[var(--muted-foreground)] 2xl:inline">
             {notice}

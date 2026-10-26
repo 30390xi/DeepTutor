@@ -5,8 +5,24 @@ export interface FavoriteSnapshot {
   summary: string
   metadata: Record<string, unknown>
 }
-export function favoriteSnapshot(record: NotebookRecordItem): FavoriteSnapshot {
-  return { type: record.type, summary: record.summary || '', metadata: record.metadata || {} }
+/**
+ * What a note keeps of a favorite besides its text. The collection name and
+ * the save time travel with the snapshot, so the card on the page can say
+ * where the excerpt came from even after the original moves or is deleted.
+ */
+export function favoriteSnapshot(
+  record: NotebookRecordItem,
+  collection?: { name: string }
+): FavoriteSnapshot {
+  return {
+    type: record.type,
+    summary: record.summary || '',
+    metadata: {
+      ...(record.metadata || {}),
+      ...(collection?.name ? { favorite_collection: collection.name } : {}),
+      ...(record.created_at ? { favorite_saved_at: record.created_at } : {}),
+    },
+  }
 }
 export const FAVORITE_LABELS: Record<string, string> = {
   chat: 'Chat',

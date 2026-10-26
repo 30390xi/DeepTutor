@@ -20,7 +20,6 @@ import {
   type SessionOrganizationPatch,
   type SessionSummary,
 } from "@/lib/session-api";
-import { listCourses, type StudyCourse } from "@/lib/courses-api";
 import {
   fetchReadingCollectionIndex,
   type ReadingCollectionLabel,
@@ -45,7 +44,6 @@ export default function WorkspaceSidebar() {
     sidebarRefreshToken,
   } = useChatStateAdapter();
   const [sessions, setSessions] = useState<SessionSummary[]>([]);
-  const [courses, setCourses] = useState<StudyCourse[]>([]);
   const [masteryTopics, setMasteryTopics] = useState<MasteryTopicLabel[]>([]);
   const [readingCollections, setReadingCollections] = useState<
     ReadingCollectionLabel[]
@@ -61,15 +59,13 @@ export default function WorkspaceSidebar() {
       // Only this workspace's conversations: switching workspace is switching
       // stores. Topic labels only name a group heading, so a failure to load
       // them must not cost the session list.
-      const [nextSessions, nextCourses, nextTopics, nextCollections] =
+      const [nextSessions, nextTopics, nextCollections] =
         await Promise.all([
           listAllSessions({ force: true }),
-          listCourses({ force: true }).catch(() => [] as StudyCourse[]),
           fetchMasteryTopicIndex().catch(() => [] as MasteryTopicLabel[]),
           fetchReadingCollectionIndex().catch(() => [] as ReadingCollectionLabel[]),
         ]);
       setSessions(nextSessions);
-      setCourses(nextCourses);
       setMasteryTopics(nextTopics);
       setReadingCollections(nextCollections);
       hasLoadedSessionsRef.current = true;
@@ -236,7 +232,6 @@ export default function WorkspaceSidebar() {
       showSessions
       sessions={liveSessions}
       liveSessionIds={liveSessionIds}
-      courses={courses}
       masteryTopics={masteryTopics}
       readingCollections={readingCollections}
       activeSessionId={selectedSessionId}

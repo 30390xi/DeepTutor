@@ -207,15 +207,6 @@ BUILTIN_TOOL_SPECS: tuple[BuiltinToolSpec, ...] = (
     ),
     BuiltinToolSpec("invoke_other", "deeptutor.capabilities.partner_group.tools:InvokeOtherTool"),
     *_specs(
-        "deeptutor.capabilities.course_study.tools",
-        (
-            ("course_overview", "CourseOverviewTool"),
-            ("course_material", "CourseMaterialTool"),
-            ("course_edit", "CourseEditTool"),
-            ("course_handoff", "CourseHandoffTool"),
-        ),
-    ),
-    *_specs(
         "deeptutor.tools.partner_memory",
         (
             ("partner_read", "PartnerReadTool"),

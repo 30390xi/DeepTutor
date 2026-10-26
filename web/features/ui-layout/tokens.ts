@@ -26,7 +26,12 @@ export function useCapabilityLabel(): (capability: { value: string; label: strin
   const { t } = useTranslation();
   const defaultLabel = useUiLayoutLabel("defaultCapability");
   return useCallback(
-    (capability) => (capability.value === "" ? defaultLabel : t(capability.label)),
+    // The layout names the default action; a surface that relabelled it
+    // (the note companion's "Write together") keeps its own name.
+    (capability) =>
+      capability.value === "" && capability.label === "Chat"
+        ? defaultLabel
+        : t(capability.label),
     [defaultLabel, t],
   );
 }

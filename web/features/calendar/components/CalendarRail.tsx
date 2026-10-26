@@ -5,6 +5,8 @@ import Link from 'next/link'
 import {
   AlarmClock,
   Bell,
+  BellOff,
+  GripVertical,
   Check,
   CircleDashed,
   Footprints,
@@ -84,7 +86,10 @@ export function CalendarRail({
 
       <section className="dt-cal-rail-section">
         <div className="dt-cal-rail-label">
-          <span>{t('Unscheduled tasks')}</span>
+          <span>
+            {t('Unscheduled tasks')}
+            {unscheduled.length > 0 && <span className="dt-cal-rail-count">{unscheduled.length}</span>}
+          </span>
           <Link href="/kanban" prefetch={false} className="dt-cal-rail-link">
             {t('Task Board')}
           </Link>
@@ -102,13 +107,12 @@ export function CalendarRail({
                   >
                     <CircleDashed aria-hidden size={13} strokeWidth={2} />
                     <span>{card.title}</span>
+                    <GripVertical aria-hidden size={13} className="dt-cal-task-grip" />
                   </div>
                 </li>
               ))}
             </ul>
-            <p className="dt-cal-rail-hint">
-              {t('Drag onto a time to block it out, or onto a day to set its due date.')}
-            </p>
+            <p className="dt-cal-rail-hint">{t('Drag onto the calendar to schedule it.')}</p>
           </>
         ) : (
           <p className="dt-cal-rail-hint">{t('Every open task has a date.')}</p>
@@ -172,18 +176,26 @@ export function CalendarRail({
         </ul>
       </section>
 
-      <p className="dt-cal-rail-hint">{t('Reminders work while DeepTutor is open.')}</p>
-      {notifications === 'default' && (
-        <button type="button" className="dt-cal-rail-notify" onClick={onEnableNotifications}>
-          <Bell aria-hidden size={14} strokeWidth={1.8} />
-          {t('Turn on browser notifications for reminders')}
-        </button>
-      )}
-      {notifications === 'denied' && (
-        <p className="dt-cal-rail-hint">
-          {t('This browser blocks notifications; reminders show inside DeepTutor only.')}
-        </p>
-      )}
+      <footer className="dt-cal-rail-foot">
+        {notifications === 'default' ? (
+          <Tooltip label={t('Reminders work while DeepTutor is open.')}>
+            <button type="button" className="dt-cal-rail-notify" onClick={onEnableNotifications}>
+              <Bell aria-hidden size={14} strokeWidth={1.8} />
+              {t('Turn on reminders')}
+            </button>
+          </Tooltip>
+        ) : notifications === 'denied' ? (
+          <p className="dt-cal-rail-hint">
+            <BellOff aria-hidden size={13} strokeWidth={1.8} />
+            {t('Notifications are blocked; reminders show inside DeepTutor.')}
+          </p>
+        ) : notifications === 'granted' ? (
+          <p className="dt-cal-rail-hint">
+            <Bell aria-hidden size={13} strokeWidth={1.8} />
+            {t('Reminders work while DeepTutor is open.')}
+          </p>
+        ) : null}
+      </footer>
     </aside>
   )
 }

@@ -21,14 +21,12 @@ export function decodeResourceSegment(value?: string | null): string | null {
 
 export function notebookRoute(
   notebookId?: string | null,
-  courseId?: string | null,
   recordId?: string | null,
 ): string {
   const pathname = notebookId?.trim()
     ? `/notebooks/${segment(notebookId)}`
     : "/notebooks";
   const query = [
-    courseId?.trim() ? `course=${segment(courseId)}` : "",
     recordId?.trim() ? `record=${segment(recordId)}` : "",
   ]
     .filter(Boolean)
@@ -47,5 +45,5 @@ export function favoriteRecordRoute(
   collectionId: string,
   recordId: string,
 ): string {
-  return notebookRoute(collectionId, null, recordId);
+  return notebookRoute(collectionId, recordId);
 }

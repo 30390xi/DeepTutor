@@ -10,7 +10,6 @@ import {
   FileQuestion,
   Calculator,
   Bot,
-  ChevronRight,
   ExternalLink,
   MessageSquare,
   NotebookPen,
@@ -21,6 +20,8 @@ import {
 import { useTranslation } from "react-i18next";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import NotebookRecordActions from "@/components/notebook/NotebookRecordActions";
+import { FavoriteKindIcon } from "@/components/notebook/favorite-kinds";
+import { formatRelativeTime } from "@/lib/relative-time";
 import { notify } from "@/lib/notifications";
 import type { NotebookRecordItem, NotebookSummary } from "@/lib/notebook-api";
 
@@ -116,7 +117,7 @@ export default function NotebookRecordRow({
   onRelocate,
   onOpenSession,
 }: NotebookRecordRowProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [editing, setEditing] = useState(false);
   const [previewing, setPreviewing] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -241,72 +242,76 @@ export default function NotebookRecordRow({
     ? new Date(record.created_at * 1000).toLocaleString()
     : "";
 
+  const kind = favoriteKind(record.type, record.metadata);
+  const messageCount = Number(record.metadata?.message_count ?? 0);
+
   return (
     <div
-      className={`group/row transition-opacity duration-150 ${busy ? "pointer-events-none opacity-50" : ""}`}
+      className={`dt-fav-record${expanded ? " is-open" : ""}${busy ? " is-busy" : ""}`}
     >
-      <div className="flex items-center gap-2.5 px-3 transition-colors duration-150 hover:bg-[var(--muted)]/40">
+      <div className="dt-fav-record-head">
         <button
           type="button"
           onClick={onToggle}
-          className="flex min-w-0 flex-1 items-center gap-2.5 py-2.5 text-left focus-visible:outline-none"
+          className="dt-fav-record-toggle"
           aria-expanded={expanded}
         >
-          <ChevronRight
-            size={13}
-            className={`shrink-0 text-[var(--muted-foreground)] transition-transform duration-200 ${expanded ? "rotate-90" : ""}`}
-          />
-          <span
-            className={`inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[10.5px] font-medium ${badge?.className ?? FALLBACK_BADGE.className}`}
-          >
-            <BadgeIcon size={10} />
-            {badgeLabel}
-          </span>
-          <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-[var(--foreground)]">
-            {record.title}
+          <FavoriteKindIcon kind={kind} />
+          <span className="min-w-0 flex-1">
+            <span className="dt-fav-record-title">{record.title}</span>
+            {!expanded && record.summary && (
+              <span className="dt-fav-record-summary">{record.summary}</span>
+            )}
+            <span className="dt-fav-record-meta">
+              <BadgeIcon size={11} aria-hidden />
+              {badgeLabel}
+              {messageCount > 0 && (
+                <> · {t("{{count}} messages", { count: messageCount })}</>
+              )}
+              {record.created_at ? (
+                <>
+                  {" · "}
+                  <time title={timestamp}>
+                    {formatRelativeTime(record.created_at, i18n.language)}
+                  </time>
+                </>
+              ) : null}
+            </span>
           </span>
         </button>
 
-        {/* The timestamp holds its place whether or not the row is hovered —
-            swapping it out for the action button made rows twitch. */}
-        <span className="shrink-0 text-[11px] tabular-nums text-[var(--muted-foreground)]">
-          {timestamp}
-        </span>
-
-        <Tooltip label={t("Edit favorite details")} side="top">
-          <button
-            type="button"
+        <div className="dt-fav-record-tools">
+          <Tooltip label={t("Edit favorite details")} side="top">
+            <button
+              type="button"
+              disabled={busy}
+              aria-label={t("Edit favorite details")}
+              onClick={() => {
+                if (!expanded) onToggle();
+                startEditing();
+              }}
+              className="dt-fav-icon-button"
+            >
+              <Pencil size={14} />
+            </button>
+          </Tooltip>
+          <NotebookRecordActions
+            targets={moveTargets}
             disabled={busy}
-            aria-label={t("Edit favorite details")}
-            onClick={() => {
+            onEdit={() => {
               if (!expanded) onToggle();
               startEditing();
             }}
-            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[var(--muted-foreground)] opacity-60 transition-[background-color,color,opacity,transform] duration-150 active:scale-[0.97] hover:bg-[var(--muted)] hover:text-[var(--foreground)] hover:opacity-100 focus-visible:bg-[var(--muted)] focus-visible:text-[var(--foreground)] focus-visible:opacity-100 focus-visible:outline-none disabled:opacity-30"
-          >
-            <Pencil size={14} />
-          </button>
-        </Tooltip>
-
-        <NotebookRecordActions
-          targets={moveTargets}
-          disabled={busy}
-          onEdit={() => {
-            if (!expanded) onToggle();
-            startEditing();
-          }}
-          onDelete={() => setPending("delete")}
-          onRelocate={(targetId, mode) => void runRelocate(targetId, mode)}
-        />
+            onDelete={() => setPending("delete")}
+            onRelocate={(targetId, mode) => void runRelocate(targetId, mode)}
+          />
+        </div>
       </div>
 
       {expanded && (
-        <div className="animate-pop-in px-3 pb-4 pl-9">
+        <div className="dt-fav-record-body animate-pop-in">
           {failure && (
-            <p
-              role="alert"
-              className="mb-2.5 rounded-lg bg-[var(--destructive)]/10 px-3 py-2 text-[12px] text-[var(--destructive)]"
-            >
+            <p role="alert" className="dt-fav-record-error">
               {failure}
             </p>
           )}
@@ -328,41 +333,42 @@ export default function NotebookRecordRow({
             />
           ) : (
             <>
-              {record.summary && (
-                <p className="mb-2.5 text-[12.5px] leading-6 text-[var(--foreground)]/80">
-                  {record.summary}
-                </p>
-              )}
+              {record.summary && <p className="dt-fav-record-lead">{record.summary}</p>}
               {record.type !== "chat" && record.user_query && (
-                <p className="mb-2.5 text-[12px] text-[var(--muted-foreground)]">
-                  <span className="font-medium">{t("Query:")}</span>{" "}
-                  {record.user_query}
+                <p className="dt-fav-record-query">
+                  <span>{t("Query:")}</span> {record.user_query}
                 </p>
               )}
-              {canOpenSession && (
-                <button
-                  type="button"
-                  onClick={() => onOpenSession(sessionId)}
-                  className="mb-2.5 inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] px-2.5 py-1.5 text-[11.5px] font-medium text-[var(--foreground)] transition-[background-color,border-color,color,transform] duration-150 active:scale-[0.98] hover:border-[var(--primary)]/40 hover:text-[var(--primary)]"
-                >
-                  <ExternalLink size={12} />
-                  {t("Open chat session")}
-                </button>
-              )}
-              <div className="max-h-[420px] overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--muted)]/25 px-3 py-2.5">
+              <div className="dt-fav-record-content">
                 <FavoriteContent
                   type={record.type}
                   markdown={record.output || ""}
                   metadata={record.metadata}
                 />
               </div>
-              <AddToNote
-                title={record.title}
-                markdown={record.output || ""}
-                sourceId={record.id}
-                favorite={favoriteSnapshot(record)}
-                sourceUrl={favoriteRecordRoute(currentNotebookId, record.id)}
-              />
+              <div className="dt-fav-record-actions">
+                {canOpenSession && (
+                  <button
+                    type="button"
+                    onClick={() => onOpenSession(sessionId)}
+                    className="dt-fav-button"
+                  >
+                    <ExternalLink size={13} />
+                    {t("Open chat session")}
+                  </button>
+                )}
+                <AddToNote
+                  title={record.title}
+                  markdown={record.output || ""}
+                  sourceId={record.id}
+                  favorite={favoriteSnapshot(
+                    record,
+                    notebooks.find((notebook) => notebook.id === currentNotebookId),
+                  )}
+                  sourceUrl={favoriteRecordRoute(currentNotebookId, record.id)}
+                  className="dt-fav-add-to-note"
+                />
+              </div>
             </>
           )}
         </div>

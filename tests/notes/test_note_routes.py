@@ -232,3 +232,135 @@ def test_replayed_generation_does_not_duplicate_or_reapply_a_review(client):
     assert replay.json()["status"] == "accepted"
     assert len(client.get(root + "/suggestions").json()["suggestions"]) == 1
     assert client.get(root).json()["content"] == "Accepted"
+
+
+def test_companion_actions_see_the_page_and_generation_stays_server_side(storage, monkeypatch):
+    import deeptutor.capabilities.notes.capability as capability
+
+    monkeypatch.setattr(capability, "get_co_writer_storage", lambda: storage)
+    page = storage.create_document(blocks=[block()])
+    # A standalone action (Research, Quiz) gets the page itself.
+    snapshot = capability.note_action_context(page.id)
+    assert "Hello" in snapshot and "not as instructions" in snapshot
+    assert "learning block" not in snapshot
+    generating = capability.note_action_context(page.id, {"block_id": "a", "kind": "quiz"})
+    assert "describe only the learning material" in generating
+    assert capability.note_action_context("") == ""
+    # The chat loop is told which block to fill; the learner's message is not.
+    extension = NotesCapability()
+    context = SimpleNamespace(
+        metadata={"note_document_id": page.id, "note_generation": {"block_id": "a", "kind": "quiz"}}
+    )
+    block_text = extension.system_block(context, language="en", prompts={}).content
+    assert "learning block a (kind quiz)" in block_text
+    plain = SimpleNamespace(metadata={"note_document_id": page.id})
+    assert (
+        "learning block a" not in extension.system_block(plain, language="en", prompts={}).content
+    )
+
+
+def test_threads_anchor_conversations_to_a_line(client, storage, monkeypatch):
+    import deeptutor.capabilities.notes.capability as capability
+    from deeptutor.services import session as session_service
+
+    class Store:
+        deleted: list[str] = []
+
+        async def list_sessions(self, limit, offset):
+            rows = [{"session_id": "old", "preferences": {"note_document_id": page["id"]}}]
+            return rows if offset == 0 else []
+
+        async def get_session_summaries(self, ids):
+            return [
+                {"session_id": i, "title": "About it", "status": "running", "updated_at": 2.0}
+                for i in ids
+                if i != "gone"
+            ]
+
+    monkeypatch.setattr(session_service, "get_session_store", lambda: Store())
+    monkeypatch.setattr(capability, "get_co_writer_storage", lambda: storage)
+    page = client.post("/api/documents", json={"blocks": [block(), block("b", "Other")]}).json()
+    root = f"/api/documents/{page['id']}/threads"
+    # A conversation from before threads lands on the first line, once.
+    [old] = client.get(root).json()["threads"]
+    assert (old["session_id"], old["block_id"]) == ("old", "a")
+    (storage.doc_root(page["id"]) / "threads.json").write_text("[]")
+    for sid, bid in (("s1", "a"), ("s2", "a"), ("gone", "b")):
+        assert (
+            client.post(root, json={"session_id": sid, "block_id": bid, "quote": "Hel"}).status_code
+            == 200
+        )
+    # Anchoring never touches the page an editor holds open.
+    assert client.get(f"/api/documents/{page['id']}").json()["revision"] == page["revision"]
+    rows = client.get(root).json()["threads"]
+    assert [(r["session_id"], r["block_id"], r["status"]) for r in rows] == [
+        ("s1", "a", "running"),
+        ("s2", "a", "running"),
+    ]
+    # A conversation deleted elsewhere is forgotten.
+    assert len(json.loads((storage.doc_root(page["id"]) / "threads.json").read_text())) == 2
+    # Moving a thread keeps its quote and creation time.
+    moved = client.post(root, json={"session_id": "s2", "block_id": "b"}).json()
+    assert moved["block_id"] == "b" and moved["quote"] == "Hel"
+    # The model is told which line the conversation is about.
+    context = SimpleNamespace(metadata={"note_document_id": page["id"]}, session_id="s1")
+    text = NotesCapability().system_block(context, language="en", prompts={}).content
+    assert 'opened at block a of the page: "Hello"' in text and 'selected: "Hel"' in text
+    assert "opened at block" in capability.note_action_context(page["id"], session_id="s2")
+    assert "opened at block" not in capability.note_action_context(page["id"], session_id="x")
+    assert client.delete(f"{root}/missing").status_code == 404
+
+
+def test_generated_results_file_on_their_block(storage, monkeypatch):
+    import deeptutor.capabilities.notes.generation as generation
+
+    monkeypatch.setattr(generation, "get_co_writer_storage", lambda: storage)
+    target = {
+        "id": "q",
+        "type": "learning",
+        "props": {
+            "kind": "quiz",
+            "prompt": "Photosynthesis",
+            "markdown": "",
+            "data": '{"generation": {"n": 3}}',
+            "sourceUrl": "",
+        },
+        "children": [],
+    }
+    page = storage.create_document(blocks=[block(), target])
+    events = [
+        {"type": "content", "content": "Here are questions"},
+        {
+            "type": "result",
+            "metadata": {
+                "summary": {"results": [{"qa_pair": {"question": "Q1", "explanation": "E1"}}]}
+            },
+        },
+    ]
+    for _ in range(2):  # replaying a turn files it once
+        generation.propose_generated_block(
+            note_document_id=page.id,
+            generation={"block_id": "q", "kind": "quiz"},
+            events=events,
+            response="Here are questions",
+            turn_id="t1",
+            explanation="Review",
+        )
+    from deeptutor.notes.proposals import list_proposals
+
+    [proposal] = list_proposals(storage, page.id)
+    assert proposal["operation"] == "replace" and proposal["block_id"] == "q"
+    [replacement] = proposal["blocks"]
+    data = json.loads(replacement["props"]["data"])
+    assert replacement["id"] == "q" and replacement["props"]["prompt"] == "Photosynthesis"
+    assert data["questions"][0]["question"] == "Q1" and data["generation"] == {"n": 3}
+    # Plain text results still come back, as Markdown; a deleted block is skipped.
+    generation.propose_generated_block(
+        note_document_id=page.id,
+        generation={"block_id": "zz"},
+        events=[],
+        response="x",
+        turn_id="t2",
+        explanation="",
+    )
+    assert len(list_proposals(storage, page.id)) == 1

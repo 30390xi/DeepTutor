@@ -16,7 +16,6 @@
  * Pure and free of React so the ordering can be tested on its own.
  */
 
-import type { StudyCourse } from "@/lib/courses-api";
 import type { MasteryTopicLabel } from "@/lib/learning-api";
 import { masteryPathIdOf, readingWorkspaceIdOf } from "@/lib/mastery-session";
 import type { ReadingCollectionLabel } from "@/lib/reading-workspace-api";
@@ -24,7 +23,7 @@ import type { SessionSummary } from "@/lib/session-api";
 import { applyManualOrder } from "@/lib/sidebar-layout";
 
 /** Which surface a group entry stands for. Decides only its mark. */
-export type SidebarGroupKind = "mastery" | "reading" | "course" | "recent";
+export type SidebarGroupKind = "mastery" | "reading" | "recent";
 
 export interface SidebarSessionEntry {
   kind: "session";
@@ -35,12 +34,10 @@ export interface SidebarSessionEntry {
 
 export interface SidebarGroupEntry {
   kind: "group";
-  /** Topic, collection or course id — this entry's key in the order. */
+  /** Topic or collection id — this entry's key in the order. */
   id: string;
   group: SidebarGroupKind;
   label: string;
-  /** A course's own colour; topics and collections carry an icon instead. */
-  color?: string;
   /** The conversations inside, newest first. */
   rows: SessionSummary[];
 }
@@ -50,7 +47,6 @@ export type SidebarEntry = SidebarSessionEntry | SidebarGroupEntry;
 export interface SidebarEntriesInput {
   /** Root conversations, already in the order they should be listed. */
   roots: readonly SessionSummary[];
-  courses?: readonly StudyCourse[];
   /** File every conversation under one "Recent" heading instead of its own groups. */
   recents?: boolean;
   /** Topics whose study conversations get their own entry. Omit for none. */
@@ -65,29 +61,19 @@ interface Container {
   id: string;
   group: SidebarGroupKind;
   label: string;
-  color?: string;
 }
 
 /**
  * The group a conversation belongs in, or null when it stands on its own.
  *
- * A study conversation files under its topic first. It can also carry a course
- * id — a path reached from a course keeps that link — but the topic is the
- * container it was actually held in, so filing it under the course would put it
- * where the learner never looks for it. A reading conversation files under its
- * collection for the same reason: the reader, its material and its citations
- * are that conversation's context.
- *
- * A container whose label is gone (topic deleted, course removed) yields null:
- * the conversation is then listed on its own rather than disappearing with its
- * heading, which is the only outcome that never loses it.
+ * Study conversations file under their topic, and reading conversations under
+ * their collection. If its label is gone, a conversation is listed on its own.
  */
 function containerOf(
   session: SessionSummary,
   labels: {
     topics: ReadonlyMap<string, MasteryTopicLabel>;
     collections: ReadonlyMap<string, ReadingCollectionLabel>;
-    courses: ReadonlyMap<string, StudyCourse>;
     recents: boolean;
   },
 ): Container | null {
@@ -106,18 +92,6 @@ function containerOf(
       ? { id: collectionId, group: "reading", label: collection.title }
       : null;
   }
-  const courseId = String(session.preferences?.course_id || "");
-  if (courseId) {
-    const course = labels.courses.get(courseId);
-    return course
-      ? {
-          id: courseId,
-          group: "course",
-          label: course.name,
-          color: course.color,
-        }
-      : null;
-  }
   return null;
 }
 
@@ -131,7 +105,6 @@ function containerOf(
  */
 export function buildSidebarEntries({
   roots,
-  courses = [],
   recents = false,
   masteryTopics = [],
   readingCollections = [],
@@ -146,7 +119,6 @@ export function buildSidebarEntries({
         collection,
       ]),
     ),
-    courses: new Map(courses.map((course) => [course.id, course])),
   };
 
   const entries: SidebarEntry[] = [];

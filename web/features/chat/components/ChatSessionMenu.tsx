@@ -21,7 +21,6 @@ import {
   SessionMenuItem,
 } from "@/components/sessions/SessionActionsMenu";
 import HeaderActionButton from "@/features/chat/components/HeaderActionButton";
-import type { StudyCourse } from "@/lib/courses-api";
 import { placeMenuBelow, type FloatingMenuPosition } from "@/lib/floating-menu";
 import { notify } from "@/lib/notifications";
 import {
@@ -43,7 +42,6 @@ interface ChatSessionMenuProps {
   /** Its organization as last read; null before the first read lands. */
   row: SessionOrganization | null;
   title: string;
-  courses: StudyCourse[];
   workspaces: ChatWorkspaceRegistration[];
   /** A turn is streaming. */
   live: boolean;
@@ -64,7 +62,6 @@ export default function ChatSessionMenu({
   workspaceId,
   row,
   title,
-  courses,
   workspaces,
   live,
   canSave,
@@ -218,7 +215,6 @@ export default function ChatSessionMenu({
             >
               <SessionActionsMenuItems
                 session={session}
-                courses={courses}
                 workspaces={workspaces}
                 live={live}
                 moving={moving}

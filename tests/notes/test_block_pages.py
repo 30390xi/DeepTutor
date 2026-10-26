@@ -354,4 +354,28 @@ def test_clip_into_empty_page_stays_a_source_block_after_reopen(store, monkeypat
     assert reopened.blocks[0]["props"]["favoriteType"] == "video_learning"
     assert reopened.blocks[0]["props"]["summary"] == "Saved summary"
     assert reopened.blocks[0]["props"]["expanded"] is False
-    assert __import__("json").loads(reopened.blocks[0]["props"]["metadata"]) == {"video_url": "/clip.mp4"}
+    assert __import__("json").loads(reopened.blocks[0]["props"]["metadata"]) == {
+        "video_url": "/clip.mp4"
+    }
+
+
+def test_cards_drop_stray_text_and_tell_the_model_what_they_hold():
+    from deeptutor.notes.threads import card_content
+
+    timeline = {
+        "id": "t",
+        "type": "learning",
+        # A model echoing the kind as content; the editor rejects such a page.
+        "content": "timeline",
+        "props": {
+            "kind": "timeline",
+            "prompt": "Photosynthesis",
+            "markdown": "",
+            "data": '{"events": [{"date": "1771", "title": "Priestley", "description": "Mint"}]}',
+        },
+        "children": [],
+    }
+    validate_blocks([timeline])
+    assert "content" not in timeline
+    assert "1771 — Priestley" in card_content(timeline)
+    assert card_content(block()) == ""

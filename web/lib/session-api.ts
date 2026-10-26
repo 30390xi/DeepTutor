@@ -91,6 +91,8 @@ export interface SessionPreferences {
   mastery_path_id?: string;
   /** "outline" | "study" | "review" — what this mastery conversation is for. */
   mastery_session_mode?: string;
+  /** Note page a notebook companion conversation is held beside. */
+  note_document_id?: string;
   /** Session-level persona preference; "" / absent = Default (no persona). */
   persona?: string;
   /** Who the conversation is handed to — `partner:<id>` / `subagent:<name>`;
@@ -104,18 +106,13 @@ export interface SessionPreferences {
    *  shown at that branch point. Missing keys default to the latest
    *  sibling (most recently created child). */
   selected_branches?: Record<string, number>;
-  /** Study-course organization. Empty/absent means Unclassified. */
-  course_id?: string;
-  /** Source conversation for nested selected-text tutor threads. */
+  /** The conversation a side chat was opened beside. */
   parent_session_id?: string;
+  /** ``selection_tutor`` marks a side chat (the name predates side chats). */
   session_kind?: "chat" | "selection_tutor" | "immersive_reading";
-  /** What a Little Tutor thread is about: one selected passage, or the whole
-   *  parent conversation (a side chat). Written by the backend on each turn. */
-  tutor_scope?: "selection" | "conversation";
-  /** The passage a selection thread pins, kept so a reopened thread can pin it
-   *  again; bounded, so it may be a prefix of a very long selection. */
-  tutor_selected_text?: string;
-  tutor_source_message_id?: number;
+  /** The partner group a side chat convenes; a partner or an agent answering
+   *  one is ``answer_by``. Written by the backend on each turn. */
+  side_chat_group_id?: string;
   /** Owning Immersive Reading workspace, present only for reading sessions. */
   reading_workspace_id?: string;
   /** Material active when the reading conversation was created. */
@@ -239,7 +236,7 @@ export async function listSessions(
   );
 }
 
-/** Fetch the complete session index in bounded pages for course organization. */
+/** Fetch the complete session index in bounded pages for conversation organization. */
 export async function listAllSessions(options?: {
   force?: boolean;
   allWorkspaces?: boolean;
@@ -395,7 +392,6 @@ export async function getMessageTrace(
 
 export type SessionOrganizationPatch = Partial<{
   workspace_id: string | null;
-  course_id: string;
   parent_session_id: string;
   session_kind: "chat" | "selection_tutor";
   pinned: boolean;
@@ -435,7 +431,7 @@ export async function getSessionOrganization(
   return data.session;
 }
 
-/** The Little Tutor threads opened from a conversation, newest first. */
+/** The side chats opened from a conversation, newest first. */
 export async function listSessionThreads(
   sessionId: string,
   workspaceId?: string,

@@ -39,6 +39,8 @@ export interface StartTurnInput {
   workspaceMode?: string | null;
   masteryPathId?: string | null;
   masterySessionMode?: string | null;
+  noteDocumentId?: string | null;
+  noteGeneration?: { block_id: string; kind?: string } | null;
   masteryPathLeaseManaged?: boolean;
   masteryAnswer?: MasteryCardAnswer | null;
   masterySkip?: MasteryCardSkip | null;
@@ -49,7 +51,6 @@ export interface StartTurnInput {
   timedMediaId?: string | null;
   timedMediaViewport?: TimedMediaViewport | null;
   parentMessageId?: number | null;
-  courseId?: string | null;
   persistUserMessage?: boolean;
   regenerate?: boolean;
   regeneratedFromMessageId?: number | null;

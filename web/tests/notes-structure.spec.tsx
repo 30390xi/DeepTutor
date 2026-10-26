@@ -25,12 +25,11 @@ it('moves nested subtrees without losing IDs or siblings and prevents self-nesti
   const back = moveNoteBlock(moved, 'child', 'sibling', 'before')
   expect(back).toEqual(original)
 })
-it('allows folding page branches, exposes full titles and identifies the current page', () => {
+it('allows folding page branches and identifies the current page', () => {
   const onNavigate = vi.fn((event: React.MouseEvent) => event.preventDefault())
   render(<NotePageTree pages={pages} currentId="child" busy={false} onNavigate={onNavigate} onClose={vi.fn()} onCreate={vi.fn()} />)
   const current = screen.getByRole('link', {name: 'Long child page title'})
   expect(current).toHaveAttribute('aria-current', 'page')
-  expect(current).toHaveAttribute('title', 'Long child page title')
   fireEvent.click(screen.getByRole('button', {name: 'Collapse Root'}))
   expect(screen.queryByRole('link', {name: 'Long child page title'})).toBeNull()
   fireEvent.click(screen.getByRole('button', {name: 'Expand Root'}))

@@ -90,8 +90,42 @@ class AgentLoopHost:
     async def begin_settlement(self) -> None:
         await self.loop._begin_settlement(self.messages)
 
+    async def read_inbox(self) -> None:
+        """Hand the model what the learner sent while the turn was running.
+
+        Read at every step boundary — before each model call, so after the
+        tool batch in flight — and appended as the learner's own words; the
+        trace row puts the message in the transcript where it was read.
+        """
+        drain = self.context.runtime.drain_user_inputs
+        inputs = drain() if drain is not None else []
+        if not inputs:
+            return
+        lead = self.pipeline._t(
+            "loop.user_sent_while_working",
+            default=(
+                "[The user sent this while you were working. Take it into account from "
+                "here on: answer it, or adjust what you are doing.]"
+            ),
+        )
+        said = "\n\n".join(str(item["content"]) for item in inputs)
+        self.loop._append_loop_instruction(self.messages, f"{lead}\n{said}")
+        await self.stream.progress(
+            "",
+            source=self.loop.source,
+            stage=self.loop.stage,
+            metadata={
+                "trace_kind": "user_input",
+                "user_inputs": [
+                    {"command_id": item["command_id"], "content": item["content"]}
+                    for item in inputs
+                ],
+            },
+        )
+
     async def call_round(self, *, settling: bool, first: bool) -> dict[str, bool]:
         self.override_after_tools = False
+        await self.read_inbox()
         self.result = await self.loop._call_llm(
             messages=self.messages,
             label=self.pipeline._t("labels.final_response", default="Final response")

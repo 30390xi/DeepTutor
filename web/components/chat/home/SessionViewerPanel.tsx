@@ -6,9 +6,9 @@ import { browserStorage } from "@/shared/storage";
 
 /**
  * SessionViewerPanel — full right-side sidebar with browser-style tabs:
- * file previews, web pages, a Markdown note, quiz follow-ups, Little Tutor
- * threads (a selected passage, or a side chat about the conversation),
- * GeoGebra boards and subagent runs.
+ * file previews, web pages, a Markdown note, quiz follow-ups, side chats
+ * (with Dito, a partner, an agent or a partner group), GeoGebra boards and
+ * subagent runs.
  *
  * - Tabs across the top of the panel; each closeable. The "+" launcher
  *   (``ViewerLauncher``) names everything the panel can hold.
@@ -43,12 +43,14 @@ import {
   Download,
   ExternalLink,
   Globe,
-  GraduationCap,
   Loader2,
   MessageSquarePlus,
+  MessagesSquare,
   NotebookPen,
   Paperclip,
   Plus,
+  UserRound,
+  UsersRound,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -66,6 +68,8 @@ import ViewerLauncher, {
   type LauncherClosedTab,
   type LauncherThread,
 } from "@/components/chat/home/ViewerLauncher";
+import type { ComposerResourceCatalog } from "@/hooks/useComposerResources";
+import ResponderFace from "@/components/chat/home/ResponderFace";
 import QuizFollowupTabBody from "@/components/quiz/QuizFollowupTabBody";
 import ConsultationTabBody from "@/components/chat/home/ConsultationTabBody";
 import {
@@ -77,12 +81,16 @@ import { apiUrl } from "@/lib/api";
 import type { MessageAttachment } from "@/features/chat/ChatStateAdapter";
 import type { StreamEvent } from "@/features/chat/model/protocol";
 import Tooltip from "@/shared/ui/Tooltip";
+import { normalizeSelectedText } from "@/lib/selection-text";
 import {
-  normalizeSelectedText,
-  selectionTutorKey,
+  DITO,
+  responderFromPreferences,
+  sameResponder,
   sideChatKey,
-  type SelectionTutorContext,
-} from "@/lib/selection-tutor";
+  type SideChatResponder,
+} from "@/lib/side-chat";
+import { usePartnerRoster } from "@/hooks/usePartnerRoster";
+import { usePartnerGroups } from "@/hooks/usePartnerGroups";
 import { listSessionThreads, type SessionSummary } from "@/lib/session-api";
 import { subscribeSessionChanges } from "@/lib/session-events";
 import { isPlaceholderSessionTitle } from "@/lib/session-title";
@@ -176,7 +184,7 @@ type ViewerTab =
       context: QuizFollowupTabContext;
     }
   | {
-      kind: "selection-tutor";
+      kind: "side-chat";
       id: string;
       label: string;
       context: QuizFollowupTabContext;
@@ -205,13 +213,13 @@ export interface SessionViewerPanelHandle {
   openMarkdownNoteTab(): void;
   /** Opens (or focuses) the follow-up chat tab for a quiz question. */
   openQuizFollowupTab(context: QuizFollowupTabContext): void;
-  /** Opens an independent Little Tutor thread grounded in selected chat text. */
-  openSelectionTutorTab(
-    selection: SelectionTutorContext,
-    language: string,
-  ): void;
-  /** Opens a Little Tutor side chat about the whole conversation. */
-  openSideChatTab(): void;
+  /**
+   * Opens a side chat about this conversation — with Dito unless another
+   * responder is named. A ``quote`` lands in its composer as an attachment:
+   * an open side chat with the same responder takes it, so asking about a
+   * second passage continues the same thread.
+   */
+  openSideChatTab(options?: SideChatOpenOptions): void;
   /** Opens (or focuses) an interactive GeoGebra applet tab. */
   openGeogebraTab(payload: GeogebraTabPayload): void;
   /** Opens (first time) or live-updates a connected subagent's run tab. */
@@ -219,6 +227,11 @@ export interface SessionViewerPanelHandle {
   /** Opens the panel and switches to the Activity home (where the
    *  capability-config card lives). */
   focusActivityHome(): void;
+}
+
+export interface SideChatOpenOptions {
+  responder?: SideChatResponder;
+  quote?: string;
 }
 
 /** What a side chat opened from the viewer is about. */
@@ -240,7 +253,7 @@ export interface SessionViewerPanelProps {
   reboundFromKey?: string | null;
   /** Grounding for a side chat; absent before the conversation has a reply. */
   conversation?: ViewerConversation | null;
-  /** Store scope for reading this conversation's Little Tutor threads. */
+  /** Store scope for reading this conversation's side chats. */
   workspaceId?: string | null;
   onClose: () => void;
   onAutoOpen: () => void;
@@ -250,7 +263,13 @@ export interface SessionViewerPanelProps {
   configSection?: ReactNode;
   taskDraftIds?: string[];
   onTaskDraftChange?: (ids: string[]) => void;
+  /** The conversation's skills and connectors, for side chats to narrow to. */
+  resourceCatalog?: ComposerResourceCatalog;
+  /** Connected agents a side chat can be handed to. */
+  agents?: { name: string; kind?: string }[];
 }
+
+const NO_AGENTS: { name: string; kind?: string }[] = [];
 
 function fileTabIdFor(a: MessageAttachment, fallback: number): string {
   return `file:${a.id ?? a.filename ?? `idx-${fallback}`}`;
@@ -270,9 +289,16 @@ function quizFollowupTabIdFor(questionKey: string): string {
   return `quiz-followup:${questionKey}`;
 }
 
-function selectionTutorTabIdFor(questionKey: string): string {
-  return `selection-tutor:${questionKey}`;
+function sideChatTabIdFor(questionKey: string): string {
+  return `side-chat:${questionKey}`;
 }
+
+const RESPONDER_ICONS: Record<SideChatResponder["kind"], LucideIcon> = {
+  dito: MessagesSquare,
+  partner: UserRound,
+  subagent: Bot,
+  partner_group: UsersRound,
+};
 
 function geogebraTabIdFor(payloadId: string): string {
   return `geogebra:${payloadId}`;
@@ -289,8 +315,8 @@ function tabIcon(tab: ViewerTab): LucideIcon {
       return Globe;
     case "markdown-note":
       return NotebookPen;
-    case "selection-tutor":
-      return GraduationCap;
+    case "side-chat":
+      return RESPONDER_ICONS[tab.context.sideChat?.responder.kind ?? "dito"];
     case "quiz-followup":
       return MessageSquarePlus;
     case "geogebra":
@@ -353,6 +379,8 @@ function SessionViewerPanelInner(
     configSection,
     taskDraftIds,
     onTaskDraftChange,
+    resourceCatalog,
+    agents = NO_AGENTS,
   }: SessionViewerPanelProps,
   ref: React.Ref<SessionViewerPanelHandle>,
 ) {
@@ -566,20 +594,45 @@ function SessionViewerPanelInner(
     [onAutoOpen],
   );
 
-  /** Open (or focus) one Little Tutor thread, whatever it is pinned to. */
-  const openTutorTab = useCallback(
+  // Names for a responder known only by id (a thread reopened from the
+  // server); the shared rosters fill them in once loaded.
+  const { partners } = usePartnerRoster(open);
+  const { groups } = usePartnerGroups(open);
+  const named = useCallback(
+    (responder: SideChatResponder): SideChatResponder => {
+      if (responder.kind === "partner") {
+        const partner = partners.find((p) => p.partner_id === responder.id);
+        return partner ? { ...responder, name: partner.name } : responder;
+      }
+      if (responder.kind === "partner_group") {
+        const group = groups.find((g) => g.group_id === responder.id);
+        return group ? { ...responder, name: group.name } : responder;
+      }
+      return responder;
+    },
+    [groups, partners],
+  );
+  const responderLabel = useCallback(
+    (responder: SideChatResponder) => (responder.kind === "dito" ? "Dito" : responder.name),
+    [],
+  );
+
+  /** Open (or focus) one side chat. */
+  const putSideChatTab = useCallback(
     (
       questionKey: string,
-      tutorSelection: SelectionTutorContext,
+      responder: SideChatResponder,
       language: string,
       followupSessionId: string | null = null,
+      seedQuote?: { id: number; text: string },
     ) => {
-      const id = selectionTutorTabIdFor(questionKey);
+      const id = sideChatTabIdFor(questionKey);
+      const label = responderLabel(responder);
       const context: QuizFollowupTabContext = {
         questionKey,
         question: {
           question_id: questionKey,
-          question: tutorSelection.selectedText,
+          question: "",
           question_type: "concept",
           correct_answer: "",
           explanation: "",
@@ -592,126 +645,117 @@ function SessionViewerPanelInner(
         notebookEntryId: null,
         followupSessionId,
         language,
-        tabLabel: t("Little Tutor"),
-        tutorSelection,
+        tabLabel: label,
+        sideChat: {
+          parentSessionId: sessionId ?? null,
+          leafMessageId: conversation?.leafMessageId ?? null,
+          parentTitle: conversation?.title,
+          responder,
+        },
+        ...(seedQuote ? { seedQuote } : {}),
       };
-
       setTabs((prev) => {
-        const existingIdx = prev.findIndex((tab) => tab.id === id);
-        const tab: ViewerTab = {
-          kind: "selection-tutor",
-          id,
-          label: t("Little Tutor"),
-          context,
-        };
-        if (existingIdx >= 0) {
-          const next = [...prev];
-          next[existingIdx] = tab;
-          setActiveTabId(id);
-          return next;
-        }
-        setActiveTabId(id);
-        return [...prev, tab];
+        const tab: ViewerTab = { kind: "side-chat", id, label, context };
+        const existingIdx = prev.findIndex((open) => open.id === id);
+        if (existingIdx < 0) return [...prev, tab];
+        const next = [...prev];
+        next[existingIdx] = tab;
+        return next;
       });
+      setActiveTabId(id);
       onAutoOpen();
     },
-    [onAutoOpen, t],
+    [conversation, onAutoOpen, responderLabel, sessionId],
   );
 
-  const openSelectionTutorTab = useCallback(
-    (selection: SelectionTutorContext, language: string) => {
-      const selectedText = normalizeSelectedText(selection.selectedText);
-      if (!selectedText) return;
-      openTutorTab(
-        selectionTutorKey(selectedText, sessionId, selection.sourceMessageId),
-        {
-          scope: "selection",
-          selectedText,
-          parentSessionId: sessionId,
-          sourceMessageId: selection.sourceMessageId,
-          sourceMessageText: selection.sourceMessageText,
-          sourceMessageRole: selection.sourceMessageRole,
-        },
-        language,
+  const seedCounter = useRef(0);
+  const openSideChatTab = useCallback(
+    ({ responder = DITO, quote }: SideChatOpenOptions = {}) => {
+      const text = quote ? normalizeSelectedText(quote) : "";
+      const seedQuote = text ? { id: ++seedCounter.current, text } : undefined;
+      const sideChats = tabs.filter(
+        (tab): tab is Extract<ViewerTab, { kind: "side-chat" }> =>
+          tab.kind === "side-chat" &&
+          Boolean(tab.context.sideChat) &&
+          sameResponder(tab.context.sideChat!.responder, responder),
+      );
+      // A quote joins the side chat already talking to this responder (the
+      // one on screen first); opening one bare reuses only a blank one.
+      const target = text
+        ? (sideChats.find((tab) => tab.id === activeTabId) ?? sideChats.at(-1))
+        : sideChats.find(
+            (tab) =>
+              !tab.context.followupSessionId &&
+              (followups?.getThread(tab.context.questionKey).messages.length ?? 0) === 0,
+          );
+      if (target) {
+        if (seedQuote) {
+          setTabs((prev) =>
+            prev.map((tab) =>
+              tab.id === target.id && tab.kind === "side-chat"
+                ? { ...tab, context: { ...tab.context, seedQuote } }
+                : tab,
+            ),
+          );
+        }
+        setActiveTabId(target.id);
+        onAutoOpen();
+        return;
+      }
+      putSideChatTab(
+        sideChatKey(sessionId ?? null),
+        responder,
+        conversation?.language ?? "en",
+        null,
+        seedQuote,
       );
     },
-    [openTutorTab, sessionId],
+    [activeTabId, conversation, followups, onAutoOpen, putSideChatTab, sessionId, tabs],
   );
 
-  const sideChatSelection = useCallback(
-    (): SelectionTutorContext | null =>
-      sessionId && conversation
-        ? {
-            scope: "conversation",
-            selectedText: "",
-            parentSessionId: sessionId,
-            sourceMessageId: conversation.leafMessageId,
-            sourceMessageText: "",
-            sourceMessageRole: "assistant",
-            parentTitle: conversation.title,
-          }
-        : null,
-    [conversation, sessionId],
+  /** Hand a side chat to someone else: the tab keeps its thread, takes the
+   *  new name, and the next message goes to them. */
+  const setSideChatResponder = useCallback(
+    (tabId: string, responder: SideChatResponder) => {
+      setTabs((prev) =>
+        prev.map((tab) =>
+          tab.id === tabId && tab.kind === "side-chat" && tab.context.sideChat
+            ? {
+                ...tab,
+                label: responderLabel(responder),
+                context: {
+                  ...tab.context,
+                  tabLabel: responderLabel(responder),
+                  sideChat: { ...tab.context.sideChat, responder },
+                },
+              }
+            : tab,
+        ),
+      );
+    },
+    [responderLabel],
   );
 
-  /** A side chat about the whole conversation. A side chat already open and
-   *  still empty is focused rather than joined by a second blank one. */
-  const openSideChatTab = useCallback(() => {
-    const selection = sideChatSelection();
-    if (!selection || !sessionId || !conversation) return;
-    const blank = tabs.find(
-      (tab) =>
-        tab.kind === "selection-tutor" &&
-        tab.context.tutorSelection?.scope === "conversation" &&
-        !tab.context.followupSessionId &&
-        (followups?.getThread(tab.context.questionKey).messages.length ?? 0) === 0,
-    );
-    if (blank) {
-      setActiveTabId(blank.id);
-      onAutoOpen();
-      return;
-    }
-    openTutorTab(sideChatKey(sessionId), selection, conversation.language);
-  }, [conversation, followups, onAutoOpen, openTutorTab, sessionId, sideChatSelection, tabs]);
-
-  /** Bring back an earlier thread, its history read from the server. A thread
-   *  still live in this page keeps its key, so its in-flight state survives. */
-  const openTutorThread = useCallback(
+  /** Bring back an earlier side chat, its history read from the server. A
+   *  thread still live in this page keeps its key, so its in-flight state
+   *  survives. */
+  const openSideChatThread = useCallback(
     (thread: SessionSummary) => {
       if (!sessionId) return;
       const prefs = thread.preferences ?? {};
-      const pinnedText = (prefs.tutor_selected_text ?? "").trim();
-      const sourceId = prefs.tutor_source_message_id;
-      // A selection pinned to a message that was never persisted cannot be
-      // grounded again; such a thread continues as a side chat.
-      const selection: SelectionTutorContext | null =
-        prefs.tutor_scope !== "conversation" &&
-        pinnedText &&
-        typeof sourceId === "number" &&
-        sourceId > 0
-          ? {
-              scope: "selection",
-              selectedText: pinnedText,
-              parentSessionId: sessionId,
-              sourceMessageId: sourceId,
-              sourceMessageText: "",
-              sourceMessageRole: "assistant",
-            }
-          : sideChatSelection();
-      if (!selection) return;
       const live = followups
         ? Object.entries(followups.getAllThreads()).find(
             ([, state]) => state.sessionId === thread.session_id,
           )?.[0]
         : undefined;
-      openTutorTab(
-        live ?? `tutor-thread:${thread.session_id}`,
-        selection,
+      putSideChatTab(
+        live ?? `thread:${thread.session_id}`,
+        named(responderFromPreferences(prefs)),
         conversation?.language ?? prefs.language ?? "en",
         thread.session_id,
       );
     },
-    [conversation, followups, openTutorTab, sessionId, sideChatSelection],
+    [conversation, followups, named, putSideChatTab, sessionId],
   );
 
   const openGeogebraBoard = useCallback(() => {
@@ -798,7 +842,6 @@ function SessionViewerPanelInner(
       openWebTab,
       openMarkdownNoteTab,
       openQuizFollowupTab,
-      openSelectionTutorTab,
       openSideChatTab,
       openGeogebraTab,
       openSubagentTab,
@@ -809,7 +852,6 @@ function SessionViewerPanelInner(
       openWebTab,
       openMarkdownNoteTab,
       openQuizFollowupTab,
-      openSelectionTutorTab,
       openSideChatTab,
       openGeogebraTab,
       openSubagentTab,
@@ -862,7 +904,7 @@ function SessionViewerPanelInner(
     [closedTabs],
   );
 
-  // This conversation's Little Tutor threads, read when the launcher opens —
+  // This conversation's side chats, read when the launcher opens —
   // new threads appear between two openings, never while one is on screen.
   const launcherOpen = tabs.some((tab) => tab.id === newTabId) && activeTabId === newTabId;
   const [threads, setThreads] = useState<{ sessionId: string; rows: SessionSummary[] }>({
@@ -884,7 +926,7 @@ function SessionViewerPanelInner(
 
   const openThreadSessionIds = new Set(
     tabs.flatMap((tab) =>
-      tab.kind === "selection-tutor"
+      tab.kind === "side-chat"
         ? [
             followups?.getThread(tab.context.questionKey).sessionId ??
               tab.context.followupSessionId,
@@ -897,18 +939,12 @@ function SessionViewerPanelInner(
     .filter((row) => !openThreadSessionIds.has(row.session_id))
     .slice(0, 6)
     .map((row) => {
-      const pinned = (row.preferences?.tutor_selected_text ?? "").trim();
-      const excerpt = pinned.length > 80 ? `${pinned.slice(0, 80)}…` : pinned;
-      const about =
-        row.preferences?.tutor_scope === "conversation" || !excerpt
-          ? t("About the whole conversation")
-          : `“${excerpt}”`;
+      const responder = named(responderFromPreferences(row.preferences));
       return {
         id: row.session_id,
-        title: isPlaceholderSessionTitle(row.title)
-          ? excerpt || t("Side chat")
-          : row.title,
-        detail: about,
+        title: isPlaceholderSessionTitle(row.title) ? t("Side chat") : row.title,
+        detail: t("With {{name}}", { name: responderLabel(responder) }),
+        icon: RESPONDER_ICONS[responder.kind],
         updatedAt: row.updated_at,
       };
     });
@@ -918,7 +954,7 @@ function SessionViewerPanelInner(
     // A thread the server already lists is offered there, with its history.
     .filter(
       (tab) =>
-        tab.kind !== "selection-tutor" ||
+        tab.kind !== "side-chat" ||
         !threadIds.has(
           followups?.getThread(tab.context.questionKey).sessionId ??
             tab.context.followupSessionId ??
@@ -1015,6 +1051,7 @@ function SessionViewerPanelInner(
         onCloseTab={closeTab}
         onNewTab={openNewTab}
         onClosePanel={onClose}
+        agents={agents}
         actions={
           activeTab?.kind === "file" ? (
             <FileTabActions source={activeTab.source} />
@@ -1035,11 +1072,17 @@ function SessionViewerPanelInner(
           <QuizFollowupTabBody
             key={activeTab.context.questionKey}
             context={activeTab.context}
+            resourceCatalog={resourceCatalog}
           />
-        ) : activeTab?.kind === "selection-tutor" ? (
+        ) : activeTab?.kind === "side-chat" ? (
           <QuizFollowupTabBody
             key={activeTab.context.questionKey}
             context={activeTab.context}
+            resourceCatalog={resourceCatalog}
+            agents={agents}
+            onResponderChange={(responder) =>
+              setSideChatResponder(activeTab.id, responder)
+            }
           />
         ) : activeTab?.kind === "geogebra" ? (
           <GeogebraTabBody
@@ -1053,16 +1096,17 @@ function SessionViewerPanelInner(
             onOpenLocalFile={(file) => openFromNewTab(() => openLocalFile(file))}
             onOpenMarkdownNote={() => openFromNewTab(openMarkdownNoteTab)}
             onOpenGeogebraBoard={() => openFromNewTab(openGeogebraBoard)}
-            onOpenSideChat={
-              sessionId && conversation
-                ? () => openFromNewTab(openSideChatTab)
-                : undefined
+            // Always open: beside a draft it is a conversation of its own.
+            onOpenSideChat={(responder) =>
+              openFromNewTab(() => openSideChatTab({ responder }))
             }
+            sideChatAboutConversation={Boolean(sessionId && conversation)}
+            sideChatAgents={agents}
             sideChatShortcut={SHORTCUTS.sideChat}
             threads={launcherThreads}
             onOpenThread={(id) => {
               const row = threadRows.find((thread) => thread.session_id === id);
-              if (row) openFromNewTab(() => openTutorThread(row));
+              if (row) openFromNewTab(() => openSideChatThread(row));
             }}
             closedTabs={launcherClosedTabs}
             onReopenTab={reopenClosedTab}
@@ -1123,9 +1167,12 @@ function TabBar({
   onCloseTab,
   onNewTab,
   onClosePanel,
+  agents,
   actions,
 }: {
   tabs: ViewerTab[];
+  /** Connected agents, so an agent's side chat wears its own glyph. */
+  agents: { name: string; kind?: string }[];
   activeTabId: string | null;
   homeActive: boolean;
   onSelectHome: () => void;
@@ -1165,7 +1212,16 @@ function TabBar({
                 aria-label={tab.label}
                 className={`inline-flex h-full min-w-0 flex-1 items-center gap-1.5 rounded-lg pl-2.5 pr-1 text-left ${TAB_FOCUS}`}
               >
-                <Icon size={13} strokeWidth={1.8} className="shrink-0" />
+                {/* A side chat wears the face of whoever answers it. */}
+                {tab.kind === "side-chat" && tab.context.sideChat ? (
+                  <ResponderFace
+                    responder={tab.context.sideChat.responder}
+                    agents={agents}
+                    size={13}
+                  />
+                ) : (
+                  <Icon size={13} strokeWidth={1.8} className="shrink-0" />
+                )}
                 <span className="truncate">{tab.label}</span>
               </button>
               <Tooltip label={t("Close tab")} side="bottom">

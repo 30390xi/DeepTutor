@@ -680,12 +680,6 @@ _router_loader.include(
     dependencies=_auth,
 )
 _router_loader.include(
-    "deeptutor.api.routers.courses:router",
-    prefix="/api/courses",
-    tags=["courses"],
-    dependencies=_auth,
-)
-_router_loader.include(
     "deeptutor.api.routers.question_notebook:router",
     prefix="/api/question-notebook",
     tags=["question-notebook"],
