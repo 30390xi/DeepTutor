@@ -9,7 +9,13 @@ from deeptutor.agents.video_lesson.runtime import ASSETS_DIR, KIT_FILES, prepare
 
 
 def test_shipped_runtime_assets_exist() -> None:
-    for name in (*KIT_FILES, "build.mjs", "package.json"):
+    for name in (
+        *KIT_FILES,
+        "build.mjs",
+        "render-platform.ts",
+        "package.json",
+        "package-lock.json",
+    ):
         assert (ASSETS_DIR / name).is_file(), name
     deps = json.loads((ASSETS_DIR / "package.json").read_text(encoding="utf-8"))["dependencies"]
     # Pinned exactly: a lesson that compiled once must compile the same way later.
@@ -39,11 +45,15 @@ def test_prepare_workdir_writes_the_voice_module(tmp_path: Path) -> None:
     assert "s1" in (tmp_path / "source" / "voice.ts").read_text(encoding="utf-8")
 
 
-def test_video_lesson_requires_a_docker_runtime(monkeypatch) -> None:
-    import pytest
+def test_video_lesson_available_without_docker(monkeypatch) -> None:
+    from types import SimpleNamespace
 
-    from deeptutor.agents.video_lesson import runtime
+    from deeptutor.app.facade import DeepTutorApp
 
-    monkeypatch.setattr(runtime.shutil, "which", lambda _name: None)
-    with pytest.raises(runtime.VideoLessonRuntimeError, match="Docker"):
-        runtime._docker()
+    monkeypatch.setattr(
+        "deeptutor.app.facade.shutil.which", lambda name: name if name in {"node", "npm"} else None
+    )
+    app = SimpleNamespace(resolve_capability=lambda value: value)
+    availability = DeepTutorApp.get_capability_availability(app, "video_lesson")
+    assert availability.available
+    assert not availability.install_hint

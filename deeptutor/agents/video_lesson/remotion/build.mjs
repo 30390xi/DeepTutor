@@ -1,5 +1,5 @@
 // Compile a model-written Remotion lesson (Lesson.tsx + the shipped kit) into a browser player
-// script. Before bundling, sample frames are rendered in a network-isolated Docker container so
+// script. Before bundling, sample frames are rendered in a WebAssembly JavaScript sandbox so
 // runtime errors come back to the model instead of reaching the learner.
 //
 //   node build.mjs <Lesson.tsx> <out.js>
@@ -8,16 +8,17 @@
 // esbuild (see package.json next to this file). Prints one JSON line: {ok, stage, errors, frames}.
 
 import {createRequire} from "node:module";
-import {mkdtempSync, writeFileSync, readFileSync, rmSync} from "node:fs";
+import {mkdtempSync, writeFileSync, readFileSync, rmSync, realpathSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {dirname, join, resolve} from "node:path";
-import {spawnSync} from "node:child_process";
+import {fileURLToPath} from "node:url";
+import {evaluateJavaScript} from "../../../services/sandbox/javascript.mjs";
 
 const runtime = resolve(process.env.DEEPTUTOR_REMOTION_RUNTIME || ".");
 const require = createRequire(join(runtime, "package.json"));
 const esbuild = require("esbuild");
 const [lessonArg, outArg] = process.argv.slice(2);
-const lesson = resolve(lessonArg).replace(/\\/g, "/");
+const lesson = realpathSync(resolve(lessonArg)).replace(/\\/g, "/");
 const nodePaths = [join(runtime, "node_modules")];
 
 const report = (o) => { console.log(JSON.stringify(o)); process.exit(o.ok ? 0 : 1); };
@@ -36,7 +37,15 @@ const onlyAllowedImports = {
       // packages pulling in their own dependencies are not the lesson's imports
       if (!args.importer || !inside(args.importer)) return undefined;
       const target = resolve(args.resolveDir, args.path).replace(/\\/g, "/");
-      if (target === lesson || (args.path.startsWith(".") && inside(target))) return undefined;
+      if (target === lesson) return undefined;
+      // Never let the trusted compiler inline arbitrary local files or symlink
+      // targets into the bundle before the interpreter even sees the code.
+      const kit = {"./kit": "kit.tsx", "./kit.tsx": "kit.tsx", "./voice": "voice.ts",
+        "./voice.ts": "voice.ts", "./china_outline.json": "china_outline.json"}[args.path];
+      if (kit) {
+        const path = join(home, kit);
+        if (realpathSync(path).replace(/\\/g, "/") === path.replace(/\\/g, "/")) return {path};
+      }
       return {errors: [{text: `import "${args.path}" is not allowed; use react, remotion and ./kit only`}]};
     });
   },
@@ -45,27 +54,30 @@ const onlyAllowedImports = {
 const common = {bundle: true, jsx: "automatic", nodePaths, logLevel: "silent", plugins: [onlyAllowedImports],
   loader: {".tsx": "tsx", ".ts": "ts"}, define: {"process.env.NODE_ENV": '"production"'}};
 
-// 1. Node check: render sample frames through @remotion/player's <Thumbnail>.
+// 1. Isolated check: render sample frames through @remotion/player's <Thumbnail>.
 const tmp = mkdtempSync(join(tmpdir(), "dt-lesson-"));
 const checkEntry = join(tmp, "check.tsx");
 writeFileSync(checkEntry, `
-import {renderToPipeableStream} from "react-dom/server";
-import {Writable} from "node:stream";
+import ${JSON.stringify(fileURLToPath(new URL("./render-platform.ts", import.meta.url)))};
+import {renderToReadableStream} from "react-dom/server.edge";
 import {Thumbnail} from "@remotion/player";
 import {Lesson, LESSON} from ${JSON.stringify(lesson)};
 // Streamed rendering reports errors thrown below a Suspense boundary through onError;
 // renderToString would silently render the fallback instead.
-const render = (element) => new Promise((done) => {
-  let html = "";
+const render = async (element) => {
   const thrown = [];
-  const sink = new Writable({write(chunk, _enc, next) { html += chunk; next(); }});
-  sink.on("finish", () => done({html, thrown}));
-  const stream = renderToPipeableStream(element, {
-    onError(error) { thrown.push(error); },
-    onShellError(error) { thrown.push(error); done({html, thrown}); },
-    onAllReady() { stream.pipe(sink); },
-  });
-});
+  const stream = await renderToReadableStream(element, {onError(error) { thrown.push(error); }});
+  await stream.allReady;
+  let chars = 0;
+  const reader = stream.getReader();
+  while (true) {
+    const {done, value} = await reader.read();
+    if (done) break;
+    chars += value.length;
+  }
+  return {chars, thrown};
+};
+export default async function check() {
 const errors = [], frames = [];
 const cfg = LESSON || {};
 for (const k of ["durationInFrames", "fps", "width", "height"])
@@ -77,44 +89,41 @@ if (!errors.length) {
     const realError = console.error;
     const logged = [];
     console.error = (...a) => logged.push(a.map(String).join(" ").slice(0, 300));
-    const {html, thrown} = await render(<Thumbnail component={Lesson} compositionWidth={cfg.width}
+    const {chars, thrown} = await render(<Thumbnail component={Lesson} compositionWidth={cfg.width}
       compositionHeight={cfg.height} durationInFrames={n} fps={cfg.fps} frameToDisplay={f} />);
     console.error = realError;
-    frames.push({frame: f, chars: html.length});
+    frames.push({frame: f, chars});
     for (const e of thrown) errors.push("frame " + f + ": " + ((e && e.message) || e));
-    if (!thrown.length && html.length < 400) errors.push("frame " + f + ": almost nothing rendered");
+    if (!thrown.length && chars < 400) errors.push("frame " + f + ": almost nothing rendered");
     for (const l of logged) if (!/Warning: Each child|useLayoutEffect|The above error occurred/.test(l)) errors.push("frame " + f + " console.error: " + l);
   }
 }
-console.log(JSON.stringify({errors: [...new Set(errors)].slice(0, 20), frames}));
+return JSON.stringify({errors: [...new Set(errors)].slice(0, 20), frames});
+}
 `);
 try {
-  await esbuild.build({...common, entryPoints: [checkEntry], outfile: join(tmp, "check.mjs"), platform: "node",
-    format: "esm", banner: {js: "import {createRequire as __cr} from 'module'; const require = __cr(import.meta.url);"}});
+  await esbuild.build({...common, entryPoints: [checkEntry], outfile: join(tmp, "check.js"), platform: "browser",
+    format: "iife", globalName: "__lessonCheck", define: {...common.define, global: "globalThis"}});
 } catch (e) {
   rmSync(tmp, {recursive: true, force: true});
   report({ok: false, stage: "compile", errors: fmtErrors(e)});
 }
-// No generated code executes in this process. The Python host owns a hardened
-// container and removes it on success, timeout, failure, or cancellation.
-const docker = process.env.DEEPTUTOR_RENDER_DOCKER;
-const container = process.env.DEEPTUTOR_RENDER_CONTAINER;
-if (!docker || !/^dt-lesson-[a-f0-9]{32}$/.test(container || "")) {
+// Only source text enters the interpreter. No host functions, objects, imports,
+// environment, filesystem or network capabilities are exposed to generated code.
+let checked, renderError;
+try {
+  const {getQuickJS} = require("quickjs-emscripten");
+  const source = readFileSync(join(tmp, "check.js"), "utf8") + "\n__lessonCheck.default()";
+  const value = await evaluateJavaScript(await getQuickJS(), source, {
+    timeoutMs: Number(process.env.DEEPTUTOR_RENDER_TIMEOUT_MS) || 180000,
+  });
+  checked = JSON.parse(value);
+} catch (e) {
+  renderError = String(e.message || e).slice(-1500);
+} finally {
   rmSync(tmp, {recursive: true, force: true});
-  report({ok: false, stage: "sandbox", errors: ["An isolated render container is required"]});
 }
-const run = spawnSync(docker, ["start", "--attach", "--interactive", container], {
-  input: readFileSync(join(tmp, "check.mjs")), encoding: "utf8",
-  timeout: Number(process.env.DEEPTUTOR_RENDER_TIMEOUT_MS) || 180000,
-  maxBuffer: 1024 * 1024,
-});
-rmSync(tmp, {recursive: true, force: true});
-if (run.error || run.signal || run.status !== 0) {
-  report({ok: false, stage: "render", errors: [(run.error?.message || run.stderr || "Render process failed").slice(-1500)]});
-}
-let checked;
-try { checked = JSON.parse(run.stdout.trim().split("\n").pop()); }
-catch { report({ok: false, stage: "render", errors: [(run.stderr || run.stdout || "no output").slice(-1500)]}); }
+if (renderError) report({ok: false, stage: "render", errors: [renderError]});
 if (checked.errors.length) report({ok: false, stage: "render", errors: checked.errors, frames: checked.frames});
 
 // 2. Browser bundle: the composition inside a <Player> with controls; ?frame=N opens paused there.

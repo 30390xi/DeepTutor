@@ -34,7 +34,11 @@ def test_parse_draft_without_code_is_unusable(reply: str) -> None:
     assert draft.title == ""
 
 
-def test_writer_agent_starts_a_conversation_with_the_kit() -> None:
+def test_writer_agent_starts_a_conversation_with_the_kit(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "deeptutor.agents.base_agent.get_agent_params",
+        lambda _: {"temperature": 0.7, "max_tokens": 16000},
+    )
     agent = LessonWriterAgent(api_key="test", base_url="http://localhost", language="en")
     agent.start(user_input="Explain a cobweb plot", history="")
     system, user = agent._messages

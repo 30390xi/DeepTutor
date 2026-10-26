@@ -352,8 +352,12 @@ jobs:
           DEEPTUTOR_TEST_REDIS_URL: redis://127.0.0.1:6379/0
 
   video-lesson-sandbox:
-    name: Video lesson isolation
-    runs-on: ubuntu-24.04
+    name: Video lesson isolation (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -369,7 +373,9 @@ jobs:
           DEEPTUTOR_TEST_VIDEO_SANDBOX: "1"
           DEEPTUTOR_REMOTION_RUNTIME: ${{ runner.temp }}/remotion
           PYTHONPATH: ${{ github.workspace }}
-        run: pytest -q tests/agents/video_lesson/test_isolation.py tests/services/sandbox/test_process_cancellation.py
+        run: |
+          pytest -q tests/agents/video_lesson tests/services/sandbox/test_process_cancellation.py
+          node --test tests/services/sandbox/javascript.test.mjs
 
   test-summary:
     name: Test Summary
