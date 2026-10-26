@@ -298,7 +298,29 @@ export type MessageSegment =
    * A region opens as soon as trace events arrive after some answer text, and
    * closes when the next text run starts.
    */
-  | { kind: "trace"; events: StreamEvent[]; key: string };
+  | { kind: "trace"; events: StreamEvent[]; key: string }
+  /**
+   * What the learner sent while the turn was running, at the step where the
+   * turn read it. It splits the message there: the work above it was done
+   * without it, everything below it was done knowing it.
+   */
+  | { kind: "user_input"; messages: string[]; key: string };
+
+/** The messages a ``user_input`` row says the turn read, if it is one. */
+function readUserInputs(event: StreamEvent): string[] | null {
+  const meta = (event.metadata ?? {}) as Record<string, unknown>;
+  if (event.type !== "progress" || meta.trace_kind !== "user_input") {
+    return null;
+  }
+  const inputs = Array.isArray(meta.user_inputs) ? meta.user_inputs : [];
+  return inputs
+    .map((item) =>
+      item && typeof item === "object"
+        ? String((item as Record<string, unknown>).content ?? "").trim()
+        : "",
+    )
+    .filter(Boolean);
+}
 
 /** Every id this event answers to, for matching a row against its call. */
 function callIdsOf(event: StreamEvent): string[] {
@@ -634,6 +656,18 @@ export function extractMessageSegments(
       // The resolution belongs to the card, not to the trace below it.
       continue;
     }
+    const said = readUserInputs(event);
+    if (said) {
+      if (said.length === 0) continue;
+      // What the turn writes next answers this, so it starts fresh below it.
+      pendingTextIdx = null;
+      pendingTraceIdx = null;
+      if (typeof meta.assistant_content_offset === "number") {
+        answerOffsets.set(segments.length, meta.assistant_content_offset);
+      }
+      segments.push({ kind: "user_input", messages: said, key: `u${seq++}` });
+      continue;
+    }
     appendTraceEvent(event);
   }
 
@@ -691,8 +725,9 @@ export function extractMessageSegments(
  *
  * A row with no recorded offset is placed differently by kind. A card is a
  * question the reader was asked, so it belongs below everything written before
- * it. A run of tool work is not worth pushing the whole answer above, so it
- * simply keeps its position in the sequence.
+ * it. A run of tool work — or a message the learner sent mid-turn — is not
+ * worth pushing the whole answer above, so it keeps its position in the
+ * sequence.
  */
 function layOutAnswerContent(
   segments: MessageSegment[],
@@ -716,7 +751,7 @@ function layOutAnswerContent(
     const offset = answerOffsets.get(idx);
     if (offset !== undefined) {
       pushText(snapToLineStart(answerContent, Math.max(cursor, offset)));
-    } else if (segment.kind !== "trace") {
+    } else if (segment.kind !== "trace" && segment.kind !== "user_input") {
       pushText(answerContent.length);
     }
     laidOut.push(segment);

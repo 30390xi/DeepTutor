@@ -25,6 +25,8 @@ import {
   type DetailRow,
 } from "@/components/activity";
 import { MODE_SPEED, MODE_TO_ORB } from "./ActivityOrb";
+import { AnswererMark } from "./AnswererMark";
+import type { Answerer } from "./answerer";
 import type {
   ResearchStageCard,
   ResearchStageId,
@@ -1526,12 +1528,15 @@ export function StreamingStatus({
   onToggle,
   summary,
   agentName,
+  answerer,
   showMark = true,
   traceBounds,
 }: {
   events: StreamEvent[];
   isStreaming?: boolean;
   content?: string;
+  /** A turn handed to a partner or an agent: they own the line, mark and all. */
+  answerer?: Answerer;
   /** The turn's real span, when ``events`` is only a preview of it. */
   traceBounds?: { started_at?: number | null; ended_at?: number | null } | null;
   // Extra layout classes from the call site (e.g. ``mt-3`` when the row
@@ -1614,6 +1619,35 @@ export function StreamingStatus({
   );
   const durationLabel =
     turnSeconds != null ? formatTurnDuration(turnSeconds) : null;
+
+  if (answerer) {
+    // Their mark where the orb would be, their name held still, and what
+    // they are doing breathing beside it — "Paul is thinking…", "Paul
+    // answered". DeepTutor's own phase words do not apply to someone else.
+    const doing =
+      mode === "responded"
+        ? t("trace.answerer.done")
+        : mode === "tool_using"
+          ? t("trace.answerer.tools")
+          : hasFinalContent
+            ? t("trace.answerer.answering")
+            : t("trace.answerer.thinking");
+    return (
+      <ActivityHeader
+        orb={MODE_TO_ORB[mode]}
+        mark={<AnswererMark answerer={answerer} working={mode !== "responded"} />}
+        lead={<span className="dt-answerer-name">{answerer.name}</span>}
+        label={doing}
+        duration={durationLabel}
+        settled={mode === "responded"}
+        expandable={expandable}
+        expanded={expanded}
+        onToggle={onToggle}
+        summary={summary}
+        className={className}
+      />
+    );
+  }
   // Static label after the answer is done — no breathing animation. Every
   // other state is live, so the label breathes to signal ongoing work while
   // the orb beside it runs its own motion.
@@ -1766,6 +1800,7 @@ export function AssistantActivity({
   content,
   className = "",
   agentName,
+  answerer,
   showMark = true,
   headerClassName = "",
   onTraceToggle,
@@ -1789,6 +1824,8 @@ export function AssistantActivity({
   className?: string;
   /** Forwarded to StreamingStatus — names the thinker in the status row. */
   agentName?: string;
+  /** Forwarded to StreamingStatus — the partner or agent a turn was handed to. */
+  answerer?: Answerer;
   /** Hide the activity mark (partner chat shows its avatar instead). */
   showMark?: boolean;
   /** Extra classes on the status header row (e.g. a min-height so the row
@@ -1865,6 +1902,7 @@ export function AssistantActivity({
         }}
         summary={processSummary}
         agentName={agentName}
+        answerer={answerer}
         showMark={showMark}
         className={headerClassName}
         traceBounds={traceBounds}

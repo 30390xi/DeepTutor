@@ -300,7 +300,7 @@ class PathService:
         return self.workspace_root / "memory"
 
     def get_learning_journal_dir(self) -> Path:
-        """Soft multi-session learning journal (#740), sibling of memory."""
+        """Soft multi-session learning journal (#740); workspace data, unlike memory."""
         return self.workspace_root / "learning_journal"
 
     def get_learning_journal_file(self) -> Path:

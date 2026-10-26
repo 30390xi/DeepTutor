@@ -93,6 +93,7 @@ dependencies = [
     "loguru>=0.7.3,<1.0.0",
     "json-repair>=0.57.0,<1.0.0",
     "croniter>=6.0.0,<7.0.0",
+    "python-dateutil>=2.9.0,<3.0.0",
     # Process-tree memory readings and Windows MinerU worker ownership.
     "psutil>=5.9.0,<8.0.0",
     "pywin32; sys_platform == 'win32'",  # MinerU Job Object ownership
@@ -183,6 +184,7 @@ server = [
     "loguru>=0.7.3,<1.0.0",
     "json-repair>=0.57.0,<1.0.0",
     "croniter>=6.0.0,<7.0.0",
+    "python-dateutil>=2.9.0,<3.0.0",
     "psutil>=5.9.0,<8.0.0",
 ]
 

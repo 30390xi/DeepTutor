@@ -5,7 +5,10 @@ from __future__ import annotations
 import pytest
 
 from deeptutor.core.stream import StreamEvent, StreamEventType
-from deeptutor.services.session._turn_runtime_shared import _selection_source_excerpt
+from deeptutor.services.session._turn_runtime_shared import (
+    _selection_source_excerpt,
+    _side_chat_transcript,
+)
 from deeptutor.services.session.turn_runtime import (
     _assemble_persisted_answer,
     _clip_text,
@@ -455,6 +458,77 @@ class TestSelectionTutorContext:
         assert "Little Tutor" in en
         assert "main-1" in en
 
+    def test_keeps_a_long_selection_that_its_source_contains(self) -> None:
+        selected = "x" * 5_000
+        result = _extract_selection_tutor_context(
+            {"selection_tutor_context": {"selected_text": selected, "parent_session_id": "main-1"}}
+        )
+        assert result is not None
+        assert result["selected_text"] == selected
+
+    def test_side_chat_needs_only_its_parent(self) -> None:
+        result = _extract_selection_tutor_context(
+            {
+                "selection_tutor_context": {
+                    "scope": "conversation",
+                    "parent_session_id": "main-1",
+                    "source_message_id": 9,
+                }
+            }
+        )
+        assert result == {
+            "scope": "conversation",
+            "selected_text": "",
+            "parent_session_id": "main-1",
+            "source_message_id": 9,
+        }
+        assert (
+            _extract_selection_tutor_context(
+                {"selection_tutor_context": {"scope": "conversation", "parent_session_id": ""}}
+            )
+            is None
+        )
+
+    @pytest.mark.asyncio
+    async def test_side_chat_reads_the_visible_branch_of_its_parent(self) -> None:
+        class FakeStore:
+            async def get_messages_for_context(self, session_id, leaf_message_id):
+                assert session_id == "main-1"
+                assert leaf_message_id == 9
+                return [
+                    {"id": 1, "role": "system", "content": "internal"},
+                    {"id": 2, "role": "user", "content": "What does fork() return?"},
+                    {"id": 9, "role": "assistant", "content": "The child sees 0."},
+                ]
+
+        resolved = await _resolve_selection_tutor_context(
+            FakeStore(),
+            {
+                "scope": "conversation",
+                "selected_text": "",
+                "parent_session_id": "main-1",
+                "source_message_id": 9,
+            },
+        )
+        assert [m["role"] for m in resolved["conversation_messages"]] == ["user", "assistant"]
+
+        zh = _format_selection_tutor_context(resolved, language="zh")
+        assert "侧边聊天" in zh
+        assert "学习者:\nWhat does fork() return?" in zh
+        en = _format_selection_tutor_context(resolved, language="en")
+        assert "side chat" in en
+        assert "Tutor:\nThe child sees 0." in en
+
+    def test_side_chat_transcript_keeps_the_newest_turns(self) -> None:
+        messages = [
+            {"role": "user" if index % 2 == 0 else "assistant", "content": f"{index}" * 5_000}
+            for index in range(10)
+        ]
+        transcript = _side_chat_transcript(messages)
+        assert transcript[0]["role"] == "omitted"
+        assert transcript[-1]["content"].startswith("9")
+        assert sum(len(m["content"]) for m in transcript) <= 24_000
+
 
 # ---------------------------------------------------------------------------
 # _extract_persist_user_message
@@ -544,3 +618,22 @@ class TestFormatFollowupQuestionContext:
         ctx["options"] = {}
         text = _format_followup_question_context(ctx, language="en")
         assert "Options:" not in text
+
+
+def test_the_answer_so_far_is_only_built_for_events_that_anchor_layout() -> None:
+    """Every streamed event passes the stamper; only tool calls and resolved
+    cards need the answer so far, and building it walks every segment."""
+    built: list[int] = []
+
+    def answer() -> str:
+        built.append(1)
+        return "Some answer text."
+
+    content = {"type": "content", "content": "x", "metadata": {}}
+    _stamp_content_offset(content, answer)
+    assert built == [] and "assistant_content_offset" not in content["metadata"]
+
+    tool = {"type": "tool_call", "content": "", "metadata": {}}
+    _stamp_content_offset(tool, answer)
+    assert built == [1]
+    assert tool["metadata"]["assistant_content_offset"] == len("Some answer text.")
