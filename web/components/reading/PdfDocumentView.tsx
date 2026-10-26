@@ -10,7 +10,12 @@ import {
 } from "react";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { loadPdfjs, pdfjsWasmUrl, type PdfDocument } from "@/lib/pdfjs-loader";
+import {
+  loadPdfjs,
+  pdfjsCMapUrl,
+  pdfjsWasmUrl,
+  type PdfDocument,
+} from "@/lib/pdfjs-loader";
 import type {
   AnnotationItem,
   NormalisedRect,
@@ -135,6 +140,11 @@ export function PdfDocumentView({
           // PDF.js loads OpenJPEG/JBIG2/QCMS from these assets when a PDF uses
           // JPEG2000 or other formats that are not decoded in pure JS.
           wasmUrl: pdfjsWasmUrl(),
+          // CID fonts (most CJK documents) are translated through PDF.js'
+          // predefined character maps; without this the font is dropped and its
+          // runs vanish from both the canvas and the text layer.
+          cMapUrl: pdfjsCMapUrl(),
+          cMapPacked: true,
           // The raw route sits behind the session cookie like every other API
           // route; pdf.js does its own fetching, so it needs telling.
           withCredentials: true,
