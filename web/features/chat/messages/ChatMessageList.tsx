@@ -28,6 +28,7 @@ import {
   MessageSquare,
   Pencil,
   RefreshCcw,
+  RotateCcw,
   Square,
   UserRound,
   UsersRound,
@@ -53,6 +54,8 @@ import type {
 import { apiFetch, apiUrl } from "@/lib/api";
 import { notify } from "@/lib/notifications";
 import { docIconFor } from "@/lib/doc-attachments";
+import { isQuoteAttachment, quoteText } from "@/lib/quote-attachments";
+import { QUOTE_RULE_CLASS } from "@/components/chat/home/QuotedPassage";
 import { useVoiceAutoplay } from "@/hooks/useVoiceAutoplay";
 import {
   SPEECH_PLAYBACK_FAILURE_MESSAGE,
@@ -95,10 +98,6 @@ import { SetupCredentialCard } from "@/components/chat/home/SetupCredentialCard"
 import { extractSetupCredential } from "@/lib/setup-signals";
 import { PartnerDraftCard } from "@/components/chat/home/PartnerDraftCard";
 import { extractPartnerDraft } from "@/lib/partner-draft";
-import {
-  extractCourseHandoffs,
-  stripLeakedHandoffJson,
-} from "@/lib/course-handoff";
 import { extractMasteryHandoffs } from "@/lib/mastery-handoff";
 import ContextReferenceTree, {
   type ContextTreeItem,
@@ -114,6 +113,9 @@ import { supportsSubmissionReplacement, type OrphanedFailedTurn } from "@/lib/se
 import { agentGlyph } from "@/components/agents/agent-icons";
 import { useConsultationReference } from "@/hooks/useConsultationReference";
 import { useConnectedAgentKinds } from "@/hooks/useConnectedAgentKinds";
+import { usePartner } from "@/hooks/usePartnerRoster";
+import { AnswererMark } from "@/features/chat/trace/AnswererMark";
+import { answererOf, parseAnswerBy } from "@/features/chat/trace/answerer";
 import {
   authoritativeResearchReport,
   isConfirmedResearchFollowup,
@@ -129,10 +131,6 @@ const MasteryQuestionCard = dynamic(
 );
 const MasterySourcePresentation = dynamic(
   () => import("@/components/chat/home/MasterySourcePresentation").then(module => module.MasterySourcePresentation),
-  { ssr: false },
-);
-const CourseHandoffCards = dynamic(
-  () => import("@/components/chat/home/CourseHandoffCard").then(module => module.CourseHandoffCards),
   { ssr: false },
 );
 const MasteryHandoffCards = dynamic(
@@ -385,6 +383,32 @@ function ProcessFold({
 }
 
 /**
+ * What the learner sent while this turn was working, where the turn read it.
+ *
+ * Drawn as the learner's own bubble, only smaller, so the reply reads as one
+ * conversation: the work above was done before it arrived, and everything
+ * below was written knowing it.
+ */
+function SentMidTurn({ messages }: { messages: string[] }) {
+  const { t } = useTranslation();
+  return (
+    <div data-sent-mid-turn="true" className="my-3 flex flex-col items-end gap-1">
+      <span className="pr-1 text-[11px] text-[var(--muted-foreground)]">
+        {t("You, while it worked")}
+      </span>
+      {messages.map((text, index) => (
+        <div
+          key={index}
+          className="max-w-[85%] whitespace-pre-wrap rounded-2xl bg-[var(--secondary)] px-3.5 py-2 text-[13.5px] leading-relaxed text-[var(--foreground)]"
+        >
+          {text}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
  * One row of the assistant message: a run of working-out, a card, or answer
  * prose. Cards and the answer stand on their own; a process run is what the
  * turn did before either of them and folds away once the turn has settled.
@@ -440,7 +464,9 @@ function buildMessageBlocks(
   segments.slice(0, answerStart).forEach((segment, index) => {
     if (
       (segment.kind === "ask_user" && !segment.data.resolved) ||
-      segment.kind === "mastery_question"
+      segment.kind === "mastery_question" ||
+      // The learner's own words are conversation, not working-out to fold.
+      segment.kind === "user_input"
     ) {
       flush();
       blocks.push({ kind: "card", key: segment.key, segment });
@@ -888,15 +914,9 @@ export const AssistantMessage = memo(function AssistantMessage({
     [msg.events],
   );
 
-  // Set by ``course_handoff`` when Course Study has decided what is worth doing
-  // next. A turn may propose more than one, so this is a list.
-  const courseHandoffs = useMemo(
-    () => extractCourseHandoffs(msg.events),
-    [msg.events],
-  );
 
   // Set by the mastery navigation tools when the learner asked to be taken
-  // back to something they are studying. Same shape of offer as above — a
+  // back to something they are studying. The offer carries a
   // destination, a reason, an editable opening line — for the surface that
   // actually teaches it.
   const masteryHandoffs = useMemo(
@@ -904,18 +924,7 @@ export const AssistantMessage = memo(function AssistantMessage({
     [msg.events],
   );
 
-  // Some models write the hand-off out as literal JSON *and* call the tool, so
-  // the card's own contents appear above it as raw arguments. Only stripped
-  // once the turn is finished — mid-stream the text is still arriving and a
-  // partial object would not match anyway — and only from a message that really
-  // produced a card.
-  const body = useMemo(
-    () =>
-      courseHandoffs.length && !isStreaming
-        ? stripLeakedHandoffJson(msg.content)
-        : msg.content,
-    [courseHandoffs.length, isStreaming, msg.content],
-  );
+  const body = msg.content;
 
   // Interleaved segments for the default chat surface: the message is laid
   // out in the order it was written — what DeepTutor said it was about to do,
@@ -1044,6 +1053,9 @@ export const AssistantMessage = memo(function AssistantMessage({
       : undefined;
   }, [headerProcess, t]);
 
+  // A turn handed to a partner or an agent is theirs: the header shows them.
+  const answerer = useMemo(() => answererOf(events), [events]);
+
   const researchInProgress =
     outlineStatus === "researching" ||
     outlineStatus === "done" ||
@@ -1059,6 +1071,7 @@ export const AssistantMessage = memo(function AssistantMessage({
           still working, collapsed once it settles into the final answer. */}
       <AssistantActivity
         events={events}
+        answerer={answerer}
         traceEvents={headerTraceEvents}
         isStreaming={isStreaming}
         content={msg.content}
@@ -1201,6 +1214,8 @@ export const AssistantMessage = memo(function AssistantMessage({
                 data={block.segment.data}
                 onSubmit={submitReply}
               />
+            ) : block.segment.kind === "user_input" ? (
+              <SentMidTurn key={block.key} messages={block.segment.messages} />
             ) : null
           ) : block.segment.kind === "text" ? (
             <AssistantResponse
@@ -1247,9 +1262,6 @@ export const AssistantMessage = memo(function AssistantMessage({
           replacing it, and applies to every branch. */}
       {setupCredential ? <SetupCredentialCard data={setupCredential} /> : null}
       {partnerDraft ? <PartnerDraftCard data={partnerDraft} /> : null}
-      {/* Course Study's hand-offs sit last: they are what to do *after* reading
-          the answer, so they belong below it rather than competing with it. */}
-      {courseHandoffs.length > 0 && <CourseHandoffCards handoffs={courseHandoffs} />}
       {masteryHandoffs.length > 0 && <MasteryHandoffCards handoffs={masteryHandoffs} />}
     </>
   );
@@ -1729,6 +1741,7 @@ export const UserMessage = memo(function UserMessage({
   // snapshot's Space references — rendered as one collapsed tree under
   // the bubble (the sent-message mirror of the composer's tree).
   const snap = msg.requestSnapshot;
+  const handedTo = parseAnswerBy(snap?.config?.answer_by);
   const refTreeItems: ContextTreeItem[] = [
     ...(consultation ? [{
       key: `${consultation.kind}-${consultation.id}`,
@@ -1737,7 +1750,7 @@ export const UserMessage = memo(function UserMessage({
       label: consultation.name,
       onClick: onOpenConsultation,
     }] : []),
-    ...(msg.attachments ?? []).map((a, ai): ContextTreeItem => {
+    ...(msg.attachments ?? []).filter((a) => !isQuoteAttachment(a)).map((a, ai): ContextTreeItem => {
       const filename = a.filename || t("Attachment");
       const spec = docIconFor(filename);
       const src = a.type === "image" ? imageSrcForAttachment(a) : null;
@@ -1850,13 +1863,15 @@ export const UserMessage = memo(function UserMessage({
         data-turn-key={turnAnchorKey(msg, index)}
         className="flex max-w-[75%] flex-col items-end gap-1.5"
       >
-        {showModeBadge && (
+        {handedTo ? (
+          <HandedToBadge kind={handedTo.kind} id={handedTo.id} agentKind={agentKinds[handedTo.id]} />
+        ) : showModeBadge ? (
           <div className="flex justify-end pr-1">
             <span className="text-[10px] tracking-wide text-[var(--muted-foreground)]">
               {t(getModeBadgeLabel(msg.capability))}
             </span>
           </div>
-        )}
+        ) : null}
         {editing ? (
           <div className="w-[min(620px,75vw)] rounded-2xl border border-[var(--primary)]/40 bg-[var(--secondary)] px-3 py-2.5 text-[14px] leading-relaxed text-[var(--foreground)] shadow-sm">
             <textarea
@@ -1925,6 +1940,14 @@ export const UserMessage = memo(function UserMessage({
                 }
               />
             ) : null}
+            {(msg.attachments ?? []).filter(isQuoteAttachment).map((a, qi) => (
+              <div
+                key={`quote-${qi}`}
+                className={`mb-1.5 line-clamp-3 whitespace-pre-line ${QUOTE_RULE_CLASS}`}
+              >
+                {quoteText(a)}
+              </div>
+            ))}
             <div className="whitespace-pre-wrap">{msg.content}</div>
           </div>
         )}
@@ -2010,8 +2033,7 @@ UserMessage.displayName = "UserMessage";
  */
 function ReadingPassageQuote({ quote, href }: { quote: string; href?: string }) {
   const { t } = useTranslation();
-  const className =
-    "mb-1.5 block border-l-2 border-[color-mix(in_srgb,var(--primary)_45%,transparent)] pl-2.5 text-[12.5px] leading-relaxed text-[var(--muted-foreground)]";
+  const className = `mb-1.5 block ${QUOTE_RULE_CLASS}`;
   const text = <span className="line-clamp-3">{quote}</span>;
   return href ? (
     <a
@@ -2035,6 +2057,7 @@ export const ChatMessageList = memo(function ChatMessageList({
   onRegenerateMessage,
   canResendLastTurn = false,
   onResendLastTurn,
+  onRetryTurn,
   onConfirmOutline,
   onPreviewAttachment,
   onOpenConsultation,
@@ -2053,6 +2076,8 @@ export const ChatMessageList = memo(function ChatMessageList({
   showModeBadge = true,
   onLoadMessageTrace,
   onReleaseMessageTrace,
+  assistantActions,
+  compactActions = false,
 }: {
   messages: ChatMessageItem[];
   isStreaming: boolean;
@@ -2064,6 +2089,8 @@ export const ChatMessageList = memo(function ChatMessageList({
    *  stopped. Drives the Resend affordance on the trailing assistant. */
   canResendLastTurn?: boolean;
   onResendLastTurn?: () => void;
+  /** Take a finished turn back into the composer to edit and send again. */
+  onRetryTurn?: (userMessage: ChatMessageItem) => void;
   onConfirmOutline?: (
     outline: Array<{ title: string; overview: string }>,
     topic: string,
@@ -2121,6 +2148,12 @@ export const ChatMessageList = memo(function ChatMessageList({
   showModeBadge?: boolean;
   onLoadMessageTrace?: (messageId: number) => Promise<void>;
   onReleaseMessageTrace?: (messageId: number) => void;
+  /** A surface's own actions on a finished reply, after the shared ones —
+   *  the note companion's "add to the page" lives here. */
+  assistantActions?: (message: ChatMessageItem) => ReactNode;
+  /** A narrow side surface keeps only copy, regenerate and its own actions:
+   *  read-aloud, delete and the usage line belong to the full chat. */
+  compactActions?: boolean;
 }) {
   const { t } = useTranslation();
   // Visible path: when no branching has happened the result is identical
@@ -2421,6 +2454,16 @@ export const ChatMessageList = memo(function ChatMessageList({
           canResendLastTurn &&
           Boolean(pairedUserMessage?.requestSnapshot) &&
           Boolean(onResendLastTurn);
+        // Retry takes a turn the server has saved: its new attempt is a
+        // sibling of this one, under the same parent.
+        const retryTarget =
+          onRetryTurn &&
+          (showRegenerate || showResend) &&
+          pairedUserMessage?.id != null &&
+          pairedUserMessage.id > 0 &&
+          !pairedUserMessage.failedSubmission
+            ? pairedUserMessage
+            : null;
         const deletableTurnUserId =
           msgDone && pairedUserMessage?.id != null && onDeleteTurn
             ? pairedUserMessage.id
@@ -2510,14 +2553,14 @@ export const ChatMessageList = memo(function ChatMessageList({
             {(showActions || costSummary || showDelete) && (
               <div className="mt-3 flex items-center">
                 {(showActions || showDelete) && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex shrink-0 items-center gap-1">
                     {showActions && (
                       <CopyActionButton
                         content={msg.content}
                         onCopy={onCopyAssistantMessage}
                       />
                     )}
-                    {showActions && (
+                    {showActions && !compactActions && (
                       <PlayAudioButton
                         content={msg.content}
                         conversationKey={sessionId ?? undefined}
@@ -2526,29 +2569,42 @@ export const ChatMessageList = memo(function ChatMessageList({
                         }
                       />
                     )}
-                    {showActions && showRegenerate && (
+                    {/* One way to try a turn again. Where the surface can
+                        take the turn back into its composer, Retry does that
+                        and the learner edits before sending; elsewhere it
+                        reruns the turn as it was. Regenerate and Resend were
+                        two identical icons offered side by side. */}
+                    {retryTarget ? (
+                      <RoughActionButton
+                        icon={RotateCcw}
+                        label={t("Retry")}
+                        onClick={() => onRetryTurn?.(retryTarget)}
+                      />
+                    ) : showActions && showRegenerate ? (
                       <RoughActionButton
                         icon={RefreshCcw}
                         label={t("Regenerate")}
                         onClick={() => onRegenerateMessage()}
                       />
-                    )}
-                    {showResend && (
+                    ) : showResend ? (
                       <RoughActionButton
                         icon={RefreshCcw}
                         label={t("Resend")}
                         onClick={() => onResendLastTurn?.()}
                       />
-                    )}
-                    {showDelete && (
+                    ) : null}
+                    {showDelete && !compactActions && (
                       <DeleteTurnButton
                         onDelete={() => onDeleteTurn?.(deletableTurnUserId)}
                       />
                     )}
+                    {showActions && assistantActions?.(msg)}
                   </div>
                 )}
-                {costSummary && (
-                  <div className="ml-auto">
+                {costSummary && !compactActions && (
+                  // The room left beside the actions is what the usage pill
+                  // measures itself against (see UsageFooter).
+                  <div className="flex min-w-0 flex-1 justify-end pl-2 [container-type:inline-size]">
                     <UsageFooter turn={costSummary} session={usageByRow.get(i) ?? costSummary} />
                   </div>
                 )}
@@ -2562,3 +2618,24 @@ export const ChatMessageList = memo(function ChatMessageList({
 });
 
 ChatMessageList.displayName = "ChatMessageList";
+
+/** Above a message handed to someone: their mark and "Handed to <name>". */
+function HandedToBadge({
+  kind,
+  id,
+  agentKind,
+}: {
+  kind: "partner" | "subagent";
+  id: string;
+  agentKind?: string;
+}) {
+  const { t } = useTranslation();
+  const partner = usePartner(kind === "partner" ? id : null);
+  const name = partner?.name ?? id;
+  return (
+    <div className="flex items-center justify-end gap-1.5 pr-1 text-[11px] text-[var(--muted-foreground)]">
+      <AnswererMark answerer={{ kind, id, name, agent: agentKind }} size={14} />
+      <span>{t("trace.answerer.handedTo", { name })}</span>
+    </div>
+  );
+}

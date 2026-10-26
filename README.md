@@ -239,7 +239,7 @@
 
 DeepTutor is an agent-native learning workspace that connects tutoring, problem solving, quiz generation, research, visualization, and mastery practice in one extensible system.
 
-- **One runtime for every mode** — Chat, Ask Questions, Quiz, Research, Visualize, Solve, Course Study, Mastery Path, Immersive Reading, and Audio Overview share one capability runtime and session context while keeping purpose-built loops and pipelines.
+- **One runtime for every mode** — Chat, Ask Questions, Quiz, Research, Visualize, Solve, Mastery Path, Immersive Reading, and Audio Overview share one capability runtime and session context while keeping purpose-built loops and pipelines.
 - **Task Board** — Track study tasks in To do, In progress, and Done, with notes, drag-and-drop or keyboard-accessible move buttons, and an archive you can restore from. Cards stay in the current workspace and follow the existing appearance and language settings; no model configuration is required.
 - **Connected learning context** — Knowledge bases, books, Co-Writer drafts, notebooks, question banks, personas, and Memory can be reused across the workflows that support them, subject to account grants and learning policies.
 - **Immersive video learning** — add YouTube or Bilibili links to Reading for native playback, transcript search, timestamp-grounded tutoring, saved notes, and resumable progress; YouTube captions and browsing can use an administrator-configured Invidious instance.
@@ -708,7 +708,7 @@ User-toggleable tools are `brainstorm`, `web_search`, `paper_search`, `zotero_se
 
 Context comes in two kinds: **sticky session context** (capability, workspace or course, tools, knowledge bases, persona, model, and Reading / Mastery state) persists across turns; **one-time references** (files, chat history, books, reading sections, notebooks, selected question-bank entries, imported agents) come from the `+` menu for a single turn. The voice button only transcribes the current message.
 
-Home keeps **Chat**, **Ask Questions**, **Quiz**, and **Visualize** one click away; **Research** for cited reports and **Solve** for worked reasoning sit under *More Capabilities*. **Personalized Learning** groups Book, **Mastery Path**, **Immersive Reading**, and **Practice**; Reading brings documents, video, and audio together with verified citations, saved notes, natural read-aloud from source passages / study guidance / vocabulary / quiz / translation actions, and notebook capture, while Course Study keeps its course-bound context.
+Home keeps **Chat**, **Ask Questions**, **Quiz**, and **Visualize** one click away; **Research** for cited reports and **Solve** for worked reasoning sit under *More Capabilities*. **Personalized Learning** groups Book, **Mastery Path**, **Immersive Reading**, and **Practice**; Reading brings documents, video, and audio together with verified citations, saved notes, natural read-aloud from source passages / study guidance / vocabulary / quiz / translation actions, and notebook capture.
 
 </details>
 
@@ -1007,7 +1007,7 @@ The repo ships a root [`SKILL.md`](SKILL.md) — a compact handover doc for the 
 | `deeptutor stop [--home PATH]` | Stop a launcher started with `--detach` |
 | `deeptutor serve [--port PORT]` | Start only the FastAPI backend |
 | `deeptutor workspace show/set/reset` | Inspect, select, or restore the per-user Content Workspace |
-| `deeptutor run <capability> <message>` | Run a single capability turn (`chat`, `ask_questions`, `deep_solve`, `deep_question`, `deep_research`, `visualize`, `math_animator`, `mastery_path`, `immersive_reading`, `course_study`, `audio_overview`); add `--format json` for NDJSON output |
+| `deeptutor run <capability> <message>` | Run a single capability turn (`chat`, `ask_questions`, `deep_solve`, `deep_question`, `deep_research`, `visualize`, `math_animator`, `mastery_path`, `immersive_reading`, `audio_overview`); add `--format json` for NDJSON output |
 | `deeptutor chat` | Interactive REPL with capability, tool, KB, notebook, and history controls |
 | `deeptutor partner list/create/start/stop` | Manage IM-connected partners |
 | `deeptutor kb list/info/create/connect-kiwix/add/search/eval/eval-diff/set-default/delete/list-sources/sync` | Manage knowledge bases, connect Kiwix archives, score and compare retrieval runs, and synchronize registered GitHub/web sources (with source add/remove commands) |
