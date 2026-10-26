@@ -41,6 +41,7 @@ def test_prepare_workdir_writes_the_voice_module(tmp_path: Path) -> None:
 
 def test_video_lesson_requires_a_docker_runtime(monkeypatch) -> None:
     import pytest
+
     from deeptutor.agents.video_lesson import runtime
 
     monkeypatch.setattr(runtime.shutil, "which", lambda _name: None)

@@ -391,12 +391,12 @@ pip install -e ".[math-animator]"   # Manim addon; requires LaTeX/ffmpeg/system 
 pip install -e ".[edge-tts]"        # Optional free speech provider and video-lesson narration
 ```
 
+**Video Lesson:** choose Video Lesson in chat or run `deeptutor run video_lesson "Explain a concept"`. The backend needs Node.js 22+, npm, and access to a running Docker daemon using Linux containers. First use downloads pinned Remotion packages and a Node container image. Frame checks run without network access, host mounts, or host credentials, and stop when the turn is cancelled; there is no unsandboxed fallback. The resulting lesson plays in the browser, with captions when optional narration is unavailable.
+
 </details>
 
 <details>
 <summary><b>Frontend dependency tweaks & dev-server troubleshooting</b></summary>
-
-**Video Lesson:** choose Video Lesson in chat or run `deeptutor run video_lesson "Explain a concept"`. The backend needs Node.js 22+, npm, and access to a running Docker daemon using Linux containers. First use downloads pinned Remotion packages and a Node container image. Frame checks run without network access, host mounts, or host credentials, and stop when the turn is cancelled; there is no unsandboxed fallback. The resulting lesson plays in the browser, with captions when optional narration is unavailable.
 
 **Changing frontend dependencies:** run `npm install --legacy-peer-deps` to refresh `web/package-lock.json`, then commit both `web/package.json` and `web/package-lock.json`.
 
