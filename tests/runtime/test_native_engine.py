@@ -577,6 +577,7 @@ def test_model_tool_admission_resolves_prompts_and_keeps_custom_augmentation(mon
     from deeptutor.services.llm.config import LLMConfig
 
     monkeypatch.setattr("deeptutor.runtime.ts_engine.config.compatibility_reason", lambda _: "")
+    monkeypatch.setattr("deeptutor.services.config.get_agent_params", lambda _name: {})
     cfg = LLMConfig(model="gpt-4o-mini", api_key="fixture", base_url="http://fixture/v1")
     pipeline = SimpleNamespace(
         llm_config=cfg,

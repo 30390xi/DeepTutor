@@ -1,5 +1,5 @@
 {
-  "fingerprint": "cc3f7e5084ea833e0291b05542e4f4cad85e52271f36b8689ffa5022edb7c3d0",
+  "fingerprint": "732a0cf7f88948d4e0f0e57122dc0fa775b99f8a14e4b0baf1eb2a5f2ae0a861",
   "routers": {
     "deeptutor.api.routers.auth:router": [
       {
@@ -3019,6 +3019,22 @@
       }
     ],
     "deeptutor.api.routers.sessions:router": [
+      {
+        "path": "/capabilities",
+        "name": "session_store_capabilities",
+        "kind": "http",
+        "methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/submission-replacement",
+        "name": "replace_submission",
+        "kind": "http",
+        "methods": [
+          "POST"
+        ]
+      },
       {
         "path": "",
         "name": "list_sessions",
