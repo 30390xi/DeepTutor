@@ -224,7 +224,9 @@ def test_dashboard_learning_library_follows_the_policy(learner_client, as_user):
         assert "reading surface" in denied.json()["detail"]
 
 
-def test_learning_navigation_index_filters_sources_without_opening_dashboard(learner_client, as_user):
+def test_learning_navigation_index_filters_sources_without_opening_dashboard(
+    learner_client, as_user
+):
     client, learner, current_user, tmp_path = learner_client
     with as_user(current_user.id, username="student"):
         material = _seed_material(tmp_path, "navigation.txt", "Assigned reading.")

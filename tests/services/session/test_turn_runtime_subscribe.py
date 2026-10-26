@@ -445,10 +445,6 @@ async def test_start_turn_preserves_selection_tutor_runtime_context(
     assert resolved["source_message_text"] == source_text
 
 
-
-
-
-
 @pytest.mark.asyncio
 async def test_side_chat_starts_from_the_parent_alone(
     monkeypatch: pytest.MonkeyPatch, tmp_path

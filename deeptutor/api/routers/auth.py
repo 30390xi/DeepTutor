@@ -526,7 +526,8 @@ def _install_request_workspace(request) -> None:
         # Management/migration requests acquire their own exclusive lease.
         task_board_request = path == "/api/task-board" or path.startswith("/api/task-board/")
         if getattr(request, "method", None) is not None and (
-            not management or (task_board_request and path != "/api/task-board/events")
+            not management
+            or (task_board_request and path != "/api/task-board/events")
             or (path.startswith("/api/calendar/") and path != "/api/calendar/stream")
         ):
             from deeptutor.services.workspace.activity import acquire_activity

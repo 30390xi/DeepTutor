@@ -494,22 +494,17 @@ async def remove_entry_from_category(entry_id: int, category_id: int):
 
 
 @router.get("/stats", response_model=QuestionBankStats)
-async def question_bank_stats(
-) -> QuestionBankStats:
+async def question_bank_stats() -> QuestionBankStats:
     """Counts behind the filter chips; also the agent's one-call overview."""
     store = get_sqlite_session_store()
     return QuestionBankStats(**await store.question_bank_stats())
 
 
 @router.get("/materials", response_model=list[QuestionBankMaterial])
-async def list_question_bank_materials(
-) -> list[QuestionBankMaterial]:
+async def list_question_bank_materials() -> list[QuestionBankMaterial]:
     """Materials represented in the unified review history."""
     store = get_sqlite_session_store()
-    return [
-        QuestionBankMaterial(**item)
-        for item in await store.list_question_bank_materials()
-    ]
+    return [QuestionBankMaterial(**item) for item in await store.list_question_bank_materials()]
 
 
 # ── Category CRUD ────────────────────────────────────────────────

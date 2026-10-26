@@ -681,9 +681,19 @@ async def partner_navigation():
     from deeptutor.services.partner_groups import get_partner_group_manager
 
     partners = [
-        {key: row.get(key) for key in (
-            "partner_id", "name", "description", "emoji", "color", "avatar", "can_manage", "running",
-        )}
+        {
+            key: row.get(key)
+            for key in (
+                "partner_id",
+                "name",
+                "description",
+                "emoji",
+                "color",
+                "avatar",
+                "can_manage",
+                "running",
+            )
+        }
         for row in visible_partners()
     ]
     group_manager = get_partner_group_manager()
@@ -697,24 +707,31 @@ async def partner_navigation():
             try:
                 rows = (
                     manager.session_store(owner_id).list_sessions()
-                    if kind == "partner" else group_manager.list_sessions(owner_id)
+                    if kind == "partner"
+                    else group_manager.list_sessions(owner_id)
                 )
                 for row in rows:
                     if row.get("archived"):
                         continue
-                    sessions.append(NavigationSession(
-                        kind=kind,
-                        owner_id=owner_id,
-                        owner_name=owner["name"],
-                        session_key=row["session_key"],
-                        title=str(row.get("title") or row.get("last_message") or "")[:160],
-                        updated_at=_navigation_timestamp(row.get("updated_at")),
-                    ))
+                    sessions.append(
+                        NavigationSession(
+                            kind=kind,
+                            owner_id=owner_id,
+                            owner_name=owner["name"],
+                            session_key=row["session_key"],
+                            title=str(row.get("title") or row.get("last_message") or "")[:160],
+                            updated_at=_navigation_timestamp(row.get("updated_at")),
+                        )
+                    )
             except Exception:
-                logger.warning("Partner navigation unavailable: %s/%s", kind, owner_id, exc_info=True)
+                logger.warning(
+                    "Partner navigation unavailable: %s/%s", kind, owner_id, exc_info=True
+                )
                 unavailable.append(f"{kind}:{owner_id}")
     sessions.sort(key=lambda row: (-row.updated_at, row.kind, row.owner_id, row.session_key))
-    return PartnerNavigation(partners=partners, groups=groups, sessions=sessions, unavailable=unavailable)
+    return PartnerNavigation(
+        partners=partners, groups=groups, sessions=sessions, unavailable=unavailable
+    )
 
 
 @router.get("/consultation-session")

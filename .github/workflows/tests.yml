@@ -8,6 +8,7 @@ on:
     branches:
       - main
       - dev
+      - preview
     paths:
       - "deeptutor/**"
       - "deeptutor_cli/**"
@@ -22,6 +23,7 @@ on:
     branches:
       - main
       - dev
+      - preview
     paths:
       - "deeptutor/**"
       - "deeptutor_cli/**"
@@ -33,10 +35,11 @@ on:
       - "packages/chat-engine/**"
       - ".github/workflows/tests.yml"
 
+# Keep Linux runners on the LTS supported by the pinned browser toolchain.
 jobs:
   chat-engine:
     name: Experimental TypeScript Chat Engine
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -82,7 +85,7 @@ jobs:
 
   lint:
     name: Lint and Format
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code
@@ -111,7 +114,7 @@ jobs:
 
   web-tests:
     name: Web Node Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code
@@ -157,7 +160,7 @@ jobs:
   multi-worker-web:
     name: Four-worker browser acceptance
     if: vars.DEEPTUTOR_MULTI_WORKER_E2E_URL != ''
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code
@@ -210,13 +213,13 @@ jobs:
       matrix:
         include:
           - python-version: "3.11"
-            os: ubuntu-latest
+            os: ubuntu-24.04
           - python-version: "3.12"
-            os: ubuntu-latest
+            os: ubuntu-24.04
           - python-version: "3.13"
-            os: ubuntu-latest
+            os: ubuntu-24.04
           - python-version: "3.14"
-            os: ubuntu-latest
+            os: ubuntu-24.04
           - python-version: "3.14"
             os: macos-latest
           - python-version: "3.14"
@@ -277,7 +280,7 @@ jobs:
 
   python-tests:
     name: Python Tests (Python ${{ matrix.python-version }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: import-check
     services:
       redis:
@@ -350,7 +353,7 @@ jobs:
 
   test-summary:
     name: Test Summary
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: [chat-engine, lint, web-tests, multi-worker-web, import-check, python-tests]
     if: always()
 

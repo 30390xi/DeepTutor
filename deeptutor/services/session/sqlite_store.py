@@ -4183,14 +4183,18 @@ class SQLiteSessionStore:
         Uses the same recycle predicate as the Question Bank. No new schema or
         migration: old entry IDs remain the IDs used by practice and review.
         """
+
         def read() -> list[dict[str, Any]]:
             with self._connect() as conn:
-                return [dict(row) for row in conn.execute(
-                    "SELECT id, substr(question, 1, 160) AS question, created_at, updated_at "
-                    "FROM notebook_entries WHERE "
-                    + _NOT_RECYCLED_ENTRY_SQL.format(entries="notebook_entries")
-                    + " ORDER BY updated_at DESC, id DESC"
-                ).fetchall()]
+                return [
+                    dict(row)
+                    for row in conn.execute(
+                        "SELECT id, substr(question, 1, 160) AS question, created_at, updated_at "
+                        "FROM notebook_entries WHERE "
+                        + _NOT_RECYCLED_ENTRY_SQL.format(entries="notebook_entries")
+                        + " ORDER BY updated_at DESC, id DESC"
+                    ).fetchall()
+                ]
 
         return await self._run(read)
 

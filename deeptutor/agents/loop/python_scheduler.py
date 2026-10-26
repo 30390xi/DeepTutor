@@ -53,8 +53,10 @@ async def run_loop(host: Any, config: dict[str, int]) -> dict[str, int]:
         try:
             result = await invoke("call_round", settling=settling, first=state["rounds"] == 0)
         except Exception as exc:
-            if isinstance(exc, CapabilityPrerequisiteError) or state["rounds"] == 0 or (
-                isinstance(exc, LLMProviderTransportError) and exc.partial_response
+            if (
+                isinstance(exc, CapabilityPrerequisiteError)
+                or state["rounds"] == 0
+                or (isinstance(exc, LLMProviderTransportError) and exc.partial_response)
             ):
                 raise
             return await force_finish("error", str(exc))

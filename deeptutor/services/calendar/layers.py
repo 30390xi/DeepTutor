@@ -69,7 +69,8 @@ def read_layers(workspace_id, start, end, tzid):
             footprint(row[0]).mastery_evidence += 1
 
     practice = PracticeStore(get_sqlite_session_store().db_path)
-    scope, _params = practice._scope(None)
+    # The database is already workspace-scoped; match PracticeStore’s live-entry filter.
+    scope = "(n.session_id IS NULL OR s.deleted_at IS NULL)"
     with practice.connect() as db:
         for row in db.execute(
             f"SELECT {_DUE_AT_SQL} AS due FROM notebook_entries n LEFT JOIN sessions s ON s.id=n.session_id LEFT JOIN practice_review_state r ON r.entry_id=n.id WHERE {scope} AND {_DUE_AT_SQL}>=? AND {_DUE_AT_SQL}<?",
