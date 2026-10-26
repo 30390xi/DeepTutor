@@ -8,12 +8,14 @@ any single segment, so every literal path must be declared above it or it will
 never be reached.
 """
 
+import logging
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
 
 from deeptutor.services.session import get_session_store
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -108,7 +110,6 @@ async def get_learning_index():
     from deeptutor.api.routers.mastery_path import list_topics
     from deeptutor.api.routers.reading import list_workspaces
     from deeptutor.multi_user.learning_access import learning_surface_allowed
-    from deeptutor.services.workspace.navigation import read_workspace_indexes
 
     async def books():
         return (await list_books())["books"]
@@ -152,8 +153,10 @@ async def get_learning_index():
         result[kind] = []
         if not learning_surface_allowed(surface):
             continue
-        result[kind], unavailable = await read_workspace_indexes(reader)
-        if unavailable:
+        try:
+            result[kind] = await _workspace_rows(reader)
+        except Exception:
+            logger.warning("Workspace learning index unavailable: %s", kind, exc_info=True)
             failed.append(kind)
     return {"sources": result, "failed": failed}
 
