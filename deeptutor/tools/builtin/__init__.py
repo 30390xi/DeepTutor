@@ -1650,7 +1650,10 @@ class SaveFavoriteTool(_PromptHintsMixin, BaseTool):
         from deeptutor.tools.write_note import write_note
 
         if kwargs.get("mode") == "edit" and kwargs.get("content"):
-            return ToolResult(content="Favorites preserve original content; add to a notebook page to edit.", success=False)
+            return ToolResult(
+                content="Favorites preserve original content; add to a notebook page to edit.",
+                success=False,
+            )
 
         outcome = write_note(
             mode=str(kwargs.get("mode") or ""),

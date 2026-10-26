@@ -84,6 +84,7 @@ _REPLAY_SNAPSHOT_FIELDS: dict[str, str] = {
     "auto_route": "autoRoute",
 }
 
+
 def _tutor_thread_preferences(context: dict[str, Any]) -> dict[str, Any]:
     if context.get("selected_text"):
         return {

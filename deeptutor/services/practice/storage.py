@@ -303,9 +303,7 @@ class PracticeStore:
             )
         return outcome
 
-    def stage_import(
-        self, filename: str, target: str, questions: list[dict]
-    ) -> str:
+    def stage_import(self, filename: str, target: str, questions: list[dict]) -> str:
         token, now = uuid.uuid4().hex, time.time()
         with self.connect() as conn:
             conn.execute(
