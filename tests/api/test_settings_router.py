@@ -882,6 +882,75 @@ async def test_apply_catalog_invalidates_runtime_caches(monkeypatch: pytest.Monk
     assert new_embedding_client.config.model == "text-embedding-after-apply"
 
 
+@pytest.mark.parametrize("endpoint", ["apply", "catalog"])
+def test_denied_catalog_replace_retains_settings_draft_and_runtime(
+    tmp_path, monkeypatch: pytest.MonkeyPatch, endpoint: str
+) -> None:
+    """#1984: a denied atomic save returns useful HTTP feedback without losing edits."""
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from deeptutor.services.config import model_catalog
+    from deeptutor.services.config.settings_draft import SettingsDraftService
+
+    service = model_catalog.ModelCatalogService(tmp_path / "model_catalog.json")
+    current = service.save(
+        _build_catalog(
+            llm_model="gpt-test",
+            llm_base_url="https://llm.example/v1",
+            llm_api_key="test-key",
+            embedding_model="embedding-test",
+            embedding_base_url="https://embedding.example/v1",
+            embedding_api_key="test-key",
+        )
+    )
+    proposed = deepcopy(current)
+    proposed["services"]["llm"]["profiles"][0]["name"] = "Unapplied change"
+    draft = SettingsDraftService(tmp_path / "settings_draft.json")
+    draft.save({"catalog": proposed})
+    saved_bytes = service.path.read_bytes()
+    saved_draft = draft.load()
+    monkeypatch.setattr(settings_router, "get_model_catalog_service", lambda: service)
+    monkeypatch.setattr(settings_router, "get_settings_draft_service", lambda: draft)
+    monkeypatch.setattr(settings_router, "_require_settings_admin", lambda: None)
+    resets = []
+    monkeypatch.setattr(llm_client_module, "reset_llm_client", lambda: resets.append("llm"))
+    monkeypatch.setattr(
+        embedding_client_module, "reset_embedding_client", lambda: resets.append("embedding")
+    )
+    original_replace = model_catalog.os.replace
+
+    def denied_replace(source, target):
+        if target == service.path:
+            raise PermissionError(13, "Access denied: private diagnostic", str(target))
+        return original_replace(source, target)
+
+    monkeypatch.setattr(model_catalog.os, "replace", denied_replace)
+    app = FastAPI()
+    app.include_router(settings_router.router, prefix="/api/settings")
+    client = TestClient(app, raise_server_exceptions=False)
+    response = (
+        client.post("/api/settings/apply")
+        if endpoint == "apply"
+        else client.put("/api/settings/catalog", json={"catalog": proposed})
+    )
+
+    assert response.status_code == 503
+    assert "service account" in response.json()["detail"]
+    assert "private diagnostic" not in response.text
+    assert str(tmp_path) not in response.text
+    assert service.path.read_bytes() == saved_bytes
+    assert draft.load() == saved_draft
+    assert resets == []
+    assert not list(tmp_path.glob(".model_catalog.json.*.tmp"))
+
+    # The retained draft remains applicable after the external denial is removed.
+    monkeypatch.setattr(model_catalog.os, "replace", original_replace)
+    assert client.post("/api/settings/apply").status_code == 200
+    assert service.load()["services"]["llm"]["profiles"][0]["name"] == "Unapplied change"
+    assert resets == ["llm", "embedding"]
+
+
 @pytest.mark.asyncio
 async def test_reapplying_an_unchanged_catalog_keeps_the_runtime_clients(
     monkeypatch: pytest.MonkeyPatch,

@@ -7923,6 +7923,26 @@ export interface paths {
     readonly patch?: never;
     readonly trace?: never;
   };
+  readonly "/api/sessions/capabilities": {
+    readonly parameters: {
+      readonly query?: never;
+      readonly header?: never;
+      readonly path?: never;
+      readonly cookie?: never;
+    };
+    /**
+     * Session Store Capabilities
+     * @description Expose operations the configured store can perform atomically.
+     */
+    readonly get: operations["session_store_capabilities_api_sessions_capabilities_get"];
+    readonly put?: never;
+    readonly post?: never;
+    readonly delete?: never;
+    readonly options?: never;
+    readonly head?: never;
+    readonly patch?: never;
+    readonly trace?: never;
+  };
   readonly "/api/sessions/recycle-bin": {
     readonly parameters: {
       readonly query?: never;
@@ -7954,6 +7974,26 @@ export interface paths {
     readonly get: operations["search_sessions_api_sessions_search_get"];
     readonly put?: never;
     readonly post?: never;
+    readonly delete?: never;
+    readonly options?: never;
+    readonly head?: never;
+    readonly patch?: never;
+    readonly trace?: never;
+  };
+  readonly "/api/sessions/submission-replacement": {
+    readonly parameters: {
+      readonly query?: never;
+      readonly header?: never;
+      readonly path?: never;
+      readonly cookie?: never;
+    };
+    readonly get?: never;
+    readonly put?: never;
+    /**
+     * Replace Submission
+     * @description Resolve admission atomically before an edited retry is sent.
+     */
+    readonly post: operations["replace_submission_api_sessions_submission_replacement_post"];
     readonly delete?: never;
     readonly options?: never;
     readonly head?: never;
@@ -14374,6 +14414,13 @@ export interface components {
      *     recover the pairing from prose.
      */
     readonly MasteryCardAnswer: {
+      /**
+       * Answers
+       * @default null
+       */
+      readonly answers: {
+        readonly [key: string]: string;
+      } | null;
       /** Question Id */
       readonly question_id: string;
       /** Text */
@@ -16306,6 +16353,11 @@ export interface components {
       /** Language */
       readonly language: string | null;
     };
+    /** SessionStoreCapabilities */
+    readonly SessionStoreCapabilities: {
+      /** Submission Replacement */
+      readonly submission_replacement: boolean;
+    };
     /** SessionSummary */
     readonly SessionSummary: {
       /** @default null */
@@ -16500,6 +16552,28 @@ export interface components {
       } | null;
       /** Consult Budget */
       readonly consult_budget?: number | null;
+    };
+    /** SubmissionReplacementRequest */
+    readonly SubmissionReplacementRequest: {
+      /** Original Submission Id */
+      readonly original_submission_id: string;
+      readonly request: components["schemas"]["TurnRequest"];
+    };
+    /** SubmissionReplacementResponse */
+    readonly SubmissionReplacementResponse: {
+      /** Session Id */
+      readonly session_id: string;
+      /**
+       * Status
+       * @constant
+       */
+      readonly status: "started";
+      /** Submission Id */
+      readonly submission_id: string;
+      /** Turn */
+      readonly turn: {
+        readonly [key: string]: unknown;
+      };
     };
     /** SupplementRequest */
     readonly SupplementRequest: {
@@ -18496,6 +18570,8 @@ export type SchemaSessionRenameRequest =
   components["schemas"]["SessionRenameRequest"];
 export type SchemaSessionReplyLanguageRequest =
   components["schemas"]["SessionReplyLanguageRequest"];
+export type SchemaSessionStoreCapabilities =
+  components["schemas"]["SessionStoreCapabilities"];
 export type SchemaSessionSummary = components["schemas"]["SessionSummary"];
 export type SchemaSessionTaskLinks = components["schemas"]["SessionTaskLinks"];
 export type SchemaSetRoleRequest = components["schemas"]["SetRoleRequest"];
@@ -18525,6 +18601,10 @@ export type SchemaSubagentMessageRequest =
   components["schemas"]["SubagentMessageRequest"];
 export type SchemaSubagentSettingsPayload =
   components["schemas"]["SubagentSettingsPayload"];
+export type SchemaSubmissionReplacementRequest =
+  components["schemas"]["SubmissionReplacementRequest"];
+export type SchemaSubmissionReplacementResponse =
+  components["schemas"]["SubmissionReplacementResponse"];
 export type SchemaSupplementRequest =
   components["schemas"]["SupplementRequest"];
 export type SchemaSupportedFileTypesInfo =
@@ -36395,6 +36475,39 @@ export interface operations {
       };
     };
   };
+  readonly session_store_capabilities_api_sessions_capabilities_get: {
+    readonly parameters: {
+      readonly query?: never;
+      readonly header?: {
+        readonly Authorization?: string | null;
+      };
+      readonly path?: never;
+      readonly cookie?: {
+        readonly dt_token?: string | null;
+      };
+    };
+    readonly requestBody?: never;
+    readonly responses: {
+      /** @description Successful Response */
+      readonly 200: {
+        headers: {
+          readonly [name: string]: unknown;
+        };
+        content: {
+          readonly "application/json": components["schemas"]["SessionStoreCapabilities"];
+        };
+      };
+      /** @description Validation Error */
+      readonly 422: {
+        headers: {
+          readonly [name: string]: unknown;
+        };
+        content: {
+          readonly "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   readonly list_recycle_bin_api_sessions_recycle_bin_get: {
     readonly parameters: {
       readonly query?: {
@@ -36455,6 +36568,43 @@ export interface operations {
         };
         content: {
           readonly "application/json": unknown;
+        };
+      };
+      /** @description Validation Error */
+      readonly 422: {
+        headers: {
+          readonly [name: string]: unknown;
+        };
+        content: {
+          readonly "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  readonly replace_submission_api_sessions_submission_replacement_post: {
+    readonly parameters: {
+      readonly query?: never;
+      readonly header?: {
+        readonly Authorization?: string | null;
+      };
+      readonly path?: never;
+      readonly cookie?: {
+        readonly dt_token?: string | null;
+      };
+    };
+    readonly requestBody: {
+      readonly content: {
+        readonly "application/json": components["schemas"]["SubmissionReplacementRequest"];
+      };
+    };
+    readonly responses: {
+      /** @description Successful Response */
+      readonly 200: {
+        headers: {
+          readonly [name: string]: unknown;
+        };
+        content: {
+          readonly "application/json": components["schemas"]["SubmissionReplacementResponse"];
         };
       };
       /** @description Validation Error */

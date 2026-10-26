@@ -107,7 +107,8 @@ async def get_learning_index():
     from deeptutor.api.routers.book import list_books
     from deeptutor.api.routers.mastery_path import list_topics
     from deeptutor.api.routers.reading import list_workspaces
-    from deeptutor.multi_user.learning_access import current_learning_policy
+    from deeptutor.multi_user.learning_access import learning_surface_allowed
+    from deeptutor.services.workspace.navigation import read_workspace_indexes
 
     async def books():
         return (await list_books())["books"]
@@ -117,17 +118,6 @@ async def get_learning_index():
 
     async def reading():
         return (await list_workspaces(search=""))["workspaces"]
-
-    policy = current_learning_policy()
-    allowed = (
-        set(policy.get("allowed_surfaces") or ["chat", "reading"]) if policy is not None else None
-    )
-    result = {"books": [], "mastery": [], "reading": [], "watching": [], "practice": []}
-    for kind, reader in (("books", books), ("mastery", mastery), ("reading", reading)):
-        surface = "chat" if kind == "mastery" else kind
-        if allowed is not None and surface not in allowed:
-            continue
-        result[kind] = await _workspace_rows(reader)
 
     async def watching():
         from deeptutor.services.session.organization import list_all_sessions_snapshot
@@ -143,17 +133,29 @@ async def get_learning_index():
             )
         ]
 
-    if allowed is None or "reading" in allowed:
-        result["watching"] = await _workspace_rows(watching)
-    if allowed is None or "chat" in allowed:
+    async def practice():
+        from deeptutor.services.session import get_sqlite_session_store
 
-        async def practice():
-            from deeptutor.services.session import get_sqlite_session_store
+        return await get_sqlite_session_store().list_notebook_navigation()
 
-            return await get_sqlite_session_store().list_notebook_navigation()
-
-        result["practice"] = await _workspace_rows(practice)
-    return {"sources": result, "failed": []}
+    result = {}
+    failed = []
+    for kind, surface, reader in (
+        ("books", "books", books),
+        ("mastery", "chat", mastery),
+        ("reading", "reading", reading),
+        ("watching", "reading", watching),
+        ("practice", "chat", practice),
+    ):
+        # Calling a route function directly bypasses its HTTP dependencies.
+        # Never load a source that the learner could not open individually.
+        result[kind] = []
+        if not learning_surface_allowed(surface):
+            continue
+        result[kind], unavailable = await read_workspace_indexes(reader)
+        if unavailable:
+            failed.append(kind)
+    return {"sources": result, "failed": failed}
 
 
 @router.get("/source-library/{kind}")

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from deeptutor.core.capability_protocol import CapabilityPrerequisiteError
 from deeptutor.services.llm import LLMProviderTransportError
 
 
@@ -22,6 +23,7 @@ async def run_loop(host: Any, config: dict[str, int]) -> dict[str, int]:
     settlement_started = False
     empty_recoveries = 0
     finish_redirect_used = False
+    recovery_used = False
 
     async def invoke(operation: str, **args: Any) -> Any:
         return await host.invoke(operation, args, dict(state))
@@ -35,20 +37,32 @@ async def run_loop(host: Any, config: dict[str, int]) -> dict[str, int]:
         settling = state["exploration_rounds"] >= config["explorationBudget"]
         if settling:
             if state["settlement_rounds"] >= config["settlementBudget"]:
-                return await force_finish()
+                if recovery_used:
+                    await invoke("reject_finish")
+                    return state
+                recovery = await invoke("prepare_recovery")
+                if recovery["rejected"]:
+                    await invoke("reject_finish")
+                    return state
+                if not recovery["available"]:
+                    return await force_finish()
+                recovery_used = True
             if not settlement_started:
                 await invoke("begin_settlement")
                 settlement_started = True
         try:
             result = await invoke("call_round", settling=settling, first=state["rounds"] == 0)
         except Exception as exc:
-            if state["rounds"] == 0 or (
+            if isinstance(exc, CapabilityPrerequisiteError) or state["rounds"] == 0 or (
                 isinstance(exc, LLMProviderTransportError) and exc.partial_response
             ):
                 raise
             return await force_finish("error", str(exc))
         state["rounds"] += 1
         state["settlement_rounds" if settling else "exploration_rounds"] += 1
+        if result.get("recoveryRejected"):
+            await invoke("reject_finish")
+            return state
         if not result["hasTools"]:
             if result["truncated"] or result["reasoningBudgetExhausted"]:
                 if result["reasoningBudgetExhausted"]:

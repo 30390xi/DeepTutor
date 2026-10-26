@@ -1,4 +1,10 @@
 {
+  "Partially correct": "Teilweise richtig",
+  "These answers could not be submitted. Please review or retry.": "Diese Antworten konnten nicht übermittelt werden. Bitte prüfen und erneut versuchen.",
+  "The edit could not be sent. Your draft is still here; please retry.": "Die Änderung konnte nicht gesendet werden. Dein Entwurf ist noch hier; bitte versuche es erneut.",
+  "Discard unsent draft": "Nicht gesendeten Entwurf verwerfen",
+  "Discarding…": "Wird verworfen…",
+  "This draft could not be discarded. Please retry or copy it before leaving.": "Dieser Entwurf konnte nicht verworfen werden. Bitte versuche es erneut oder kopiere ihn, bevor du die Seite verlässt.",
   "Review rebuild": "Neuaufbau überprüfen",
   "language.english": "Englisch",
   "language.chinese": "Chinesisch",
@@ -4426,6 +4432,7 @@
   "Uses the current form without saving. Choose text in the voice's language. The provider may charge for this synthesis.": "Nutzt das aktuelle Formular, ohne zu speichern. Wähle Text in der Sprache der Stimme. Der Provider kann diese Synthese in Rechnung stellen.",
   "Generated voice preview": "Erzeugte Stimmen-Vorschau",
   "Voice preview failed.": "Stimmen-Vorschau fehlgeschlagen.",
+  "Voice preview failed (HTTP {{status}}).": "Stimmen-Vorschau fehlgeschlagen (HTTP {{status}}).",
   "The provider returned no playable audio.": "Der Provider hat kein abspielbares Audio zurückgegeben.",
   "Voice preview was cancelled or timed out.": "Die Stimmen-Vorschau wurde abgebrochen oder hat das Zeitlimit überschritten.",
   "Voice preview failed. Check the provider credentials, model, voice, language and format.": "Stimmen-Vorschau fehlgeschlagen. Überprüfe Provider-Anmeldedaten, Modell, Stimme, Sprache und Format.",

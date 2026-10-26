@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock
 
 from deeptutor.services.llm.image_replay import deduplicate_user_images
 from deeptutor.services.session.context_builder import ContextBuilder, count_tokens
-from deeptutor.services.session.model_history import replay_history
+from deeptutor.services.session.model_history import replay_history, summary_snapshot
 
 CONFIG = SimpleNamespace(model="test", context_window=272000, max_tokens=4096, binding="openai")
 IMAGE_ALLOWANCE = 4096
@@ -110,8 +110,14 @@ class ImageTokenTests(unittest.TestCase):
         record["messages"][-1]["thinking_blocks"] = [
             {"type": "thinking", "thinking": "reasoning", "signature": "sig"}
         ]
-        expected = count_tokens(json.dumps(replay_history(rows, "summary"), ensure_ascii=False))
-        self.assertEqual(self.builder._model_tokens(rows, "summary"), expected)
+        expected = count_tokens(json.dumps(replay_history(rows), ensure_ascii=False))
+        self.assertEqual(self.builder._model_tokens(rows), expected)
+        # The summary is delivered as a trailing snapshot instead of a leading
+        # row inside the replay, so it is counted on top of the history.
+        self.assertEqual(
+            self.builder._model_tokens(rows, "summary"),
+            expected + count_tokens(json.dumps(summary_snapshot("summary"), ensure_ascii=False)),
+        )
 
     def test_encoding_in_user_text_is_still_text(self):
         rows = rows_with_parts([{"type": "text", "text": RANDOM_IMAGE}])
@@ -215,7 +221,8 @@ class BuilderTests(unittest.IsolatedAsyncioTestCase):
         result = await builder.build(session_id="test", llm_config=CONFIG)
         builder._summarize.assert_awaited_once()
         store.update_summary.assert_awaited_once_with("test", "compact summary", 2)
-        self.assertEqual(result.model_history[1:], replay_history(latest))
+        # The summary rides separately from the replayed history now.
+        self.assertEqual(result.model_history, replay_history(latest))
 
     async def test_many_images_still_consume_finite_budget(self):
         rows = []
@@ -256,7 +263,7 @@ class BuilderTests(unittest.IsolatedAsyncioTestCase):
         # The three retained turns share one image, fitting the 5040-token
         # recent budget. Counting them separately wrongly summarizes two.
         store.update_summary.assert_awaited_once_with("test", "compact summary", 2)
-        self.assertEqual(result.model_history[1:], replay_history(recent))
+        self.assertEqual(result.model_history, replay_history(recent))
 
     async def test_failed_summary_reprojects_images_after_removing_canonical_turn(self):
         rows = rows_with_parts([distinct_image(1), {"type": "text", "text": "old " * 20000}])

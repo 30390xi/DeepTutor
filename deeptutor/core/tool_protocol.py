@@ -60,7 +60,7 @@ class ToolParameter:
             "description": self.description,
         }
         if self.enum:
-            schema["enum"] = self.enum
+            schema["enum"] = list(self.enum)
         if self.minimum is not None:
             schema["minimum"] = self.minimum
         if self.maximum is not None:
@@ -148,6 +148,21 @@ class ToolPromptHints:
     aliases: list[ToolAlias] = field(default_factory=list)
 
 
+TOOL_EVENT_PROJECTION = "_tool_event_projection"
+
+
+@dataclass(frozen=True)
+class ToolEventProjection:
+    """Server-owned public invocation details, separate from execution arguments.
+
+    The runtime accepts this typed value only; a model-supplied JSON object
+    cannot change trace visibility. Capabilities inject it beside private kwargs.
+    """
+
+    arguments: dict[str, Any] = field(default_factory=dict)
+    retrieval_query: str = ""
+
+
 @dataclass
 class ToolResult:
     """Standardised return value from a tool execution.
@@ -187,6 +202,10 @@ class ToolResult:
     # Private model-only follow-up (for example verified source image parts).
     # Never copy this into stream events, citation rows, or persisted metadata.
     model_message: dict[str, Any] | None = field(default=None, repr=False)
+    # Optional public stream projection. Omitted fields are withheld, not
+    # inherited from private content/sources/metadata. The inference result
+    # remains intact in the tool message and internal model trace.
+    public_result: dict[str, Any] | None = field(default=None, repr=False)
 
     def __str__(self) -> str:
         return self.content

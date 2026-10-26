@@ -50,7 +50,7 @@ function lessonEvents(reloaded: boolean, bookkeeping = "mastery_note_explained")
 }
 
 describe("Mastery teaching visibility", () => {
-  it("keeps teaching visible while a quiz is pending and when the turn settles", () => {
+  it("keeps teaching visible while a quiz is pending and when the turn settles", async () => {
     const events = lessonEvents(false);
     const props = (trace: StreamEvent[], streaming: boolean) => ({
       msg: { content: lesson + transition, capability: "mastery_path", events: trace },
@@ -68,38 +68,38 @@ describe("Mastery teaching visibility", () => {
     view.rerender(<AssistantMessage {...props(events, false)} />);
     expect(screen.getByText(lesson)).toBeVisible();
     expect(screen.getByText(transition)).toBeVisible();
-    expect(screen.getByText(question.prompt)).toBeVisible();
+    expect(await screen.findByText(question.prompt)).toBeVisible();
   });
 
-  it("keeps a teaching-only turn visible after its final bookkeeping tool", () => {
+  it("keeps a teaching-only turn visible after its final bookkeeping tool", async () => {
     const events = lessonEvents(false).slice(0, 3);
     render(<AssistantMessage msg={{ content: lesson, capability: "mastery_path", events }} />);
     expect(screen.getByText(lesson)).toBeVisible();
   });
 
-  it.each([false, true])("keeps the lesson visible across bookkeeping (reloaded=%s)", (reloaded) => {
+  it.each([false, true])("keeps the lesson visible across bookkeeping (reloaded=%s)", async (reloaded) => {
     render(<AssistantMessage msg={{ content: lesson + transition, capability: "mastery_path", events: lessonEvents(reloaded) }} />);
     expect(screen.getByText(lesson)).toBeVisible();
     expect(screen.getByText(transition)).toBeVisible();
-    expect(screen.getByText(question.prompt)).toBeVisible();
+    expect(await screen.findByText(question.prompt)).toBeVisible();
     const reasoning = screen.queryByText("Internal assessment planning");
     if (reasoning) expect(reasoning).not.toBeVisible();
   });
 
-  it("does not hide an existing lesson when later work retrieves more sources", () => {
+  it("does not hide an existing lesson when later work retrieves more sources", async () => {
     render(<AssistantMessage msg={{ content: lesson + transition, capability: "mastery_path", events: lessonEvents(false, "rag") }} />);
     expect(screen.getByText(lesson)).toBeVisible();
     expect(screen.getByText(transition)).toBeVisible();
-    expect(screen.getByText(question.prompt)).toBeVisible();
+    expect(await screen.findByText(question.prompt)).toBeVisible();
   });
 
-  it("keeps ordinary chat commentary folded when no Mastery question is posed", () => {
+  it("keeps ordinary chat commentary folded when no Mastery question is posed", async () => {
     const events = lessonEvents(false, "rag").filter((item) => !(item.type === "tool_result" && item.metadata?.tool_metadata));
     render(<AssistantMessage msg={{ content: lesson + transition, capability: "chat", events }} />);
     expect(screen.queryByText(lesson)).not.toBeVisible();
   });
 
-  it("does not promote the process before an earlier resolved clarification", () => {
+  it("does not promote the process before an earlier resolved clarification", async () => {
     const planning = "First choose which source to use.";
     const events = [
       event("content", planning, { call_id: "planning-round", call_kind: "agent_loop_round" }),
@@ -111,10 +111,10 @@ describe("Mastery teaching visibility", () => {
     render(<AssistantMessage msg={{ content: planning + lesson + transition, capability: "mastery_path", events }} />);
     expect(screen.queryByText(planning)).not.toBeVisible();
     expect(screen.getByText(lesson)).toBeVisible();
-    expect(screen.getByText(question.prompt)).toBeVisible();
+    expect(await screen.findByText(question.prompt)).toBeVisible();
   });
 
-  it("does not restore a rejected answer as visible teaching", () => {
+  it("does not restore a rejected answer as visible teaching", async () => {
     const rejected = "A rejected explanation that must not become lesson text.";
     const events = [
       event("content", rejected, { call_id: "rejected-round", call_kind: "agent_loop_round" }),
@@ -125,6 +125,6 @@ describe("Mastery teaching visibility", () => {
     const rejectedText = screen.queryByText(rejected);
     if (rejectedText) expect(rejectedText).not.toBeVisible();
     expect(screen.getByText(lesson)).toBeVisible();
-    expect(screen.getByText(question.prompt)).toBeVisible();
+    expect(await screen.findByText(question.prompt)).toBeVisible();
   });
 });

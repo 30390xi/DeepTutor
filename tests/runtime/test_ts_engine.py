@@ -138,3 +138,31 @@ async def test_idle_cleanup_never_interrupts_a_waiting_peer(client, monkeypatch)
     assert process is not None and process.returncode is None
     gate.set()
     assert (await waiting)["rounds"] == 1
+
+
+@pytest.mark.asyncio
+async def test_mid_turn_prerequisite_failure_never_salvages_across_bridge(client):
+    from deeptutor.core.capability_protocol import CapabilityPrerequisiteError
+
+    error = CapabilityPrerequisiteError("source unavailable")
+    operations = []
+
+    class PrerequisiteHost:
+        async def invoke(self, operation, args, state):
+            operations.append(operation)
+            if operation == "call_round":
+                if state["rounds"]:
+                    raise error
+                return dict(
+                    hasTools=True, hasText=False, truncated=False, reasoningBudgetExhausted=False
+                )
+            if operation == "dispatch_tools":
+                return {"pause": False}
+            if operation == "after_tools":
+                return {"override": False, "terminate": False}
+            raise AssertionError(f"Unexpected operation: {operation}")
+
+    with pytest.raises(CapabilityPrerequisiteError) as raised:
+        await client.run(PrerequisiteHost(), CONFIG)
+    assert raised.value is error
+    assert operations == ["call_round", "dispatch_tools", "after_tools", "call_round"]

@@ -43,9 +43,12 @@ class AgentLoopHost:
         self.redirect = ""
         self.override: str | None = None
         self.override_after_tools = False
+        self.recovery_tools: frozenset[str] | None = None
+        self.recovery_schemas: list[dict[str, Any]] | None = None
 
     async def invoke(self, operation: str, args: dict[str, Any], state: dict[str, Any]) -> Any:
         operations = {
+            "prepare_recovery": self.prepare_recovery,
             "begin_settlement": self.begin_settlement,
             "call_round": self.call_round,
             "continue_truncated": self.continue_truncated,
@@ -86,6 +89,23 @@ class AgentLoopHost:
             stage=self.loop.stage,
             metadata={"trace_kind": "warning"},
         )
+
+    async def prepare_recovery(self) -> dict[str, bool]:
+        recovery = self.pipeline._capability_settlement_recovery(self.context)
+        if recovery is None:
+            return {"available": False, "rejected": False}
+        instruction, names = recovery
+        self.recovery_schemas = [
+            schema for schema in self.loop.tool_schemas or []
+            if (schema.get("function") or {}).get("name") in names
+        ]
+        self.recovery_tools = frozenset(
+            schema["function"]["name"] for schema in self.recovery_schemas
+        )
+        if not self.recovery_tools:
+            return {"available": False, "rejected": True}
+        self.loop._append_loop_instruction(self.messages, instruction)
+        return {"available": True, "rejected": False}
 
     async def begin_settlement(self) -> None:
         await self.loop._begin_settlement(self.messages)
@@ -134,11 +154,20 @@ class AgentLoopHost:
             call_kind="agent_loop_round",
             trace_role="response" if settling else "explore",
             max_tokens=self.pipeline.loop_max_tokens,
-            tool_schemas=self.loop.tool_schemas,
+            tool_schemas=self.recovery_schemas
+            if self.recovery_tools is not None
+            else self.loop.tool_schemas,
             defer_visible_output=self.pipeline._capability_buffers_visible_output(self.context),
             tool_choice=self.pipeline.initial_tool_choice if first else None,
         )
+        rejected = self.recovery_tools is not None and any(
+            str(call.get("name") or "").strip() not in self.recovery_tools
+            for call in self.result.tool_calls
+        )
+        if rejected:
+            await self.loop._discard_deferred_output(self.result)
         return {
+            "recoveryRejected": rejected,
             "hasTools": bool(self.result.tool_calls),
             "hasText": bool(self.loop._clean(self.result.text)),
             "truncated": finish_was_truncated(self.result.finish_reason),

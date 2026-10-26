@@ -183,6 +183,7 @@ lines.on("line", (line: string) => {
             String(error?.message ?? "Host operation failed"),
             value.callId,
             error?.partialResponse === true,
+            error?.fatal === true,
           ),
         );
       }

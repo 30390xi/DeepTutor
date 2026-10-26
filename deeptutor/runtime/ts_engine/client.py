@@ -152,12 +152,15 @@ class EngineClient:
                 except Exception as exc:
                     # Keep the original typed exception in-process. Node only
                     # needs to know whether salvage is safe after visible output.
+                    from deeptutor.core.capability_protocol import CapabilityPrerequisiteError
+
                     failures[call_id] = exc
                     reply.update(
                         ok=False,
                         error={
                             "message": str(exc)[:4096],
                             "partialResponse": bool(getattr(exc, "partial_response", False)),
+                            "fatal": isinstance(exc, CapabilityPrerequisiteError),
                         },
                     )
                 await self._send(reply)

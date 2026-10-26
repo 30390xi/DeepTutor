@@ -100,7 +100,8 @@ LOOP_STAGE = "responding"
 # Settlement is deliberately small but large enough for the longest built-in
 # interaction boundary: register state -> ask/resume -> record result -> reply.
 # A single additional tool-less hard finish follows if all of these rounds
-# still request tools, making the total upper bound ``exploration + 4``.
+# still request tools. A receipt-backed capability delivery can use that final
+# round instead, with a restricted tool surface: the bound stays exploration + 4.
 MAX_SETTLEMENT_ROUNDS = 3
 # Reasoning-only completions can recur when a model rewrites its plan instead
 # of acting. Give it a stronger directive on the second miss, then use the
@@ -373,7 +374,7 @@ class AgentLoop:
         dispatch: DispatchOutcome,
         checkpoint_boundary: int,
     ) -> int:
-        summary = _last_context_checkpoint_summary(dispatch)
+        summary, state = _last_context_checkpoint(dispatch)
         if not summary:
             return checkpoint_boundary
         prefix = messages[:checkpoint_boundary]
@@ -383,8 +384,13 @@ class AgentLoop:
                 "content": f"[Context checkpoint]\n{summary}",
             }
         )
+        boundary = len(prefix)
+        if state:
+            # State sits past the boundary, so the next fold replaces it rather
+            # than leaving a stale copy beside every summary.
+            prefix.append({"role": "system", "content": state})
         messages[:] = prefix
-        return len(messages)
+        return boundary
 
     async def _reject_capability_finish(self) -> LoopOutcome:
         """Fail a turn whose required interaction could not be completed."""
@@ -454,6 +460,10 @@ class AgentLoop:
             # prevents callers from offering an accurate retry action.
             raise
         except Exception as exc:
+            from deeptutor.core.capability_protocol import CapabilityPrerequisiteError
+
+            if isinstance(exc, CapabilityPrerequisiteError):
+                raise
             # The salvage call itself failed (e.g. the provider is still
             # returning unusable data). Don't bubble up and lose the turn —
             # emit the graceful fallback answer instead.
@@ -614,18 +624,34 @@ class AgentLoop:
         defer_visible_output: bool = False,
         tool_choice: str | None = None,
     ) -> LLMCallResult:
+        prepare = getattr(self.pipeline, "prepare_model_request", None)
+        lesson_messages = await prepare(self.context, self.stream, messages) if prepare else []
         request_messages = with_transient_model_messages(messages, self._transient_model_messages)
-        # Guard the same request representation we send. Raw repeated images
-        # must not cause tool evidence to be snipped before image projection.
+        # Current tool pixels take precedence over cached lesson pages. Neither
+        # belongs in the durable dialogue; the hook runs again on forced finish.
+        if lesson_messages and not has_image_parts(self._transient_model_messages):
+            request_messages = [*request_messages, *lesson_messages]
+        project = getattr(self.pipeline, "project_model_request", None)
+        if project is not None:
+            request_messages = project(request_messages)
         projected_messages = deduplicate_user_images(
             [
-                {key: value for key, value in message.items() if key != "_context_snapshot"}
+                {
+                    key: value
+                    for key, value in message.items()
+                    if key not in {"_context_snapshot", "_lesson_packet"}
+                }
                 for message in request_messages
             ]
         )
-        await self.pipeline._guard_context_window(projected_messages, self.stream)
+        await self.pipeline._guard_context_window(
+            projected_messages, self.stream, tool_schemas=tool_schemas
+        )
         stage = self.stage
         call_id = new_call_id(f"{self.source}-{stage}")
+        # Runtime-only invocation identity: reviewed mutations can require a
+        # subsequent model call, rather than trust an LLM-supplied argument.
+        self.context.extension("agent_loop")["model_call_id"] = call_id
         trace_meta = build_trace_metadata(
             call_id=call_id,
             phase=stage,
@@ -1409,8 +1435,13 @@ async def _single_chunk_stream(response: Any) -> Any:
     )
 
 
-def _last_context_checkpoint_summary(dispatch: DispatchOutcome) -> str:
-    summary = ""
+def _last_context_checkpoint(dispatch: DispatchOutcome) -> tuple[str, str]:
+    """``(summary, state)`` of the round's last checkpoint.
+
+    ``summary`` is history the fold keeps; ``state`` is the optional current
+    state that replaces the previous fold's copy instead of stacking with it.
+    """
+    summary, state = "", ""
     for tool_message in dispatch.tool_messages:
         tool_call_id = str(tool_message.get("tool_call_id") or "")
         metadata = dispatch.tool_metadata_by_id.get(tool_call_id) or {}
@@ -1420,7 +1451,8 @@ def _last_context_checkpoint_summary(dispatch: DispatchOutcome) -> str:
         candidate = str(checkpoint.get("summary") or "").strip()
         if candidate:
             summary = candidate
-    return summary
+            state = str(checkpoint.get("state") or "").strip()
+    return summary, state
 
 
 __all__ = [

@@ -148,8 +148,15 @@ class MemoryCoordinator:
 
     async def acknowledge_expired_turn(self, turn_id: str) -> None:
         async with self._lock:
-            self._known_turns.discard(turn_id)
             lease = self._turn_leases.get(turn_id)
+            if self._active(lease):
+                return
+            self._known_turns.discard(turn_id)
+            # Recovery has verified the durable terminal row. Keeping these
+            # payloads forever leaks every completed conversation (#1971).
+            self._events.pop(turn_id, None)
+            for _, command in self._commands.pop(turn_id, []):
+                self._command_ids.pop(command.command_id, None)
             if lease is not None and not self._active(lease):
                 self._turn_leases.pop(turn_id, None)
                 if self._session_turns.get(lease.session_id) == turn_id:

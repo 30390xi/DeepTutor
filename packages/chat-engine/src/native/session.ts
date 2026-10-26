@@ -164,6 +164,8 @@ export class NativeSession implements LoopHost {
     args: JsonRecord,
   ): Promise<unknown> {
     switch (operation) {
+      case "prepare_recovery":
+        return { available: false, rejected: false };
       case "begin_settlement":
         await this.warning(
           "budget_settling",

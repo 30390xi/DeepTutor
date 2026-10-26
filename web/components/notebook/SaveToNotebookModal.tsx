@@ -174,6 +174,14 @@ export default function SaveToNotebookModal({
   const hasMessageSelection = Array.isArray(messages) && messages.length > 0;
 
   useEffect(() => {
+    if (!open) setIsLoading(false);
+    return () => {
+      abortRef.current?.abort();
+      abortRef.current = null;
+    };
+  }, [open]);
+
+  useEffect(() => {
     if (!open) {
       abortRef.current?.abort();
       return;
@@ -348,6 +356,7 @@ export default function SaveToNotebookModal({
         },
       );
 
+      if (controller.signal.aborted) return;
       if (!response.ok || !response.body) {
         throw new Error(t("Failed to save to notebook."));
       }
@@ -359,6 +368,7 @@ export default function SaveToNotebookModal({
 
       while (true) {
         const { done, value } = await reader.read();
+        if (controller.signal.aborted) return;
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
         const lastSeparator = buffer.lastIndexOf("\n\n");
@@ -416,6 +426,11 @@ export default function SaveToNotebookModal({
         err instanceof Error ? err.message : t("Failed to save to notebook."),
       );
       setIsLoading(false);
+    } finally {
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+        setIsLoading(false);
+      }
     }
   };
 

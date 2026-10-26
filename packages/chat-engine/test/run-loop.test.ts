@@ -11,6 +11,7 @@ const config: LoopConfig = { explorationBudget: 2, settlementBudget: 3, emptyRec
 
 class Script implements LoopHost {
   calls: Array<{ operation: Operation; input: unknown; state: Readonly<LoopState> }> = [];
+  recovery = false;
   redirect = false;
   override = false;
   pause = false;
@@ -31,6 +32,7 @@ class Script implements LoopHost {
         result = round;
         break;
       }
+      case "prepare_recovery": result = { available: this.recovery, rejected: false }; break;
       case "check_finish": result = { redirect: this.redirect, override: this.override }; break;
       case "dispatch_tools": result = { pause: this.pause }; break;
       case "resolve_pause": result = this.resumed; break;
@@ -157,4 +159,31 @@ test("invalid budgets are rejected before invoking any effect", async () => {
     await assert.rejects(host.run({ explorationBudget }), /Invalid loop budget/);
     assert.deepEqual(host.calls, []);
   }
+});
+
+
+test("source recovery gets one restricted delivery round within the hard budget", async () => {
+  const host = new Script([tools, tools, answer]);
+  host.recovery = true;
+  assert.equal((await host.run({ explorationBudget: 1, settlementBudget: 1 })).rounds, 3);
+  assert.equal(host.operations().at(-1), "finish");
+  assert.ok(!host.operations().includes("forced_finish"));
+});
+
+test("recovery cannot reopen exploration or dispatch a rejected tool batch", async () => {
+  for (const rejected of [false, true]) {
+    const host = new Script([tools, tools, { ...tools, recoveryRejected: rejected }]);
+    host.recovery = true;
+    const state = await host.run({ explorationBudget: 1, settlementBudget: 1 });
+    assert.equal(state.rounds, 3);
+    assert.equal(state.tool_steps, rejected ? 2 : 3);
+    assert.equal(host.operations().at(-1), "reject_finish");
+    assert.ok(!host.operations().includes("forced_finish"));
+  }
+});
+
+test("failed capability prerequisites propagate without a salvage call", async () => {
+  const host = new Script([tools, new HostFailure("source unavailable", "prerequisite", false, true)]);
+  await assert.rejects(host.run(), /source unavailable/);
+  assert.ok(!host.operations().includes("forced_finish"));
 });

@@ -313,15 +313,32 @@ async def test_batch_shares_id_space_and_remaps_cross_module_prereqs(path_id):
 
 
 @pytest.mark.asyncio
-async def test_batch_refuses_when_any_module_touches_mastered_work(path_id):
+async def test_batch_refuses_when_any_module_touches_mastered_work(path_id, monkeypatch):
     """Proven work in ANY module of the batch refuses the whole request."""
+    from deeptutor.learning import semantic_assessment
+
+    learner_answer = (
+        "Conjunction requires both propositions to be true; disjunction requires at least one."
+    )
+
+    async def judge(_config, items):
+        assert all(item["answer"] == learner_answer for item in items)
+        return {
+            item["question_id"]: semantic_assessment.Verdict(
+                result="correct", confidence=0.99, feedback="The explanation meets the objective."
+            )
+            for item in items
+        }
+
+    monkeypatch.setattr(semantic_assessment, "judge_answers", judge)
     built = await _build_three_modules(path_id)
     assessed = await MasteryAssessTool().execute(
         _mastery_path_id=path_id,
         knowledge_point_id="test_path_m1_kp0",
-        passed=True,
+        _learner_message=learner_answer,
         feedback="学习者用自己的话说清了合取与析取的区别。",
     )
+    assert assessed.success, assessed.content
     assert json.loads(assessed.content)["mastered"] is True
     _, store = _stored_state(path_id)
     post_assess_revision = store.load(path_id).version

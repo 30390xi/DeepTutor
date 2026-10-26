@@ -16,6 +16,7 @@ export interface LoopState {
 }
 
 export interface RoundFacts {
+  recoveryRejected?: boolean;
   hasTools: boolean;
   hasText: boolean;
   truncated: boolean;
@@ -23,6 +24,7 @@ export interface RoundFacts {
 }
 
 export interface Operations {
+  prepare_recovery: { input: Record<string, never>; output: { available: boolean; rejected: boolean } };
   begin_settlement: { input: Record<string, never>; output: null };
   call_round: { input: { settling: boolean; first: boolean }; output: RoundFacts };
   continue_truncated: { input: Record<string, never>; output: null };
@@ -45,7 +47,7 @@ export interface LoopHost {
 }
 
 export class HostFailure extends Error {
-  constructor(message: string, readonly callId: string, readonly partialResponse: boolean) {
+  constructor(message: string, readonly callId: string, readonly partialResponse: boolean, readonly fatal = false) {
     super(message);
     this.name = "HostFailure";
   }
@@ -69,6 +71,7 @@ export function validateOutput<K extends Operation>(operation: K, value: unknown
     ? value as Record<string, unknown> : undefined;
   let fields: string[] | undefined;
   switch (operation) {
+    case "prepare_recovery": fields = ["available", "rejected"]; break;
     case "call_round": fields = ["hasTools", "hasText", "truncated", "reasoningBudgetExhausted"]; break;
     case "check_finish": fields = ["redirect", "override"]; break;
     case "dispatch_tools": fields = ["pause"]; break;
