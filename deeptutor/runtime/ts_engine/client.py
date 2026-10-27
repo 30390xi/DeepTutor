@@ -97,12 +97,14 @@ class EngineClient:
             if process.returncode is None:
                 with suppress(ProcessLookupError):
                     process.terminate()
+            # A caller may start another turn as soon as it receives failure.
+            # Reap first so _ensure_started cannot reuse the exiting worker.
+            await process.wait()
             for queue in tuple(self._runs.values()):
                 with suppress(asyncio.QueueFull):
                     queue.put_nowait(
                         EngineUnavailableError("TypeScript scheduler stopped during turn")
                     )
-            await process.wait()
 
     async def _send(self, frame: dict[str, Any]) -> None:
         payload = (json.dumps({"v": 1, **frame}, ensure_ascii=False) + "\n").encode()
