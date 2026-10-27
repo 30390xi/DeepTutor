@@ -1,3 +1,4 @@
+import { emptyLearningIndex } from "./fixtures/learning-index";
 import { expect, test } from "@playwright/test";
 import { emptyTaskBoard } from "./fixtures/task-board";
 
@@ -108,6 +109,7 @@ test.beforeEach(async ({ page }) => {
     const json = (payload: unknown, status = 200) =>
       route.fulfill({ status, json: payload });
 
+    if (path === "/api/dashboard/learning-index") return json(emptyLearningIndex);
     if (path === "/api/partners" || path === "/api/partner-groups") return json([]);
     if (path === "/api/task-board") return json(emptyTaskBoard);
     if (path === "/api/auth/status") {
@@ -204,7 +206,7 @@ test("back and forward cross materials, survive reload, and stay session-scoped"
   await page.getByRole("button", { name: "History material A second" }).click();
   await expect(page.getByText("History A2 text.")).toBeVisible();
 
-  await page.getByRole("button", { name: "History material B" }).click();
+  await page.locator(".dt-reading-navigator").getByRole("button", { name: "History material B" }).click();
   await expect(page.getByText("History B1 text.")).toBeVisible();
 
   await page.getByRole("button", { name: "Back", exact: true }).click();
@@ -218,7 +220,7 @@ test("back and forward cross materials, survive reload, and stay session-scoped"
   await page.goto(`/learning/reading/${WORKSPACE_ID}/sessions/${SESSION_TWO}`, { waitUntil: "domcontentloaded" });
   // A fresh load starts with the contents navigator collapsed (v1.6.10).
   await page.getByRole("button", { name: "Expand contents", exact: true }).click();
-  await page.getByRole("button", { name: "History material B", exact: true }).click();
+  await page.locator(".dt-reading-navigator").getByRole("button", { name: "History material B", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Back", exact: true }),
   ).toBeDisabled();
