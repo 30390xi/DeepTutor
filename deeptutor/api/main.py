@@ -528,63 +528,23 @@ except Exception:
     if not user_dir.exists():
         user_dir.mkdir(parents=True)
 
-# Import routers only after runtime settings are initialized.
-# Some router modules load YAML settings at import time.
-from deeptutor.api.routers import (
-    agent_config,
-    attachments,
-    auth,
-    book,
-    capabilities,
-    capabilities_settings,
-    co_writer,
-    courses,
-    dashboard,
-    file_preview,
-    imports,
-    knowledge,
-    learning_journal,
-    marginnote4,
-    mastery_path,
-    mcp_settings,
-    memory,
-    notebook,
-    outputs,
-    partner_groups,
-    partners,
-    personas,
-    plugins,
-    practice,
-    question,
-    question_notebook,
-    quiz_judge,
-    reading,
-    reading_extensions,
-    sessions,
-    settings,
-    skills,
-    space_cli_apps,
-    space_mcp,
-    subagents,
-    system,
-    task_board,
-    unified_ws,
-    video_learning,
-    visualizers,
-    voice,
-    workspace,
+# Runtime settings must be initialized before a router module is imported.
+# The native profile defers unrelated feature schemas until their first request.
+import os  # noqa: E402
+
+from deeptutor.api.router_loader import RouterLoader  # noqa: E402
+
+_router_loader = RouterLoader(
+    app, lazy=os.environ.get("DEEPTUTOR_CHAT_ENGINE") == "typescript-native"
 )
-from deeptutor.api.routers import (
-    tools as tools_router,
-)
-from deeptutor.api.routers.file_library import router as file_library_router  # noqa: E402
-from deeptutor.api.routers.multi_user import router as multi_user_router  # noqa: E402
 
 # Auth router is public — login/logout/register/status require no token
-app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
-app.include_router(outputs.router, prefix="/files/outputs", tags=["outputs"])
-app.include_router(
-    workspace.files_router,
+_router_loader.include("deeptutor.api.routers.auth:router", prefix="/api/auth", tags=["auth"])
+_router_loader.include(
+    "deeptutor.api.routers.outputs:router", prefix="/files/outputs", tags=["outputs"]
+)
+_router_loader.include(
+    "deeptutor.api.routers.workspace:files_router",
     prefix="/files/workspace-items",
     tags=["workspace"],
 )
@@ -603,32 +563,50 @@ _auth = [Depends(require_learning_surface)]
 # (single-user local runs are implicitly admin — no behaviour change there).
 _admin = [Depends(require_admin)]
 
-app.include_router(
-    multi_user_router,
+_router_loader.include(
+    "deeptutor.api.routers.multi_user:router",
     prefix="/api/multi-user",
     tags=["multi-user"],
     dependencies=_auth,
 )
-app.include_router(question.router, prefix="/api/question", tags=["question"], dependencies=_auth)
-app.include_router(knowledge.router, prefix="/api", tags=["knowledge-bases"], dependencies=_auth)
-app.include_router(
-    file_preview.router,
+_router_loader.include(
+    "deeptutor.api.routers.question:router",
+    prefix="/api/question",
+    tags=["question"],
+    dependencies=_auth,
+)
+_router_loader.include(
+    "deeptutor.api.routers.knowledge:router",
+    prefix="/api",
+    tags=["knowledge-bases"],
+    dependencies=_auth,
+)
+_router_loader.include(
+    "deeptutor.api.routers.file_preview:router",
     prefix="/api/file-preview",
     tags=["file-preview"],
     dependencies=[Depends(require_auth)],
 )
-app.include_router(imports.router, prefix="/api/imports", tags=["imports"], dependencies=_auth)
-app.include_router(
-    dashboard.router, prefix="/api/dashboard", tags=["dashboard"], dependencies=_auth
+_router_loader.include(
+    "deeptutor.api.routers.imports:router",
+    prefix="/api/imports",
+    tags=["imports"],
+    dependencies=_auth,
 )
-app.include_router(
-    mastery_path.router,
+_router_loader.include(
+    "deeptutor.api.routers.dashboard:router",
+    prefix="/api/dashboard",
+    tags=["dashboard"],
+    dependencies=_auth,
+)
+_router_loader.include(
+    "deeptutor.api.routers.mastery_path:router",
     prefix="/api/mastery-paths",
     tags=["mastery-path"],
     dependencies=_auth,
 )
-app.include_router(
-    file_library_router,
+_router_loader.include(
+    "deeptutor.api.routers.file_library:router",
     prefix="/files/library",
     tags=["library"],
     dependencies=_auth,
@@ -636,56 +614,86 @@ app.include_router(
 # WebSocket handlers authenticate inside the connection before ``accept``.
 # Keep them off HTTP router dependencies: ``require_learning_surface`` takes a
 # Request, which FastAPI cannot construct for a WebSocket scope.
-app.include_router(question.ws_router, prefix="/ws/questions", tags=["question"])
-app.include_router(knowledge.ws_router, prefix="/ws", tags=["knowledge-bases"])
-app.include_router(
-    mastery_path.ws_router,
+_router_loader.include(
+    "deeptutor.api.routers.question:ws_router", prefix="/ws/questions", tags=["question"]
+)
+_router_loader.include(
+    "deeptutor.api.routers.knowledge:ws_router", prefix="/ws", tags=["knowledge-bases"]
+)
+_router_loader.include(
+    "deeptutor.api.routers.mastery_path:ws_router",
     prefix="/ws",
     tags=["mastery-path"],
 )
-app.include_router(co_writer.router, prefix="/api", tags=["documents"], dependencies=_auth)
-app.include_router(notebook.router, prefix="/api", tags=["notebooks"], dependencies=_auth)
-app.include_router(
-    task_board.router, prefix="/api/task-board", tags=["task-board"], dependencies=_auth
+_router_loader.include(
+    "deeptutor.api.routers.co_writer:router", prefix="/api", tags=["documents"], dependencies=_auth
 )
-app.include_router(book.router, prefix="/api", tags=["books"], dependencies=_auth)
-app.include_router(book.ws_router, prefix="/ws", tags=["books"])
-app.include_router(reading.router, prefix="/api/reading", tags=["reading"], dependencies=_auth)
-app.include_router(
-    reading_extensions.router,
+_router_loader.include(
+    "deeptutor.api.routers.notebook:router", prefix="/api", tags=["notebooks"], dependencies=_auth
+)
+_router_loader.include(
+    "deeptutor.api.routers.task_board:router",
+    prefix="/api/task-board",
+    tags=["task-board"],
+    dependencies=_auth,
+)
+_router_loader.include(
+    "deeptutor.api.routers.calendar:router",
+    prefix="/api/calendar",
+    tags=["calendar"],
+    dependencies=_auth,
+)
+_router_loader.include(
+    "deeptutor.api.routers.book:router", prefix="/api", tags=["books"], dependencies=_auth
+)
+_router_loader.include("deeptutor.api.routers.book:ws_router", prefix="/ws", tags=["books"])
+_router_loader.include(
+    "deeptutor.api.routers.reading:router",
+    prefix="/api/reading",
+    tags=["reading"],
+    dependencies=_auth,
+)
+_router_loader.include(
+    "deeptutor.api.routers.reading_extensions:router",
     prefix="/api/reading",
     tags=["reading-extensions"],
     dependencies=_auth,
 )
-app.include_router(memory.router, prefix="/api/memory", tags=["memory"], dependencies=_auth)
-app.include_router(
-    learning_journal.router,
+_router_loader.include(
+    "deeptutor.api.routers.memory:router", prefix="/api/memory", tags=["memory"], dependencies=_auth
+)
+_router_loader.include(
+    "deeptutor.api.routers.learning_journal:router",
     prefix="/api/learning-journal",
     tags=["learning-journal"],
     dependencies=_auth,
 )
-app.include_router(
-    capabilities_settings.router,
+_router_loader.include(
+    "deeptutor.api.routers.capabilities_settings:router",
     prefix="/api/capabilities",
     tags=["capabilities"],
     dependencies=_auth,
 )
-app.include_router(
-    capabilities.router,
+_router_loader.include(
+    "deeptutor.api.routers.capabilities:router",
     prefix="/api/capabilities",
     tags=["capabilities"],
     dependencies=_auth,
 )
-app.include_router(sessions.router, prefix="/api/sessions", tags=["sessions"], dependencies=_auth)
-app.include_router(courses.router, prefix="/api/courses", tags=["courses"], dependencies=_auth)
-app.include_router(
-    question_notebook.router,
+_router_loader.include(
+    "deeptutor.api.routers.sessions:router",
+    prefix="/api/sessions",
+    tags=["sessions"],
+    dependencies=_auth,
+)
+_router_loader.include(
+    "deeptutor.api.routers.question_notebook:router",
     prefix="/api/question-notebook",
     tags=["question-notebook"],
     dependencies=_auth,
 )
-app.include_router(
-    practice.router,
+_router_loader.include(
+    "deeptutor.api.routers.practice:router",
     prefix="/api/question-notebook/practice",
     tags=["practice"],
     dependencies=_auth,
@@ -694,26 +702,31 @@ app.include_router(
 # before a session exists, so GET /api/settings/ui must not be gated
 # by _auth). Mounted first so the path resolves here, not on the gated
 # settings router below.
-app.include_router(
-    settings.public_router,
+_router_loader.include(
+    "deeptutor.api.routers.settings:public_router",
     prefix="/api/settings",
     tags=["settings"],
 )
-app.include_router(settings.router, prefix="/api/settings", tags=["settings"], dependencies=_auth)
-app.include_router(
-    workspace.settings_router,
+_router_loader.include(
+    "deeptutor.api.routers.settings:router",
+    prefix="/api/settings",
+    tags=["settings"],
+    dependencies=_auth,
+)
+_router_loader.include(
+    "deeptutor.api.routers.workspace:settings_router",
     prefix="/api/settings/workspace",
     tags=["workspace-settings"],
     dependencies=_auth,
 )
-app.include_router(
-    video_learning.settings_router,
+_router_loader.include(
+    "deeptutor.api.routers.video_learning:settings_router",
     prefix="/api/settings/video-learning",
     tags=["video-learning-settings"],
     dependencies=_admin,
 )
-app.include_router(
-    mcp_settings.router,
+_router_loader.include(
+    "deeptutor.api.routers.mcp_settings:router",
     prefix="/api/settings/mcp",
     tags=["mcp-settings"],
     dependencies=_auth,
@@ -722,8 +735,8 @@ app.include_router(
 # resolve the owner server-side, and everything a non-admin can reach through it
 # is remote-transport-only (see the module docstring). The admin registry above
 # keeps its own ``require_admin``.
-app.include_router(
-    space_mcp.router,
+_router_loader.include(
+    "deeptutor.api.routers.space_mcp:router",
     prefix="/api/space/mcp",
     tags=["space-mcp"],
     dependencies=_auth,
@@ -732,56 +745,81 @@ app.include_router(
 # routes that install or remove an app carry their own ``require_admin``, and
 # what is left for an ordinary account is reading the catalog and toggling its
 # own preference among apps an administrator already granted it.
-app.include_router(
-    space_cli_apps.router,
+_router_loader.include(
+    "deeptutor.api.routers.space_cli_apps:router",
     prefix="/api/space/cli-apps",
     tags=["space-cli-apps"],
     dependencies=_auth,
 )
-app.include_router(skills.router, prefix="/api/skills", tags=["skills"], dependencies=_auth)
-app.include_router(
-    subagents.router, prefix="/api/subagents", tags=["subagents"], dependencies=_auth
+_router_loader.include(
+    "deeptutor.api.routers.skills:router", prefix="/api/skills", tags=["skills"], dependencies=_auth
 )
-app.include_router(personas.router, prefix="/api", tags=["personas"], dependencies=_auth)
-app.include_router(plugins.router, prefix="/api/plugins", tags=["plugins"])
-app.include_router(tools_router.router, prefix="/api/tools", tags=["tools"], dependencies=_auth)
-app.include_router(system.router, prefix="/api/system", tags=["system"], dependencies=_auth)
-app.include_router(voice.router, prefix="/api/voice", tags=["voice"], dependencies=_auth)
-app.include_router(
-    video_learning.router,
+_router_loader.include(
+    "deeptutor.api.routers.subagents:router",
+    prefix="/api/subagents",
+    tags=["subagents"],
+    dependencies=_auth,
+)
+_router_loader.include(
+    "deeptutor.api.routers.personas:router", prefix="/api", tags=["personas"], dependencies=_auth
+)
+_router_loader.include(
+    "deeptutor.api.routers.plugins:router", prefix="/api/plugins", tags=["plugins"]
+)
+_router_loader.include(
+    "deeptutor.api.routers.tools:router", prefix="/api/tools", tags=["tools"], dependencies=_auth
+)
+_router_loader.include(
+    "deeptutor.api.routers.system:router", prefix="/api/system", tags=["system"], dependencies=_auth
+)
+_router_loader.include(
+    "deeptutor.api.routers.voice:router", prefix="/api/voice", tags=["voice"], dependencies=_auth
+)
+_router_loader.include(
+    "deeptutor.api.routers.video_learning:router",
     prefix="/api/video-learning",
     tags=["video-learning"],
     dependencies=_auth,
 )
-app.include_router(
-    visualizers.router,
+_router_loader.include(
+    "deeptutor.api.routers.visualizers:router",
     prefix="/api/visualizers",
     tags=["visualizers"],
     dependencies=_auth,
 )
-app.include_router(
-    agent_config.router, prefix="/api/agent-config", tags=["agent-config"], dependencies=_auth
+_router_loader.include(
+    "deeptutor.api.routers.agent_config:router",
+    prefix="/api/agent-config",
+    tags=["agent-config"],
+    dependencies=_auth,
 )
 # Partners are per-user resources now: anyone may build their own, and an admin
 # may assign theirs to others. Only ``_auth`` here — every route in the router
 # declares whether it needs *use* or *manage* rights on the partner it names
 # (see ``multi_user.partner_access``), which a blanket admin gate could not
 # express.
-app.include_router(partners.router, prefix="/api/partners", tags=["partners"], dependencies=_auth)
-app.include_router(
-    partner_groups.router,
+_router_loader.include(
+    "deeptutor.api.routers.partners:router",
+    prefix="/api/partners",
+    tags=["partners"],
+    dependencies=_auth,
+)
+_router_loader.include(
+    "deeptutor.api.routers.partner_groups:router",
     prefix="/api/partner-groups",
     tags=["partner-groups"],
     dependencies=_auth,
 )
-app.include_router(partners.ws_router, prefix="/ws/partners", tags=["partners"])
-app.include_router(
-    partner_groups.ws_router,
+_router_loader.include(
+    "deeptutor.api.routers.partners:ws_router", prefix="/ws/partners", tags=["partners"]
+)
+_router_loader.include(
+    "deeptutor.api.routers.partner_groups:ws_router",
     prefix="/ws/partner-groups",
     tags=["partner-groups"],
 )
-app.include_router(
-    attachments.router,
+_router_loader.include(
+    "deeptutor.api.routers.attachments:router",
     prefix="/files/attachments",
     tags=["attachments"],
     dependencies=_auth,
@@ -789,19 +827,19 @@ app.include_router(
 
 # MarginNote 4 device bridge — pairing/management routes carry _auth in-router;
 # sync/heartbeat use device-token auth (the Add-on has no session).
-app.include_router(
-    marginnote4.router,
+_router_loader.include(
+    "deeptutor.api.routers.marginnote4:router",
     prefix="/api/marginnote4",
     tags=["marginnote4"],
 )
 
 # Unified WebSocket endpoint — auth is checked inside the handler (WebSockets
 # cannot use FastAPI dependencies in the standard way)
-app.include_router(unified_ws.router, tags=["unified-ws"])
+_router_loader.include("deeptutor.api.routers.unified_ws:router", tags=["unified-ws"])
 
 # Quiz AI-judge WebSocket — same caveat as unified_ws above; auth is checked
 # inside the handler so the WS upgrade isn't rejected by an HTTP-style dep.
-app.include_router(quiz_judge.router, prefix="/ws", tags=["quiz-judge"])
+_router_loader.include("deeptutor.api.routers.quiz_judge:router", prefix="/ws", tags=["quiz-judge"])
 
 
 @app.get("/")
