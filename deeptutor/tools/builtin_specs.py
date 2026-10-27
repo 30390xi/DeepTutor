@@ -44,6 +44,10 @@ def _specs(module: str, members: tuple[tuple[str, str], ...]) -> tuple[BuiltinTo
 
 
 BUILTIN_TOOL_SPECS: tuple[BuiltinToolSpec, ...] = (
+    BuiltinToolSpec("write_note", "deeptutor.capabilities.notes.tools:WriteNoteTool"),
+    BuiltinToolSpec("search_notes", "deeptutor.capabilities.notes.tools:SearchNotesTool"),
+    BuiltinToolSpec("note_read", "deeptutor.capabilities.notes.tools:NoteReadTool"),
+    BuiltinToolSpec("note_suggest", "deeptutor.capabilities.notes.tools:NoteSuggestTool"),
     *_specs(
         "deeptutor.tools.builtin",
         (
@@ -62,7 +66,8 @@ BUILTIN_TOOL_SPECS: tuple[BuiltinToolSpec, ...] = (
             ("load_tools", "LoadToolsTool"),
             ("web_fetch", "WebFetchTool"),
             ("list_notebook", "ListNotebookTool"),
-            ("write_note", "WriteNoteTool"),
+            ("list_favorites", "ListFavoritesTool"),
+            ("save_favorite", "SaveFavoriteTool"),
             ("question_bank", "QuestionBankTool"),
             ("github", "GithubTool"),
             ("ask_user", "AskUserTool"),
@@ -202,15 +207,6 @@ BUILTIN_TOOL_SPECS: tuple[BuiltinToolSpec, ...] = (
         "propose_partner", "deeptutor.capabilities.partner_authoring.tools:ProposePartnerTool"
     ),
     BuiltinToolSpec("invoke_other", "deeptutor.capabilities.partner_group.tools:InvokeOtherTool"),
-    *_specs(
-        "deeptutor.capabilities.course_study.tools",
-        (
-            ("course_overview", "CourseOverviewTool"),
-            ("course_material", "CourseMaterialTool"),
-            ("course_edit", "CourseEditTool"),
-            ("course_handoff", "CourseHandoffTool"),
-        ),
-    ),
     *_specs(
         "deeptutor.tools.partner_memory",
         (
