@@ -1683,7 +1683,7 @@ class QuestionPipeline:
             kwargs.setdefault("sort_by", "relevance")
         elif tool_name == "read_source":
             kwargs["source_index"] = self._source_index(context)
-        elif tool_name == "write_note":
+        elif tool_name == "save_favorite":
             kwargs["conversation_history"] = list(context.conversation_history or [])
             kwargs["current_user_message"] = context.user_message or ""
         return kwargs

@@ -95,8 +95,17 @@ class ChatOrchestrator:
                 yield event
             return
 
-        cap_name = context.active_capability or "chat"
-        capability = self._cap_registry.get(cap_name)
+        if context.runtime.answer_by:
+            # The turn belongs to someone else: a partner or a connected agent
+            # answers in place of the selected mode. Not a registry entry —
+            # it is never a mode a learner picks, only who replies.
+            from deeptutor.capabilities.handoff import HandoffCapability
+
+            cap_name = "handoff"
+            capability = HandoffCapability()
+        else:
+            cap_name = context.active_capability or "chat"
+            capability = self._cap_registry.get(cap_name)
 
         if capability is None:
             bus = StreamBus()
