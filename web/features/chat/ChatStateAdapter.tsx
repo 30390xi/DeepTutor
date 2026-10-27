@@ -80,11 +80,7 @@ import {
 } from "@/lib/send-retry";
 import { reconcileTurnIds } from "@/lib/turn-reconcile";
 import { decideFailedTurnReplay, isFailedTurnVisible } from "@/lib/chat-resend";
-import {
-  isRetractionMarker,
-  recomputeAnswerContent,
-  shouldAppendEventContent,
-} from "@/lib/stream";
+import { shouldAppendEventContent } from "@/lib/stream";
 import { hasPendingAskUserInMessages, pendingAskUserKeyInMessages } from "@/lib/ask-user-state";
 import { notify } from "@/lib/notifications";
 import { forwardReaderAction } from "@/lib/reading-reader-action";
@@ -455,7 +451,7 @@ type Action =
   | { type: "SET_SUBMISSION_PERSISTENCE"; key: string; submissionId: string; saved: boolean }
   | { type: "POP_LAST_ASSISTANT"; key: string }
   | { type: "RESTORE_ASSISTANT"; key: string; message: MessageItem }
-  | { type: "STREAM_START"; key: string; startedAt: number }
+  | { type: "STREAM_START"; key: string; startedAt: number; capability?: string | null }
   | { type: "QUEUE_MESSAGE"; key: string; message: QueuedMessage }
   | { type: "OFFER_QUEUED"; key: string; ids: string[]; turnId: string }
   | { type: "DROP_QUEUED"; key: string; ids: string[] }
@@ -1065,7 +1061,9 @@ function reduce(state: ProviderState, action: Action): ProviderState {
                 events: [],
                 // Include connection and provider latency before the first frame (#1435).
                 trace: { started_at: action.startedAt },
-                capability: session.activeCapability || "",
+                capability: action.capability !== undefined
+                  ? action.capability || ""
+                  : session.activeCapability || "",
                 parentMessageId: tip?.id ?? null,
               },
             ],
@@ -1114,13 +1112,7 @@ function reduce(state: ProviderState, action: Action): ProviderState {
       const language = session.language;
       let rawContent = last?.rawContent ?? last?.content ?? "";
       let content = last?.content ?? "";
-      if (isRetractionMarker(action.event)) {
-        // A capability rejected this round after it had already streamed:
-        // drop its text from the answer — it stays in the trace. Recompute
-        // from immutable event content, never from display text.
-        rawContent = recomputeAnswerContent(events);
-        content = repairChineseEmphasis(rawContent, language);
-      } else if (shouldAppendEventContent(action.event)) {
+      if (shouldAppendEventContent(action.event)) {
         const delta = action.event.content;
         rawContent += delta;
         content = appendWithEmphasisRepair(content, delta, rawContent, language);
@@ -3236,7 +3228,10 @@ export function ChatStateAdapterProvider({
           failedSubmissionId: submissionId,
         });
         }
-        dispatch({ type: "STREAM_START", key, startedAt: Date.now() / 1000 });
+        dispatch({
+          type: "STREAM_START", key, startedAt: Date.now() / 1000,
+          capability: effectiveCapability,
+        });
       };
       if (!replacesSubmissionId) showSubmission();
       const {
@@ -3534,7 +3529,10 @@ export function ChatStateAdapterProvider({
       pendingRegenerateRef.current.delete(key);
     }
     dispatch({ type: "POP_LAST_ASSISTANT", key });
-    dispatch({ type: "STREAM_START", key, startedAt: Date.now() / 1000 });
+    dispatch({
+      type: "STREAM_START", key, startedAt: Date.now() / 1000,
+      capability: lastUser.requestSnapshot?.capability ?? lastUser.capability ?? null,
+    });
     sendThroughRunner(key, {
       type: "regenerate",
       session_id: session.sessionId,

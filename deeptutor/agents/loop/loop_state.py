@@ -71,10 +71,8 @@ class LLMCallResult:
     content_chars: int = 0
     tool_call_chars: int = 0
     finish_reason: str = ""
-    # This round's ``call_status`` metadata, set whether or not the round was
-    # buffered. A streamed round needs it to publish a correction when its
-    # finish is later rejected; the ``deferred_*`` pair below is set only while
-    # the text is still withheld.
+    # Completion metadata describes the round; it never revokes public text.
+    # Deferred metadata is reserved for unpublished structured protocol output.
     completion_metadata: dict[str, Any] | None = None
     deferred_chunk_metadata: dict[str, Any] | None = None
     deferred_completion_metadata: dict[str, Any] | None = None

@@ -46,7 +46,6 @@ import {
   hasRenderableCallTrace as selectHasRenderableCallTrace,
   hasSettledFinalRound,
   isChatLoopAnswerContent,
-  isRetractedRound,
   isTracePending,
   selectTraceDisplayItems,
 } from "./selectors";
@@ -449,25 +448,16 @@ function getTraceHeader(
   return title;
 }
 
-// Chat-loop `content` (call_kind "agent_loop_round") is the model's
-// user-facing text, and it stays in the answer bubble — commentary written
-// before a tool call included. So it is kept OUT of the trace by default, to
-// avoid showing the same sentence twice. The one exception is a round a
-// capability retracted: that text is no longer in the bubble, so the trace is
-// the only place left for it.
+// Chat-loop prose belongs to the answer and must not be duplicated in the trace.
 function getTraceText(
   events: StreamEvent[],
   eventTypes: Array<StreamEvent["type"]>,
-  // When the caller knows this group's text was retracted, its
-  // ``agent_loop_round`` content is trace material and should NOT be
-  // filtered out as answer-bubble text.
-  includeChatLoopContent = false,
 ) {
   const textEvents = events.filter(
     (event) =>
       eventTypes.includes(event.type) &&
       event.content.trim().length > 0 &&
-      (includeChatLoopContent || !isChatLoopAnswerContent(event)),
+      !isChatLoopAnswerContent(event),
   );
   if (!textEvents.length) return "";
 
@@ -783,16 +773,9 @@ function TraceRowBody({
   );
   const thoughtText = getTraceText(callEvents, ["thinking"]);
   const observationText = getTraceText(callEvents, ["observation"]);
-  // A chat round can emit BOTH reasoning (thinking) and retracted commentary
-  // (content) in a single call; both are trace material and render as
-  // separate stacked blocks. Other pipelines keep the legacy "thought or
-  // content" fallback so their rows are unchanged.
+  // Chat-loop reasoning belongs in the trace; its public prose stays in the answer.
   const isChatRound = kind === "agent_loop_round";
-  const contentText = getTraceText(
-    callEvents,
-    ["content"],
-    isRetractedRound(callEvents),
-  );
+  const contentText = getTraceText(callEvents, ["content"]);
   const bodyBlocks =
     role === "observe"
       ? [observationText]
@@ -953,11 +936,7 @@ function hasExpandableContent(
   );
   const thoughtText = getTraceText(callEvents, ["thinking"]);
   const observationText = getTraceText(callEvents, ["observation"]);
-  const contentText = getTraceText(
-    callEvents,
-    ["content"],
-    isRetractedRound(callEvents),
-  );
+  const contentText = getTraceText(callEvents, ["content"]);
   const genericBodyText =
     role === "observe"
       ? observationText
@@ -1023,7 +1002,6 @@ function TraceRowItem({
   const isToolRow = kind === "tool_planning" || group === "tool_call";
   const isChatRound = kind === "agent_loop_round";
   const isRetrieve = role === "retrieve";
-  const retracted = isRetractedRound(callEvents);
   // The model's own text-form deliberation — chat-loop reasoning/narration and
   // pipeline "Thought"/"Plan" rounds. Unlike a tool call (whose result is
   // secondary detail worth folding away), here the text IS the substance, so
@@ -1043,7 +1021,6 @@ function TraceRowItem({
   const isContextExploration = kind === "context_exploration";
   const answering =
     isChatRound &&
-    !retracted &&
     callEvents.some(isChatLoopAnswerContent);
   const autoOpen =
     isThinking && !isContextExploration && !answering ? active : false;
@@ -1065,7 +1042,7 @@ function TraceRowItem({
     | undefined;
 
   const thoughtText = getTraceText(callEvents, ["thinking"]).trim();
-  const contentText = getTraceText(callEvents, ["content"], retracted).trim();
+  const contentText = getTraceText(callEvents, ["content"]).trim();
 
   // Resolve every row into a uniform { icon, headline, chip } triple so the
   // activity feed reads consistently across pipelines. Tool calls get a human

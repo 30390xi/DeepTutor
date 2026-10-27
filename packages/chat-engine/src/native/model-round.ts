@@ -52,7 +52,6 @@ export async function modelRound(
   let visible = "",
     inlineReasoning = "";
   const drafts = new AskUserDraft(emit, trace);
-  const forced = first && !!input.initialToolChoice;
   const piece = async (kind: "content" | "thinking", text: string) => {
     if (!text) return;
     if (kind === "content") visible += text;
@@ -62,7 +61,7 @@ export async function modelRound(
       content: text,
       metadata: { ...trace, trace_kind: "llm_chunk" },
     };
-    if (kind === "content" && (input.deferOutput || forced)) {
+    if (kind === "content" && input.deferOutput) {
       const last = deferred.at(-1);
       if (last?.type === "content" && last.content.length + text.length <= 8192)
         last.content += text;
@@ -101,11 +100,6 @@ export async function modelRound(
   }
   for (const call of response.calls) await drafts.observe(call, true);
   for (const [kind, text] of filter.feed("", true)) await piece(kind, text);
-  if (forced && response.calls.length && !input.deferOutput)
-    deferred.length = 0;
-  // Providers that ignore forced tool choice may still give a valid answer.
-  if (forced && !response.calls.length && !input.deferOutput)
-    for (const event of deferred.splice(0)) await emit(event);
   const usage = Object.keys(response.usage).length
     ? response.usage
     : {
@@ -120,7 +114,7 @@ export async function modelRound(
     trace_kind: "call_status",
     call_state: "complete",
     call_role: response.calls.length ? "narration" : "finish",
-    answer_visible: !(forced && response.calls.length),
+    answer_visible: true,
     finish_reason: response.finishReason || "stop",
     requested_max_tokens: input.seed.outputTokens,
     usage_reported: Object.keys(response.usage).length > 0,
@@ -134,7 +128,7 @@ export async function modelRound(
     deferred.push({ type: "progress", content: "", metadata });
   else await emit({ type: "progress", content: "", metadata });
   return {
-    text: forced && response.calls.length ? "" : visible,
+    text: visible,
     reasoning: inlineReasoning,
     toolCalls: response.calls,
     usage,

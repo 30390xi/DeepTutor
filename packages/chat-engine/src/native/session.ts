@@ -100,12 +100,12 @@ export class NativeSession implements LoopHost {
   }
   private async release(discard = false): Promise<void> {
     if (!this.round) return;
-    if (discard) {
+    if (discard && this.input.deferOutput) {
       this.round.deferred.length = 0;
       await this.emit({
         type: "progress",
         content: "",
-        metadata: { ...this.round.trace, answer_visible: false },
+        metadata: { ...this.round.trace, call_role: "narration" },
       });
     } else
       for (const event of this.round.deferred.splice(0)) await this.emit(event);
@@ -147,8 +147,15 @@ export class NativeSession implements LoopHost {
   }
   private async finish(override: boolean): Promise<void> {
     if (!this.round) throw new Error("Missing model round");
-    const text = override ? (this.override ?? "") : this.round.text.trim();
+    let text = override ? (this.override ?? "") : this.round.text.trim();
     if (override) {
+      if (!this.input.deferOutput && this.round.text) {
+        this.continued.push(this.round.text);
+        if (text.includes(this.round.text))
+          text = text.replace(this.round.text, "").trim();
+        if (!this.round.toolCalls.length)
+          this.conversation.appendAssistant(this.round);
+      }
       await this.release(true);
       await this.legacy("publish_override", { text });
       this.conversation.messages.push({ role: "assistant", content: text });
@@ -253,7 +260,11 @@ export class NativeSession implements LoopHost {
         this.redirect = String(policy.redirect || "");
         this.override =
           typeof policy.override === "string" ? policy.override : null;
-        if (this.redirect) await this.release(true);
+        if (this.redirect) {
+          if (!this.input.deferOutput && this.round?.text)
+            this.continued.push(this.round.text);
+          await this.release(true);
+        }
         return { redirect: !!this.redirect, override: this.override !== null };
       }
       case "redirect_finish":
@@ -265,6 +276,7 @@ export class NativeSession implements LoopHost {
           "finish_rejected",
           "The required capability action was not completed.",
         );
+        this.response = this.continued.filter(Boolean).join("\n\n");
         this.completed = false;
         return null;
       case "finish":
@@ -369,6 +381,12 @@ export class NativeSession implements LoopHost {
         const policy = await this.policy(this.round.text);
         if (policy.redirect) {
           await this.release(true);
+          this.response = [
+            ...this.continued,
+            this.input.deferOutput ? "" : this.round.text,
+          ]
+            .filter(Boolean)
+            .join("\n\n");
           this.completed = false;
           return { extraRounds: 1 };
         }

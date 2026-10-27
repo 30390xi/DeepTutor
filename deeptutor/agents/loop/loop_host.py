@@ -166,6 +166,8 @@ class AgentLoopHost:
             for call in self.result.tool_calls
         )
         if rejected:
+            if self.result.deferred_chunk_metadata is None and self.result.visible_text:
+                self.continued.append(self.result.visible_text)
             await self.loop._discard_deferred_output(self.result)
         return {
             "recoveryRejected": rejected,
@@ -262,6 +264,8 @@ class AgentLoopHost:
         text = self.loop._clean(self.result.text)
         self.redirect = self.pipeline._capability_finish_instruction(self.context, text)
         if self.redirect:
+            if self.result.deferred_chunk_metadata is None and self.result.visible_text:
+                self.continued.append(self.result.visible_text)
             await self.loop._discard_deferred_output(self.result)
             return {"redirect": True, "override": False}
         self.override = self.pipeline._capability_final_text_override(self.context, text)
@@ -275,6 +279,7 @@ class AgentLoopHost:
 
     async def reject_finish(self) -> None:
         self.outcome = await self.loop._reject_capability_finish()
+        self.outcome.final_text = values._join_answer_parts(self.continued, "")
 
     async def finish(self, *, override: bool) -> None:
         result = self.result
@@ -282,6 +287,16 @@ class AgentLoopHost:
         if override:
             assert self.override is not None
             if not self.override_after_tools:
+                if result.deferred_chunk_metadata is None and result.visible_text:
+                    self.continued.append(result.visible_text)
+                    self.messages.append(values._assistant_round_message(result))
+                    # An additive notice may include the original answer. That
+                    # answer is already on screen, so publish only the addition.
+                    if result.visible_text in self.override:
+                        before, _, after = self.override.partition(result.visible_text)
+                        self.override = (before + after).strip()
+                        if self.override:
+                            self.override = "\n\n" + self.override
                 await self.loop._discard_deferred_output(result)
             if not self.context.capability_output.answer_published:
                 await self.pipeline._emit_protocol_fallback_final_response(
@@ -289,7 +304,10 @@ class AgentLoopHost:
                 )
                 self.context.capability_output.answer_published = True
             self.outcome = await self.loop._finalize_finish(
-                self.override, continued_answer_parts=self.continued, allow_empty=True
+                self.override,
+                visible_text=self.override,
+                continued_answer_parts=self.continued,
+                allow_empty=True,
             )
             return
         await self.loop._release_deferred_output(result)

@@ -28,7 +28,8 @@ export function extractVideoLessonResult(
       Boolean(item) &&
       typeof item === "object" &&
       (item as Record<string, unknown>).type === "html" &&
-      typeof (item as Record<string, unknown>).url === "string",
+      typeof (item as Record<string, unknown>).url === "string" &&
+      Boolean(((item as Record<string, unknown>).url as string).trim()),
   );
   if (!page) return null;
   const code =

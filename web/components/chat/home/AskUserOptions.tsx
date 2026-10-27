@@ -12,10 +12,7 @@ import {
   readPosedQuestion,
   type MasteryQuestion,
 } from "@/lib/mastery-question";
-import {
-  collectRetractedCallIds,
-  shouldAppendEventContent,
-} from "@/lib/stream";
+import { shouldAppendEventContent } from "@/lib/stream";
 import { hasRenderableCallTrace } from "@/features/chat/trace/selectors";
 import type { StreamEvent } from "@/features/chat/model/protocol";
 
@@ -366,9 +363,6 @@ export function extractMessageSegments(
   let pendingTextIdx: number | null = null;
   let pendingTraceIdx: number | null = null;
   let seq = 0;
-  // A round a capability rejected was streamed and then taken back: its text
-  // is trace material, never answer text. Ordinary commentary stays.
-  const retractedCallIds = collectRetractedCallIds(events);
   // Calls the reader sees as a card. Their *payloads* are not trace material
   // — the card is what those say. The call itself is: stopping to ask is a
   // step the agent took, and a trace with no row for it claims the answers
@@ -441,10 +435,6 @@ export function extractMessageSegments(
   for (const event of events) {
     if (shouldAppendEventContent(event)) {
       const callId = ((event.metadata ?? {}) as { call_id?: string }).call_id;
-      if (callId && retractedCallIds.has(callId)) {
-        appendTraceEvent(event);
-        continue;
-      }
       // Keep the transition to answer text with the preceding reasoning
       // trace so it can fold before the whole model call finishes. Only the
       // first delta is needed; subsequent answer deltas stay in the text.

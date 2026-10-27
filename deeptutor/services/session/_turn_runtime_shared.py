@@ -32,8 +32,7 @@ MemoryReference = Literal["recent", "profile", "scope", "preferences", "summary"
 # Content call_kinds that make up the persisted answer. The chat agent loop
 # streams every round's text as ``content`` with ``agent_loop_round``, and all
 # of it is the answer — the commentary a round wrote before calling a tool
-# included. Only a round a capability retracted is filtered back out (see
-# _retracted_round_call_id).
+# included. Published content is never retracted.
 _ANSWER_CONTENT_CALL_KINDS = frozenset({"llm_final_response", "agent_loop_round"})
 _FINAL_TURN_STATUSES = frozenset({"completed", "failed", "cancelled"})
 
@@ -101,38 +100,11 @@ def _resolve_turn_failure_metadata(
     return "", False
 
 
-def _retracted_round_call_id(event: StreamEvent) -> str | None:
-    """call_id of a chat-loop round whose prose was taken back out of the answer.
-
-    Commentary a round wrote before calling a tool is answer content — the
-    reader was shown it as the work happened, and the persisted answer keeps it
-    so a reloaded turn reads the way it did live. The single exception is a
-    round a capability's finish guard rejected, which republishes its marker
-    with ``answer_visible: False``; that text belongs to the trace only.
-    """
-    metadata = event.metadata or {}
-    if (
-        metadata.get("trace_kind") == "call_status"
-        and metadata.get("call_state") == "complete"
-        and metadata.get("answer_visible") is False
-    ):
-        call_id = metadata.get("call_id")
-        return str(call_id) if call_id else None
-    return None
-
-
 def _assemble_persisted_answer(
     content_segments: Sequence[tuple[str | None, str]],
-    retracted_call_ids: set[str],
 ) -> str:
-    """Replay visible content bytes, excluding rounds a capability retracted."""
-    return clean_thinking_tags(
-        "".join(
-            text
-            for call_id, text in content_segments
-            if not (call_id and call_id in retracted_call_ids)
-        )
-    )
+    """Replay all published answer text, including commentary before tool calls."""
+    return clean_thinking_tags("".join(text for _call_id, text in content_segments))
 
 
 _FENCED_CODE_BLOCK_RE = re.compile(r"```[\s\S]*?```")

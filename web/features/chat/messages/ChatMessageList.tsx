@@ -452,7 +452,6 @@ function buildMessageBlocks(
   });
   // Keep Mastery teaching/feedback visible before an assessment arrives and
   // when a turn ends with bookkeeping without posing an assessment at all.
-  // Explicitly retracted prose is already a trace, not a text segment.
   if (isMastery) preserveTeachingBefore(segments.length);
   const blocks: MessageBlock[] = [];
   let run: MessageSegment[] = [];
@@ -831,9 +830,18 @@ export const AssistantMessage = memo(function AssistantMessage({
   }, [msg.capability, resultEvent]);
 
   const videoLessonResult = useMemo(() => {
-    if (msg.capability !== "video_lesson" || !resultEvent) return null;
-    return extractVideoLessonResult(resultEvent.metadata);
-  }, [msg.capability, resultEvent]);
+    // A one-turn capability or a resumed turn may still have the composer's
+    // chat label. The capability that emitted the result is authoritative.
+    // Ignore earlier intermediate results that do not carry a playable page.
+    for (let index = events.length - 1; index >= 0; index -= 1) {
+      const event = events[index];
+      if (event.type !== "result" ||
+          (event.source !== "video_lesson" && msg.capability !== "video_lesson")) continue;
+      const lesson = extractVideoLessonResult(event.metadata);
+      if (lesson) return lesson;
+    }
+    return null;
+  }, [msg.capability, events]);
 
   // Detect the ``ask_user`` terminator payload: when the assistant turn
   // ended via the ``ask_user`` tool, this is the question the user is
@@ -936,6 +944,7 @@ export const AssistantMessage = memo(function AssistantMessage({
     !outlinePreview &&
     !mathAnimatorResult &&
     !visualizeResult &&
+    !videoLessonResult &&
     !(quizQuestions && quizQuestions.length > 0);
   const messageSegments = useMemo(
     () =>

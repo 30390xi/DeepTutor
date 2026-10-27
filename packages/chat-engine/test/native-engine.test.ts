@@ -889,3 +889,150 @@ test("a learner message received during a tool is read once before the next mode
     assert.deepEqual(read[0]!.metadata.user_inputs, [{ command_id: "cmd-1", content: "Only cover the discrete case." }]);
   } finally { await fixture.close(); }
 });
+
+for (const repeated of [false, true]) {
+  test(`finish checks preserve public explanations (repeated=${repeated})`, async () => {
+    const explanation = "B also works under the assumption you raised.";
+    const correction = "The question needs that assumption stated explicitly.";
+    const fixture = await server((_body, response, count) =>
+      answer(response, count === 1 ? explanation : correction),
+    );
+    const events: EngineEvent[] = [];
+    let checks = 0;
+    try {
+      const config = input(fixture.endpoint);
+      config.policyHooks = true;
+      const output = await runNative(
+        config,
+        async (operation, args) => {
+          if (operation === "event") events.push(args.event as EngineEvent);
+          if (operation === "policy") {
+            checks++;
+            return {
+              redirect:
+                repeated || checks === 1
+                  ? "Check the failed tool operation."
+                  : "",
+              override: null,
+            };
+          }
+          return null;
+        },
+        new AbortController().signal,
+      );
+      const content = events
+        .filter((e) => e.type === "content")
+        .map((e) => e.content)
+        .join("");
+      assert.equal(content, explanation + correction);
+      assert.ok(output.response.includes(explanation));
+      assert.ok(output.response.includes(correction));
+      assert.equal(output.completed, !repeated);
+      assert.ok(events.every((e) => e.metadata?.answer_visible !== false));
+      assert.equal(fixture.requests.length, 2);
+    } finally {
+      await fixture.close();
+    }
+  });
+}
+
+test("public answer survives a capability notice without duplication", async () => {
+  const explanation = "B also satisfies the stated condition.";
+  const notice = "The optional profile update was not saved.";
+  const fixture = await server((_body, response) =>
+    answer(response, explanation),
+  );
+  const events: EngineEvent[] = [];
+  try {
+    const config = input(fixture.endpoint);
+    config.policyHooks = true;
+    const output = await runNative(
+      config,
+      async (operation, args) => {
+        if (operation === "event") events.push(args.event as EngineEvent);
+        if (operation === "policy")
+          return { redirect: "", override: notice + "\n\n" + explanation };
+        if (operation === "publish_override") {
+          events.push({
+            type: "content",
+            content: String(args.text),
+            metadata: {},
+          });
+        }
+        return null;
+      },
+      new AbortController().signal,
+    );
+    const content = events
+      .filter((e) => e.type === "content")
+      .map((e) => e.content)
+      .join("");
+    assert.equal(content, explanation + notice);
+    assert.equal(output.response, explanation + "\n\n" + notice);
+    assert.equal(output.completed, true);
+  } finally {
+    await fixture.close();
+  }
+});
+
+test("forced tool choice preserves the accompanying explanation", async () => {
+  const { modelRound } = await import("../src/native/model-round.js");
+  const explanation = "Let us clarify your objection first.";
+  const fixture = await server((_body, response) => {
+    frame(response, { content: explanation });
+    frame(
+      response,
+      {
+        tool_calls: [
+          {
+            index: 0,
+            id: "ask",
+            function: {
+              name: "ask_user",
+              arguments: '{"questions":[{"id":"q","prompt":"Which premise?"}]}',
+            },
+          },
+        ],
+      },
+      "tool_calls",
+    );
+    response.end("data: [DONE]\n\n");
+  });
+  try {
+    const config = input(fixture.endpoint);
+    config.initialToolChoice = "ask_user";
+    const events: EngineEvent[] = [];
+    const round = await modelRound(
+      config,
+      new Conversation(config.seed),
+      [
+        {
+          type: "function",
+          function: {
+            name: "ask_user",
+            description: "Clarify",
+            parameters: { type: "object", properties: {} },
+          },
+        },
+      ],
+      async (event) => {
+        events.push(event);
+      },
+      new AbortController().signal,
+      false,
+      true,
+    );
+    assert.equal(round.text, explanation);
+    assert.equal(
+      events
+        .filter((e) => e.type === "content")
+        .map((e) => e.content)
+        .join(""),
+      explanation,
+    );
+    assert.ok(events.every((e) => e.metadata?.answer_visible !== false));
+    assert.equal(round.toolCalls.length, 1);
+  } finally {
+    await fixture.close();
+  }
+});

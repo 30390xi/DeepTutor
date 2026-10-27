@@ -20,7 +20,6 @@ from deeptutor.services.session.turn_runtime import (
     _format_selection_tutor_context,
     _repair_chinese_emphasis_for_persistence,
     _resolve_selection_tutor_context,
-    _retracted_round_call_id,
     _should_capture_assistant_content,
     _stamp_content_offset,
 )
@@ -71,63 +70,6 @@ class TestShouldCaptureAssistantContent:
         assert _should_capture_assistant_content(event) is False
 
 
-class TestRetractedRoundCallId:
-    @staticmethod
-    def _marker(**metadata: object) -> StreamEvent:
-        return StreamEvent(
-            type=StreamEventType.PROGRESS,
-            metadata={
-                "trace_kind": "call_status",
-                "call_state": "complete",
-                **metadata,
-            },
-        )
-
-    def test_retracted_round_returns_call_id(self) -> None:
-        event = self._marker(
-            call_id="round-rejected",
-            call_role="narration",
-            answer_visible=False,
-        )
-        assert _retracted_round_call_id(event) == "round-rejected"
-
-    def test_commentary_before_a_tool_call_stays_in_the_answer(self) -> None:
-        """The paradigm: a round that called tools still wrote answer text.
-
-        The reader watched that sentence arrive above the tool's own row, so
-        reloading the turn must show it in the same place. Only an explicit
-        retraction takes text back out of the answer.
-        """
-        event = self._marker(
-            call_id="search-round",
-            call_role="narration",
-            answer_visible=True,
-        )
-        assert _retracted_round_call_id(event) is None
-
-    def test_finish_marker_is_not_retracted(self) -> None:
-        event = self._marker(
-            call_id="round-2",
-            call_role="finish",
-            answer_visible=True,
-        )
-        assert _retracted_round_call_id(event) is None
-
-    def test_running_status_is_not_retracted(self) -> None:
-        event = self._marker(
-            call_id="round-1",
-            call_state="running",
-            call_role="narration",
-            answer_visible=False,
-        )
-        assert _retracted_round_call_id(event) is None
-
-    def test_legacy_marker_without_the_flag_is_not_retracted(self) -> None:
-        """Sessions recorded before the flag existed keep their text."""
-        event = self._marker(call_id="round-old", call_role="narration")
-        assert _retracted_round_call_id(event) is None
-
-
 class TestAssemblePersistedAnswer:
     def test_repairs_chinese_emphasis_boundaries_before_persistence(self) -> None:
         assert (
@@ -162,7 +104,7 @@ class TestAssemblePersistedAnswer:
             ("round-part-2", "Part two."),
         ]
 
-        assert _assemble_persisted_answer(segments, set()) == "Part one. Part two."
+        assert _assemble_persisted_answer(segments) == "Part one. Part two."
 
     def test_commentary_rounds_are_part_of_the_persisted_answer(self) -> None:
         segments = [
@@ -170,15 +112,15 @@ class TestAssemblePersistedAnswer:
             ("finish-round", "Answer."),
         ]
 
-        assert _assemble_persisted_answer(segments, set()) == "Checking the syllabus first. Answer."
+        assert _assemble_persisted_answer(segments) == "Checking the syllabus first. Answer."
 
-    def test_a_retracted_round_is_excluded(self) -> None:
+    def test_all_published_rounds_are_persisted(self) -> None:
         segments = [
             ("rejected-round", "A question I never actually posed."),
             ("finish-round", "Answer."),
         ]
 
-        assert _assemble_persisted_answer(segments, {"rejected-round"}) == "Answer."
+        assert _assemble_persisted_answer(segments) == "A question I never actually posed.Answer."
 
 
 def test_ask_user_resolution_records_the_current_answer_boundary() -> None:

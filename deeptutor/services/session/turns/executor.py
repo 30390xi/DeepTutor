@@ -48,7 +48,6 @@ from .._turn_runtime_shared import (
     _resolve_side_chat_context,
     _resolve_turn_failure_metadata,
     _resolve_turn_outcome,
-    _retracted_round_call_id,
     _should_capture_assistant_content,
     _stamp_content_offset,
     _topic_material_manifest,
@@ -151,19 +150,15 @@ class TurnExecutor:
         assistant_content = ""
         provider_response_state: dict[str, Any] | None = None
         context: UnifiedContext | None = None
-        # Per-round content segments + retracted call_ids: every chat-loop
-        # round's text is captured live and kept, commentary written before a
-        # tool call included. Only a round a capability retracted is dropped
-        # from the persisted answer (mirrors the frontend bubble).
+        # Keep every published answer segment, including commentary before tools.
         content_segments: list[tuple[str | None, str]] = []
-        retracted_call_ids: set[str] = set()
 
         def _persisted_answer() -> str:
             # clean_thinking_tags is a second line of defence: providers that
             # inline <think> in the content channel are split at streaming
             # time by the agent loop, but anything that slips through must
             # never be persisted as the user-facing answer.
-            return _assemble_persisted_answer(content_segments, retracted_call_ids)
+            return _assemble_persisted_answer(content_segments)
 
         # Files the model generated this turn (exec artifacts),
         # persisted as assistant-message attachments so the UI shows openable
@@ -1080,9 +1075,6 @@ class TurnExecutor:
                 if _should_capture_assistant_content(event):
                     call_id = (event.metadata or {}).get("call_id")
                     content_segments.append((str(call_id) if call_id else None, event.content))
-                retracted_call_id = _retracted_round_call_id(event)
-                if retracted_call_id:
-                    retracted_call_ids.add(retracted_call_id)
                 for attachment in artifact_attachments(event):
                     if attachment["url"] not in seen_artifact_urls:
                         seen_artifact_urls.add(attachment["url"])
@@ -1129,9 +1121,8 @@ class TurnExecutor:
             # already unwinding and must not start new blocking work.
             await fill_preview_text(generated_attachments)
 
-            # The persisted answer is the captured content minus any round a
-            # capability retracted (that text stayed in the trace). Apply
-            # the CJK Markdown repair only after every streamed segment has
+            # Persist every published content segment. Apply the CJK Markdown
+            # repair only after every streamed segment has
             # arrived, so no incomplete response is ever rewritten.
             assistant_content = _repair_chinese_emphasis_for_persistence(
                 _persisted_answer(),

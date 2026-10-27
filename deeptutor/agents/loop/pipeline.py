@@ -1025,14 +1025,8 @@ class AgenticLoopPipeline:
         republished verbatim by ``final_text_override`` and would otherwise
         appear twice.
 
-        It is the wrong trade for a capability that merely guards how a turn
-        may *end*. Mastery and Partner authoring stream ordinary teaching prose
-        and reject a finish only in the uncommon case (a question that was
-        never posed, a draft that was never created). Buffering every round of
-        theirs to catch that case removed streaming from those surfaces
-        entirely; a rejected finish is instead withdrawn after the fact by the
-        round's ``narration`` marker, which is how the reader's answer text is
-        reconciled anyway.
+        Ordinary tutoring and authoring prose streams immediately. Finish
+        checks may request more tool work, but cannot withdraw public text.
 
         Declared explicitly rather than inferred, because the two groups are
         indistinguishable from their hooks: both define ``finish_instruction``.

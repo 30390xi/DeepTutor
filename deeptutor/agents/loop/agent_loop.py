@@ -22,11 +22,10 @@ unresolved pause (or a terminator tool) halts the turn.
 
 There is no separate respond pass and no text destination has to be guessed:
 every round's text streams to the user as it is generated and stays there. The
-``call_status`` marker a completed round emits carries two independent facts —
+``call_status`` marker a completed round emits describes its phase —
 ``call_role`` (``narration`` = more work follows, ``finish`` = terminal) says
-where the turn is, while ``answer_visible`` says whether the text counts as
-answer content. It is ``True`` for every ordinary round; only a capability
-retracting a rejected round sets it ``False``.
+where the turn is. ``answer_visible`` remains true for compatibility; published
+answer text is never retracted by a finish check.
 """
 
 from __future__ import annotations
@@ -421,7 +420,9 @@ class AgentLoop:
         # Empty text asks capabilities about state, without inventing prose to
         # validate or giving the model another chance to claim completion.
         if self.pipeline._capability_finish_instruction(self.context, ""):
-            return await self._reject_capability_finish()
+            outcome = await self._reject_capability_finish()
+            outcome.final_text = _join_answer_parts(continued_answer_parts or [], "")
+            return outcome
         if reason == "error":
             # The caller has the exception and logs it; without it here the
             # reader is told a step failed and never which one or why — the
@@ -578,35 +579,11 @@ class AgentLoop:
         result.deferred_completion_metadata = None
 
     async def _discard_deferred_output(self, result: LLMCallResult) -> None:
-        """Take a rejected round's prose back out of the answer.
-
-        Two shapes reach here. A *buffered* round is simply never published,
-        so closing its trace as retracted is the whole retraction. A round
-        that already **streamed** — the ordinary case now that only protocol
-        capabilities buffer — was published optimistically, so its retraction
-        has to be a correction: the same ``call_id`` re-marked
-        ``answer_visible: False``, which is what moves that text out of the
-        answer and into the collapsed trace on the reader's side.
-
-        This is the ONLY way prose leaves the answer. Ordinary commentary
-        written before a tool call stays where the reader saw it.
-
-        Emitting nothing in that second case was what left rejected prose
-        sitting in the answer as though it had been accepted.
-        """
-        metadata = result.deferred_completion_metadata or result.completion_metadata
-        if metadata is not None:
-            metadata = dict(metadata)
+        """Discard only unpublished protocol payloads, never public answer text."""
+        if result.deferred_completion_metadata is not None:
+            metadata = dict(result.deferred_completion_metadata)
             metadata["call_role"] = "narration"
-            metadata["answer_visible"] = False
-            metadata["finish_rejected"] = True
-            await self.stream.progress(
-                "",
-                source=self.source,
-                stage=self.stage,
-                metadata=metadata,
-            )
-        result.completion_metadata = None
+            await self.stream.progress("", source=self.source, stage=self.stage, metadata=metadata)
         result.deferred_chunk_metadata = None
         result.deferred_completion_metadata = None
 
@@ -792,11 +769,6 @@ class AgentLoop:
                     if segment.strip():
                         action_started = True
                         content_chars += len(segment)
-                    if forced_tool_choice:
-                        # This round exists to produce a call, so its prose is
-                        # not an answer and must not reach the reader — but
-                        # that is a rule about *content*, not about reasoning.
-                        continue
                     output_emitted = True
                     visible_text_parts.append(segment)
                     if not defer_visible_output:
@@ -1224,8 +1196,7 @@ class AgentLoop:
             # Every round's prose belongs to the answer, in the order it was
             # written. Commentary written before a tool call is what the reader
             # is told while the work happens, not an internal preamble to hide,
-            # so the only text that ever leaves the answer is text a capability
-            # explicitly retracts (see ``_discard_deferred_output``).
+            # and a capability finish check must never retract it.
             "answer_visible": True,
             "finish_reason": finish_reason or "stop",
             "requested_max_tokens": int(max_tokens),
@@ -1271,14 +1242,6 @@ class AgentLoop:
             logger.info(log_line, *log_args)
 
         completion_event_metadata = merge_trace_metadata(trace_meta, completion_metadata)
-        if forced_tool_choice and not tool_calls and text:
-            # Some compatibility providers accept ``tool_choice`` but ignore
-            # it. Do not lose their answer merely because it was buffered.
-            fallback_dsml = DSMLStreamFilter()
-            fallback_filter = InlineThinkFilter()
-            visible = fallback_dsml.feed(text) + fallback_dsml.flush()
-            await _emit_segments(fallback_filter.feed(visible) + fallback_filter.flush())
-
         if not defer_visible_output:
             await self.stream.progress(
                 "",

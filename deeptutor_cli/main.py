@@ -217,6 +217,7 @@ def serve(
         proxy_headers=False,
         ws_max_size=get_ws_max_size(),
         timeout_keep_alive=HTTP_KEEP_ALIVE_TIMEOUT,
+        timeout_graceful_shutdown=1,
     )
 
 
