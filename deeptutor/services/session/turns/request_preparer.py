@@ -205,8 +205,8 @@ class TurnRequestPreparer:
         # Freeze the content binding at admission, before scheduling the turn.
         # Existing conversations are moved through the organization endpoint;
         # a stale tab must never move one by sending its cached preference.
+        from deeptutor.core.identities import is_partner_user_id
         from deeptutor.multi_user.context import get_current_user
-        from deeptutor.services.partners.scope import is_partner_user_id
         from deeptutor.services.workspace import get_content_workspace_service
         from deeptutor.services.workspace.context import get_workspace_scope
 
@@ -436,7 +436,6 @@ class TurnRequestPreparer:
         # the tutor may change it mid-turn with ``mastery_mode`` and the
         # learner may change it from the header, so the value a turn starts
         # with is only where it starts.
-        from deeptutor.capabilities.mastery.mode import enforced_mode
 
         # ``or``, not "is the key present": the client writes this key on every
         # turn and leaves it null whenever it does not happen to hold the mode
@@ -452,7 +451,14 @@ class TurnRequestPreparer:
         # ``enforced_mode`` rather than ``normalize_mode``: a conversation that
         # never recorded a mode must stay unrecorded all the way down to the
         # tools, which read the absence as "enforce nothing".
-        mastery_session_mode = enforced_mode(raw_mastery_mode)
+        mastery_session_mode = None
+        if raw_mastery_mode:
+            from deeptutor.modules.catalog import require_module
+
+            require_module("mastery")
+            from deeptutor.capabilities.mastery.mode import enforced_mode
+
+            mastery_session_mode = enforced_mode(raw_mastery_mode)
         payload = {
             **payload,
             "mastery_path_id": mastery_path_id,

@@ -1,3 +1,4 @@
+import { sourceModuleInventory } from "./fixtures/modules";
 import { expect, test, type Page } from "@playwright/test";
 
 // All writes are intercepted. Regression coverage must never change a developer's settings.
@@ -86,6 +87,7 @@ async function mockSettings(
   await page.route("**/api/**", async (route) => {
     const request = route.request();
     const path = new URL(request.url()).pathname;
+    if (path === "/api/modules") return route.fulfill({ json: sourceModuleInventory });
     const method = request.method();
     const body = request.postDataJSON();
     const write =

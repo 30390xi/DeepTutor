@@ -8,12 +8,10 @@ queue or a second parsing cache.
 from __future__ import annotations
 
 import asyncio
-from contextvars import ContextVar
 from hashlib import sha256
 import json
 import os
 from pathlib import Path
-import re
 import sys
 import threading
 import time
@@ -26,8 +24,22 @@ except ImportError:  # CLI-only installs need no process-monitor dependency.
     psutil = None
 
 from deeptutor.services.file_io import atomic_write_json, read_text
+from deeptutor.services.parsing.progress import (
+    _CURRENT,
+)
+from deeptutor.services.parsing.progress import (
+    IndexingCancelled as IndexingCancelled,
+)
+from deeptutor.services.parsing.progress import (
+    _redact as _redact,
+)
+from deeptutor.services.parsing.progress import (
+    current_run as current_run,
+)
+from deeptutor.services.parsing.progress import (
+    failure_code as failure_code,
+)
 
-_CURRENT: ContextVar[IndexingRun | None] = ContextVar("indexing_run", default=None)
 _TERMINAL = {"completed", "partial", "failed", "cancelled", "interrupted"}
 _RECOVERY_DESCRIPTION = (
     "Retry reuses validated parser outputs and resumable LlamaIndex document "
@@ -37,53 +49,6 @@ _RECOVERY_DESCRIPTION = (
 
 class IndexingBusyError(RuntimeError):
     pass
-
-
-class IndexingCancelled(RuntimeError):
-    pass
-
-
-def current_run() -> IndexingRun | None:
-    return _CURRENT.get()
-
-
-def _redact(detail: str) -> str:
-    text = re.sub(r"(?i)(bearer\s+)[^\s]+", r"\1[redacted]", str(detail))
-    text = re.sub(
-        r"(?i)((?:api[_-]?key|token|secret|password|signature|authorization)\s*[=:]\s*)[^\s&]+",
-        r"\1[redacted]",
-        text,
-    )
-    text = re.sub(
-        r'(?i)(["\']?(?:api[_-]?key|token|secret|password|signature|authorization)["\']?\s*[:=]\s*)["\'][^"\']*["\']',
-        r'\1"[redacted]"',
-        text,
-    )
-    text = re.sub(r"(https?://)[^/\s@]+:[^/\s@]+@", r"\1[redacted]@", text)
-    return text[-1600:]
-
-
-def failure_code(exc: BaseException) -> str:
-    text = str(exc).casefold()
-    if isinstance(exc, (TimeoutError,)) or "timeout" in text or "timed out" in text:
-        return "timeout"
-    if isinstance(exc, MemoryError) or "out of memory" in text or "resource exhausted" in text:
-        return "resource_exhaustion"
-    if (
-        isinstance(exc, (FileNotFoundError, ModuleNotFoundError))
-        or "not installed" in text
-        or "cli_missing" in text
-    ):
-        return "dependency_missing"
-    if "unsupported" in text or "doesn't support" in text:
-        return "unsupported_input"
-    if "download" in text:
-        return "model_download_failed"
-    if "embedding" in text or "vector" in text:
-        return "embedding_failed"
-    if "no content" in text or "no output" in text or "invalid" in text:
-        return "invalid_output"
-    return "runtime_failure"
 
 
 def load_run(kb_dir: Path) -> dict[str, Any] | None:
@@ -257,7 +222,7 @@ class IndexingRun:
                 "usable_version": None,
                 "candidate_storage": None,
             }
-            from deeptutor.services.rag.file_routing import FileTypeRouter
+            from deeptutor.utils.file_types import FileTypeRouter
 
             candidates = list(dict.fromkeys(self.sources))
             raw = self.kb_dir / "raw"

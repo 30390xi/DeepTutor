@@ -241,17 +241,16 @@ class TurnExecutor:
 
                 assert_learning_material(material_id)
             from deeptutor.agents.notebook import NotebookAnalysisAgent
-            from deeptutor.book.context import build_book_context
             from deeptutor.core.context import Attachment, TurnRuntimeContext, UnifiedContext
+            from deeptutor.core.source_context import SourceContext
+            from deeptutor.modules.catalog import require_module
             from deeptutor.services.learning_journal import get_learning_journal_store
-            from deeptutor.services.memory import get_memory_store
             from deeptutor.services.model_selection.runtime import (
                 activate_llm_selection,
             )
             from deeptutor.services.model_selection.runtime import (
                 reset_llm_selection as reset_active_llm_selection,
             )
-            from deeptutor.services.notebook import get_notebook_manager
             from deeptutor.services.workspace import get_content_workspace_service
 
             request_config = dict(payload.get("config", {}) or {})
@@ -294,7 +293,16 @@ class TurnExecutor:
                 payload.get("partner_group_references")
             )
             question_notebook_references = payload.get("question_notebook_references", []) or []
-            book_context_result = build_book_context(payload.get("book_references", []) or [])
+            book_context_result = SourceContext()
+            if payload.get("book_references"):
+                require_module("books")
+                from deeptutor.book.context import build_book_context
+
+                book_context_result = build_book_context(payload["book_references"])
+            if notebook_references:
+                require_module("notebook")
+                from deeptutor.services.notebook import get_notebook_manager
+
             book_references = book_context_result.references
             reading_references = _reading_references(payload.get("reading_references"))
             memory_references = _extract_memory_references(payload)
@@ -574,8 +582,12 @@ class TurnExecutor:
                 on_event=_emit_context_event,
                 leaf_message_id=branch_parent_id,
             )
-            memory_store = get_memory_store()
-            memory_context = memory_store.read_l3_concat() if memory_references else ""
+            memory_context = ""
+            if memory_references:
+                require_module("memory")
+                from deeptutor.services.memory import get_memory_store
+
+                memory_context = get_memory_store().read_l3_concat()
 
             # One snapshot per turn; selected-text tutoring stays independent
             # of an unrelated mission from earlier conversations (#1407).
@@ -865,6 +877,9 @@ class TurnExecutor:
                 # Audio overview reads the page itself and takes the message as
                 # its topic, so the page must not be folded into the message.
                 elif payload.get("note_document_id") and capability_name != "audio_overview":
+                    from deeptutor.modules.catalog import require_module
+
+                    require_module("co-writer")
                     from deeptutor.capabilities.notes.capability import note_action_context
 
                     workspace_context = await asyncio.to_thread(
@@ -1228,6 +1243,9 @@ class TurnExecutor:
                 and note_generation.get("block_id")
                 and payload.get("note_document_id")
             ):
+                from deeptutor.modules.catalog import require_module
+
+                require_module("co-writer")
                 from deeptutor.capabilities.notes.generation import propose_generated_block
 
                 zh = str(payload.get("language", "en") or "en").startswith("zh")

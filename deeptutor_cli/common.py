@@ -855,8 +855,17 @@ def build_turn_request(
 
 
 def maybe_run(coro):  # noqa: ANN001
+    async def run_and_close():
+        from deeptutor.app.container import close_application_container
+
+        try:
+            return await coro
+        finally:
+            # Release turns, subprocesses and module leases on the owning loop.
+            await close_application_container()
+
     try:
-        return asyncio.run(coro)
+        return asyncio.run(run_and_close())
     except KeyboardInterrupt:
         console.print("\n[dim]Interrupted.[/]")
         return None

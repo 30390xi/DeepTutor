@@ -6192,5 +6192,9 @@
   "Turn a question into an animated explainer you can play": "Zamień pytanie w animowane wyjaśnienie do odtworzenia",
   "View Remotion Code": "Pokaż kod Remotion",
   "{{seconds}} s": "{{seconds}} s",
-  "Fixed after {{count}} checks": "Poprawiono po {{count}} sprawdzeniach"
+  "Fixed after {{count}} checks": "Poprawiono po {{count}} sprawdzeniach",
+  "Modules": "Modules",
+  "Module": "Module",
+  "Stop DeepTutor before changing modules. Removing a module keeps your data.": "Stop DeepTutor before changing modules. Removing a module keeps your data.",
+  "This module is not installed or is disabled.": "This module is not installed or is disabled."
 }

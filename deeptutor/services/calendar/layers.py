@@ -24,9 +24,7 @@ def owner_key():
 
 
 def read_layers(workspace_id, start, end, tzid):
-    from deeptutor.learning.policy import path_display_name
-    from deeptutor.learning.scheduler import SpacedRepetitionScheduler
-    from deeptutor.learning.storage import LearningStore
+    from deeptutor.modules.catalog import module_enabled
     from deeptutor.services.cron.service import compute_next_run, get_cron_service
     from deeptutor.services.practice.storage import _DUE_AT_SQL, PracticeStore
     from deeptutor.services.session import get_sqlite_session_store
@@ -47,26 +45,33 @@ def read_layers(workspace_id, start, end, tzid):
         key = day(ts)
         return footprints.setdefault(key, FootprintDay(date=key))
 
-    learning = LearningStore()
-    scheduler = SpacedRepetitionScheduler()
-    for progress, _topic, _count, _interaction in learning.list_topic_snapshots():
-        counts = {}
-        for task in scheduler.build_review_queue(progress):
-            if lo <= task.due_at < hi:
-                key = day(task.due_at)
-                counts[key] = counts.get(key, 0) + 1
-        for key, count in counts.items():
-            row = reviews.setdefault(key, ReviewDay(date=key))
-            row.mastery += count
-            row.paths.append(
-                ReviewPathCount(id=progress.book_id, title=path_display_name(progress), count=count)
-            )
-    with learning._connect() as db:
-        for row in db.execute(
-            "SELECT timestamp FROM mastery_learning_evidence WHERE timestamp>=? AND timestamp<?",
-            (lo, hi),
-        ):
-            footprint(row[0]).mastery_evidence += 1
+    if module_enabled("mastery"):
+        from deeptutor.learning.policy import path_display_name
+        from deeptutor.learning.scheduler import SpacedRepetitionScheduler
+        from deeptutor.learning.storage import LearningStore
+
+        learning = LearningStore()
+        scheduler = SpacedRepetitionScheduler()
+        for progress, _topic, _count, _interaction in learning.list_topic_snapshots():
+            counts = {}
+            for task in scheduler.build_review_queue(progress):
+                if lo <= task.due_at < hi:
+                    key = day(task.due_at)
+                    counts[key] = counts.get(key, 0) + 1
+            for key, count in counts.items():
+                row = reviews.setdefault(key, ReviewDay(date=key))
+                row.mastery += count
+                row.paths.append(
+                    ReviewPathCount(
+                        id=progress.book_id, title=path_display_name(progress), count=count
+                    )
+                )
+        with learning._connect() as db:
+            for row in db.execute(
+                "SELECT timestamp FROM mastery_learning_evidence WHERE timestamp>=? AND timestamp<?",
+                (lo, hi),
+            ):
+                footprint(row[0]).mastery_evidence += 1
 
     practice = PracticeStore(get_sqlite_session_store().db_path)
     # The database is already workspace-scoped; match PracticeStore’s live-entry filter.

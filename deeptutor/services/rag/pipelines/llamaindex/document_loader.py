@@ -27,10 +27,10 @@ from deeptutor.services.embedding import get_embedding_client
 from deeptutor.services.llm.image_caption_batch import ImageCaptionBatcher
 from deeptutor.services.llm.image_caption_cache import complete_image_caption
 from deeptutor.services.llm.image_description import get_image_description_client
-from deeptutor.services.rag.file_routing import FileTypeRouter
 from deeptutor.services.rag.source_pages import SourcePageError
 from deeptutor.services.rag.visual_assets import VisualAssetCandidate, collect_visual_assets
 from deeptutor.utils.document_validator import DocumentValidator
+from deeptutor.utils.file_types import FileTypeRouter
 
 from .config import image_description_batch_size, image_description_limits
 

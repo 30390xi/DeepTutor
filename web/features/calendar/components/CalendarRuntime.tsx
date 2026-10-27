@@ -1,5 +1,6 @@
 'use client'
 
+import { useModules } from '@/hooks/useModules'
 import { browserStorage } from '@/shared/storage'
 import { useEffect, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -13,7 +14,9 @@ import { browserTimeZone, formatTime } from '../model/dates'
 export default function CalendarRuntime({ children }: { children: ReactNode }) {
   const { t, i18n } = useTranslation()
   const { loading, learningPolicy, enabled: authEnabled, authenticated } = useAuthStatus()
+  const { modules } = useModules()
   const enabled =
+    Boolean(modules?.some(module => module.id === 'calendar' && module.enabled)) &&
     !loading &&
     (!authEnabled || authenticated) &&
     (!learningPolicy || learningPolicy.allowedSurfaces.includes('chat'))

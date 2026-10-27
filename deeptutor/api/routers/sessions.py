@@ -13,8 +13,7 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field, field_validator
 
 from deeptutor.core.turn_request import TurnRequest
-from deeptutor.learning.storage import LearningStore
-from deeptutor.reading.catalog_store import ReadingCatalogStore
+from deeptutor.modules.catalog import module_enabled
 from deeptutor.response_languages import validate_reply_language_override
 from deeptutor.services.session import get_session_store, get_sqlite_session_store
 from deeptutor.services.session.organization import (
@@ -524,7 +523,12 @@ async def rename_session(session_id: str, payload: SessionRenameRequest):
     # The reader keeps its own list of a collection's conversations; the
     # sidebar is where they are renamed, so the list has to hear about it.
     try:
-        await asyncio.to_thread(ReadingCatalogStore().retitle_session, session_id, payload.title)
+        if module_enabled("reading"):
+            from deeptutor.reading.catalog_store import ReadingCatalogStore
+
+            await asyncio.to_thread(
+                ReadingCatalogStore().retitle_session, session_id, payload.title
+            )
     except Exception:
         logger.exception("failed to retitle reading conversation %s", session_id)
     session = await store.get_session(session_id)
@@ -682,7 +686,10 @@ async def delete_session(session_id: str):
 
 async def _cleanup_deleted_session(session_id: str) -> None:
     try:
-        await asyncio.to_thread(LearningStore().detach_session, session_id)
+        if module_enabled("mastery"):
+            from deeptutor.learning.storage import LearningStore
+
+            await asyncio.to_thread(LearningStore().detach_session, session_id)
     except Exception:
         logger.exception("failed to detach mastery paths for session %s", session_id)
     try:
@@ -690,7 +697,10 @@ async def _cleanup_deleted_session(session_id: str) -> None:
     except Exception:
         logger.exception("failed to clean up attachments for session %s", session_id)
     try:
-        await asyncio.to_thread(ReadingCatalogStore().forget_session, session_id)
+        if module_enabled("reading"):
+            from deeptutor.reading.catalog_store import ReadingCatalogStore
+
+            await asyncio.to_thread(ReadingCatalogStore().forget_session, session_id)
     except Exception:
         logger.exception("failed to detach reading collections for session %s", session_id)
 

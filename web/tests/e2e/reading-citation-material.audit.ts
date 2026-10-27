@@ -1,3 +1,4 @@
+import { sourceModuleInventory } from "./fixtures/modules";
 import { emptyLearningIndex } from "./fixtures/learning-index";
 import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
@@ -85,6 +86,7 @@ const workspace = {
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
+    if (path === "/api/modules") return route.fulfill({ json: sourceModuleInventory });
     const json = (payload: unknown, status = 200) =>
       route.fulfill({ status, json: payload });
 

@@ -7,6 +7,7 @@ index disables deferral; OpenAPI expands every router before schema generation.
 
 from __future__ import annotations
 
+from copy import copy
 import hashlib
 from importlib import import_module
 import json
@@ -106,14 +107,28 @@ class RouterLoader:
 
         app.openapi = openapi
 
-    def include(self, reference: str, **options: Any) -> None:
-        if reference in self.index:
+    def include(
+        self, reference: str, *, exclude_paths: tuple[str, ...] = (), **options: Any
+    ) -> None:
+        if reference in self.index and not exclude_paths:
             self.app.router.routes.append(
                 DeferredRouter(self.app, reference, options, self.index[reference])
             )
         else:
             module, attribute = reference.split(":", 1)
             router = getattr(import_module(module), attribute)
+            if exclude_paths:
+                router = copy(router)
+                prefix = options.get("prefix", "")
+                router.routes = [
+                    route
+                    for route in router.routes
+                    if not any(
+                        prefix + getattr(route, "path", "") == path
+                        or (prefix + getattr(route, "path", "")).startswith(path + "/")
+                        for path in exclude_paths
+                    )
+                ]
             self.records[reference] = router
             self.app.include_router(router, **options)
 
