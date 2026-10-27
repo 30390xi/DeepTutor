@@ -142,7 +142,61 @@ class AnthropicProvider(LLMProvider):
                 )
                 continue
 
-        return system, self._merge_consecutive(raw)
+        return system, self._drop_completed_turn_thinking(self._merge_consecutive(raw))
+
+    @staticmethod
+    def _opens_new_turn(msg: dict[str, Any]) -> bool:
+        """Whether a converted user message is a new prompt.
+
+        A user message carrying ``tool_result`` blocks answers the preceding
+        assistant's tool calls, so it continues that turn. Any other user
+        message starts one.
+        """
+        if msg.get("role") != "user":
+            return False
+        content = msg.get("content")
+        if not isinstance(content, list):
+            return True
+        return not any(
+            isinstance(block, dict) and block.get("type") == "tool_result" for block in content
+        )
+
+    @classmethod
+    def _drop_completed_turn_thinking(cls, msgs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Keep signed thinking only for the turn still in progress.
+
+        Anthropic needs the thinking blocks of the assistant rounds after the
+        latest user prompt (a tool loop must replay them verbatim). Blocks
+        from earlier, completed turns are optional, and the API binds each
+        signature to the system prompt and messages it was produced under.
+        DeepTutor rebuilds that prefix every turn (runtime context, learning
+        journal, KB seed), so replaying an earlier turn's block is rejected
+        with ``Invalid `signature` in `thinking` block`` and every follow-up
+        message in a conversation fails.
+        """
+        last_prompt = -1
+        for index, msg in enumerate(msgs):
+            if cls._opens_new_turn(msg):
+                last_prompt = index
+        if last_prompt <= 0:
+            return msgs
+
+        result: list[dict[str, Any]] = []
+        for index, msg in enumerate(msgs):
+            content = msg.get("content")
+            if index < last_prompt and msg.get("role") == "assistant" and isinstance(content, list):
+                kept = [
+                    block
+                    for block in content
+                    if not (
+                        isinstance(block, dict)
+                        and block.get("type") in {"thinking", "redacted_thinking"}
+                    )
+                ]
+                if len(kept) != len(content):
+                    msg = {**msg, "content": kept or [{"type": "text", "text": "(empty)"}]}
+            result.append(msg)
+        return result
 
     @staticmethod
     def _tool_result_block(msg: dict[str, Any]) -> dict[str, Any]:
