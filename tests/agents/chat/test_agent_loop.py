@@ -1082,8 +1082,7 @@ async def test_anthropic_gateway_request_carries_cache_control_breakpoints(
         for index, message in enumerate(sent)
         if isinstance(message.get("content"), list)
         and any(
-            isinstance(block, dict) and "cache_control" in block
-            for block in message["content"]
+            isinstance(block, dict) and "cache_control" in block for block in message["content"]
         )
     ]
     # system + end-of-stable-history (the durable assistant turn) + last message.
@@ -1129,8 +1128,7 @@ async def test_non_anthropic_gateway_request_gets_no_cache_control(
     await _run(pipeline, UnifiedContext(session_id="s1", user_message="Hi"))
 
     assert all(
-        not isinstance(message.get("content"), list)
-        for message in client.calls[0]["messages"]
+        not isinstance(message.get("content"), list) for message in client.calls[0]["messages"]
     )
 
 
@@ -1164,8 +1162,7 @@ async def test_native_anthropic_binding_leaves_markers_to_the_provider(
     await _run(pipeline, UnifiedContext(session_id="s1", user_message="Hi"))
 
     assert all(
-        not isinstance(message.get("content"), list)
-        for message in client.calls[0]["messages"]
+        not isinstance(message.get("content"), list) for message in client.calls[0]["messages"]
     )
 
 
