@@ -1386,6 +1386,9 @@ export function CopyActionButton({
 // Speaker button: synthesizes this one reply and plays it. Auto-play of later
 // replies is a Settings preference (`autoPlayFresh`), not a first-click prompt.
 let activePlayback: { owner: object; stop: () => void } | null = null;
+// 50 ms of playable unsigned 8-bit PCM silence; an empty WAV cannot unlock playback.
+const SILENT_UNLOCK_WAV =
+  "data:audio/wav;base64,UklGRrQBAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YZABAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICA";
 
 async function ttsErrorMessage(resp: Response): Promise<string> {
   try {
@@ -1448,6 +1451,16 @@ export function PlayAudioButton({
     abortRef.current = ac;
     activePlayback = { owner: playbackOwnerRef.current, stop };
     setState("loading");
+
+    // WebKit evaluates media playback eligibility when play() is called. Keep
+    // this element unlocked in the click task, then replace its source after
+    // synthesis completes rather than constructing a new audio element then.
+    const audio = new Audio(SILENT_UNLOCK_WAV);
+    audioRef.current = audio;
+    void Promise.resolve(audio.play()).catch(() => {
+      /* Unlocking playback can fail on clients that already permit it. */
+    });
+
     try {
       const resp = await apiFetch(apiUrl("/api/voice/tts"), {
         method: "POST",
@@ -1474,8 +1487,8 @@ export function PlayAudioButton({
       }
       const url = URL.createObjectURL(blob);
       urlRef.current = url;
-      const audio = new Audio(url);
-      audioRef.current = audio;
+      audio.src = url;
+      audio.load();
       audio.onended = () => {
         if (gen !== genRef.current) return;
         setState("idle");
