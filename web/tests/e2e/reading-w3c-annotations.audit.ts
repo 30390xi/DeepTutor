@@ -1,3 +1,4 @@
+import { sourceModuleInventory } from "./fixtures/modules";
 import { emptyLearningIndex } from "./fixtures/learning-index";
 import { expect, test } from "@playwright/test";
 import { emptyTaskBoard } from "./fixtures/task-board";
@@ -81,6 +82,7 @@ const annotation = {
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
+    if (path === "/api/modules") return route.fulfill({ json: sourceModuleInventory });
     const json = (payload: unknown, status = 200) =>
       route.fulfill({ status, json: payload });
 
