@@ -218,13 +218,18 @@ def list_visible_knowledge_bases() -> list[dict[str, Any]]:
         canonical_kb_id,
         knowledge_catalog,
         library_request,
+        library_viewer,
         move_aliases,
         parse_kb_id,
     )
     from deeptutor.services.workspace.resources import current_resources
 
     if library_request.get():
-        return knowledge_catalog()
+        viewer = library_viewer.get()
+        catalog = knowledge_catalog()
+        if viewer is None:
+            return catalog
+        return [item for item in catalog if item["workspace_id"] == viewer]
     selected = current_resources().knowledge_bases
     if selected is None:
         own = _list_visible_knowledge_bases()

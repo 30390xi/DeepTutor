@@ -19,8 +19,6 @@ import threading
 from types import SimpleNamespace
 from typing import Any
 
-from openai import AsyncAzureOpenAI, AsyncOpenAI
-
 from deeptutor.services.config import load_system_settings
 from deeptutor.services.keypool import KeyPool, primary_api_key
 from deeptutor.services.llm import get_token_limit_kwargs, supports_tools
@@ -118,6 +116,19 @@ def _client_cache_key(
         config.api_format,
         disable_ssl_verify,
     )
+
+
+def AsyncOpenAI(**kwargs: Any) -> Any:
+    """Lazy SDK constructor; native turns need only the parameter helpers."""
+    from openai import AsyncOpenAI as Client
+
+    return Client(**kwargs)
+
+
+def AsyncAzureOpenAI(**kwargs: Any) -> Any:
+    from openai import AsyncAzureOpenAI as Client
+
+    return Client(**kwargs)
 
 
 def _build_openai_client(
