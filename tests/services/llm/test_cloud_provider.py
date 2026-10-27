@@ -105,6 +105,7 @@ async def test_minimax_discovery_recommends_current_text_models(monkeypatch: Mon
     assert await cloud_provider.fetch_models("https://api.minimax.io/v1", "fixture", "minimax") == [
         "MiniMax-M3.1-Flash",
         "MiniMax-M3",
+        "MiniMax-M2.7",
         "speech-2.8-hd",
     ]
 

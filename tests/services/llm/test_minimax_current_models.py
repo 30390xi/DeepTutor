@@ -15,7 +15,7 @@ from deeptutor.runtime.agentic.client import (
 )
 from deeptutor.services.llm.config import LLMConfig
 from deeptutor.services.llm.context_window import known_context_window
-from deeptutor.services.llm.minimax_models import active_model_names
+from deeptutor.services.llm.minimax_models import prioritize_model_names
 from deeptutor.services.llm.provider_factory import _build_runtime_provider
 from deeptutor.services.model_selection.reasoning import supported_reasoning_efforts
 
@@ -56,12 +56,19 @@ TOOLS = [
 def test_active_discovery_preserves_unrelated_models(binding, prefix, suffix):
     flash = prefix + FLASH + suffix
     m3 = prefix + "MiniMax-M3"
-    saved = [prefix + "MiniMax-M2.7", "custom-deployment", "speech-2.8-hd", m3, flash]
-    assert active_model_names(saved, binding) == [flash, m3, "custom-deployment", "speech-2.8-hd"]
+    saved = [
+        prefix + "MiniMax-M2.7",
+        prefix + "MiniMax-M4",
+        "custom-deployment",
+        "speech-2.8-hd",
+        m3,
+        flash,
+    ]
+    assert prioritize_model_names(saved, binding) == [flash, m3, *saved[:4]]
     assert saved[0] == prefix + "MiniMax-M2.7"
-    assert active_model_names(saved, "custom") == saved
-    assert active_model_names([m3], binding) == [m3]
-    assert active_model_names([], binding) == []
+    assert prioritize_model_names(saved, "custom") == saved
+    assert prioritize_model_names([m3], binding) == [m3]
+    assert prioritize_model_names([], binding) == []
 
 
 def test_context_windows_keep_gateway_provenance():
