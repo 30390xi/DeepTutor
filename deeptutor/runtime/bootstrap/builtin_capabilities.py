@@ -39,10 +39,10 @@ BUILTIN_CAPABILITY_CLASSES: dict[str, str] = {
     "deep_question": "deeptutor.agents.question.capability:DeepQuestionCapability",
     "deep_research": "deeptutor.agents.research.capability:DeepResearchCapability",
     "math_animator": "deeptutor.agents.math_animator.capability:MathAnimatorCapability",
+    "video_lesson": "deeptutor.agents.video_lesson.capability:VideoLessonCapability",
     "visualize": "deeptutor.agents.visualize.capability:VisualizeCapability",
     "mastery_path": "deeptutor.capabilities.mastery.capability:MasteryPathCapability",
     "immersive_reading": "deeptutor.capabilities.reading.mode:ImmersiveReadingCapability",
-    "course_study": "deeptutor.capabilities.course_study.mode:CourseStudyCapability",
     "audio_overview": ("deeptutor.capabilities.audio_overview.capability:AudioOverviewCapability"),
 }
 
@@ -145,6 +145,16 @@ BUILTIN_CAPABILITY_SPECS: dict[str, BuiltinCapabilitySpec] = {
             },
         ),
     ),
+    "video_lesson": BuiltinCapabilitySpec(
+        BUILTIN_CAPABILITY_CLASSES["video_lesson"],
+        _manifest(
+            "video_lesson",
+            "Generate an animated video lesson (Remotion) that plays in the browser.",
+            stages=["code_generation", "render_check", "render_output"],
+            tools_used=[],
+            cli_aliases=["lesson"],
+        ),
+    ),
     "visualize": BuiltinCapabilitySpec(
         BUILTIN_CAPABILITY_CLASSES["visualize"],
         _manifest(
@@ -215,25 +225,6 @@ BUILTIN_CAPABILITY_SPECS: dict[str, BuiltinCapabilitySpec] = {
                 "reason",
             ],
             cli_aliases=["reading", "read"],
-        ),
-    ),
-    "course_study": BuiltinCapabilitySpec(
-        BUILTIN_CAPABILITY_CLASSES["course_study"],
-        _manifest(
-            "course_study",
-            "Sense a course's learning state, recommend the best next action, and hand the learner to the right teaching surface.",
-            stages=["responding"],
-            tools_used=[
-                "course_overview",
-                "course_material",
-                "course_edit",
-                "course_handoff",
-                "rag",
-                "web_search",
-                "exec",
-                "reason",
-            ],
-            cli_aliases=["course"],
         ),
     ),
     "audio_overview": BuiltinCapabilitySpec(
