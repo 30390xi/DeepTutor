@@ -187,6 +187,7 @@ class _WorkerClient:
                 )
 
         queue: asyncio.Queue = asyncio.Queue(maxsize=64)
+        consumer_closed = False
 
         async def run():
             try:
@@ -196,7 +197,9 @@ class _WorkerClient:
                         group.create_task(produce())
             finally:
                 # Wake the consumer even when the worker fails with an empty stream.
-                if not asyncio.current_task().cancelling():
+                # Python 3.11/3.12 TaskGroup failures leave an internal cancellation
+                # count behind. Only consumer shutdown may suppress this signal.
+                if not consumer_closed:
                     await queue.put(None)
 
         task = asyncio.create_task(run())
@@ -205,6 +208,7 @@ class _WorkerClient:
                 yield item
             await task
         finally:
+            consumer_closed = True
             task.cancel()
             # Kill the entire session, including render helpers inheriting pipes.
             from deeptutor.runtime.process import kill_process_tree

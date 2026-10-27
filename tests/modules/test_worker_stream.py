@@ -59,12 +59,22 @@ print(json.dumps({"kind":"complete"}),flush=True)
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("output", ["{}", '{"kind":"event","event":{}}', '{"kind":"complete"}\n{}'])
+@pytest.mark.parametrize(
+    "output", ["", "not-json", "{}", '{"kind":"event","event":{}}', '{"kind":"complete"}\n{}']
+)
 async def test_malformed_or_truncated_stream_fails(tmp_path, output):
-    client = worker(tmp_path, f"import sys\nsys.stdin.read()\nprint({output!r},flush=True)\n")
+    ready = tmp_path / "pid"
+    client = worker(
+        tmp_path,
+        f"import os,sys\nfrom pathlib import Path\nsys.stdin.read()\n"
+        f"Path({str(ready)!r}).write_text(str(os.getpid()))\nprint({output!r},flush=True)\n",
+    )
     with pytest.raises(ExceptionGroup):
-        async for _ in client.stream("run_capability", {}):
-            pass
+        async with asyncio.timeout(5):
+            async for _ in client.stream("run_capability", {}):
+                pass
+    with pytest.raises(ProcessLookupError):
+        os.kill(int(ready.read_text()), 0)
 
 
 @pytest.mark.asyncio
