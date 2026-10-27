@@ -306,7 +306,7 @@ class TurnApplicationService:
                 if now - first_done_at >= self._POST_DONE_MAX_SECONDS:
                     return
                 if not emitted:
-                    await asyncio.sleep(0.1)
+                    await self._wait_for_turn_events(turn_id, last_seq)
                 continue
             turn = await store.get_turn(turn_id)
             if turn is None:
@@ -341,7 +341,17 @@ class TurnApplicationService:
                 }
                 return
             if not emitted:
-                await asyncio.sleep(0.1)
+                await self._wait_for_turn_events(turn_id, last_seq)
+
+    async def _wait_for_turn_events(self, turn_id: str, after_seq: int) -> None:
+        # Notifications accelerate the live path; they never replace durable
+        # replay or the periodic terminal-state checks. Older/distributed
+        # coordinator adapters can keep their existing polling behavior.
+        wait = getattr(self.coordinator, "wait_for_events", None)
+        if wait is None:
+            await asyncio.sleep(0.1)
+        else:
+            await wait(turn_id, after_seq, timeout=0.5)
 
     async def subscribe_session(
         self,
@@ -574,6 +584,7 @@ class TurnApplicationService:
         content: str,
         *,
         command_id: str | None = None,
+        withdraw: str | None = None,
     ) -> bool:
         store, _runtime = self._resolve()
         if (
@@ -584,7 +595,7 @@ class TurnApplicationService:
         await self.coordinator.submit_command(
             turn_id,
             "user_input",
-            {"content": content},
+            {"content": content, "withdraw": withdraw},
             command_id=command_id,
         )
         return True
