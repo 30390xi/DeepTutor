@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import httpx
 
 from .exceptions import LLMProviderTransportError, LLMTimeoutError
@@ -184,7 +186,14 @@ def is_tool_schema_unsupported(exc: Exception) -> bool:
 def is_image_input_unsupported(exc: Exception) -> bool:
     """Whether a provider or model rejected multimodal message content."""
     text = error_text(exc)
-    return any(
+    # GLM's dotted-path validation only indicates unsupported image content
+    # when the message content type explicitly permits text and nothing else.
+    text_only_content = re.search(
+        r"messages(?:\[\d+\])?\.content(?:\[\d+\])?\.type"
+        r"[^\n]*取值范围\s*[:：]?\s*\[\s*['\"]text['\"]\s*\]",
+        text,
+    )
+    return bool(text_only_content) or any(
         marker in text
         for marker in (
             "image",
@@ -196,11 +205,6 @@ def is_image_input_unsupported(exc: Exception) -> bool:
             "expected a string",
             "expected string",
             "invalid type for 'messages",
-            # Zhipu/GLM rejects multimodal blocks with a Chinese message whose
-            # path is dotted ("messages.content.type ... 参数非法，取值范围 ['text']"),
-            # which none of the English markers above match.
-            "content.type",
-            "取值范围",
         )
     )
 
