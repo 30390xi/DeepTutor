@@ -681,3 +681,34 @@ async def test_scoped_group_clarification_resume_and_exactly_once_credit(service
     assert [attempt.question_id for attempt in progress.quiz_attempts] == ["q1", "q2"]
     replay, _, replayed = await service.grade_interaction_semantic("p", answer="", question_id="g")
     assert replayed and len(replay.learning_evidence) == 2 and len(calls) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "source_text, quote",
+    [
+        ("x_1", "x1"),
+        ("a*b", "ab"),
+        ("x < 0 and y > 1", "x1"),
+        ("x₂", "x2"),
+        ("x²", "x2"),
+        ("not able", "notable"),
+        ("|x|", "||"),
+    ],
+)
+async def test_citation_normalization_does_not_accept_changed_math_or_words(
+    service, monkeypatch, source_text, quote
+):
+    from deeptutor.learning import lesson_evidence
+    from deeptutor.learning import semantic_assessment as semantic
+
+    progress = service.store.load("p")
+    progress.lesson_evidence["kp1"] = {"sources": [{"ref": {}, "text": source_text}]}
+    monkeypatch.setattr(lesson_evidence, "validate_evidence", lambda *args, **kwargs: None)
+
+    async def request(*args, **kwargs):
+        return {"supported": True, "citations": [{"index": 0, "quote": quote}]}
+
+    monkeypatch.setattr(semantic, "_request", request)
+    with pytest.raises(semantic.AssessmentUnavailable, match="absent"):
+        await semantic.bind_question(service.store, progress, leaf())

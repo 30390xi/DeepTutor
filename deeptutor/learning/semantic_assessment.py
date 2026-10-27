@@ -15,19 +15,22 @@ import unicodedata
 
 from pydantic import BaseModel, ConfigDict, Field
 
-_MARKUP = re.compile(r"<[^>]+>")
-_FORMATTING = re.compile(r"[\s*_`#|]+")
+# Only strip known table layout tags. A generic <...> pattern also consumes
+# mathematical inequalities, and Markdown characters may be math operators.
+_TABLE_MARKUP = re.compile(
+    r"</?(?:table|thead|tbody|tfoot|tr|td|th)(?:\s+[^<>]*)?\s*/?>", re.IGNORECASE
+)
+_CJK_WRAP = re.compile(r"(?<=[\u3400-\u9fff])\s+(?=[\u3400-\u9fff])")
+_FULL_WIDTH_ASCII = str.maketrans({chr(c): chr(c - 0xFEE0) for c in range(0xFF01, 0xFF5F)})
 
 
 def _comparable(text: str) -> str:
-    """Fold formatting-only differences so faithful citations still match.
-
-    Verifier quotes are transcribed from page pixels, so line wraps,
-    indentation, HTML table markup and full-width/half-width variants differ
-    from the parsed text even though the words are identical.
-    """
-    text = unicodedata.normalize("NFKC", str(text or ""))
-    return _FORMATTING.sub("", _MARKUP.sub("", text))
+    """Fold layout differences without erasing mathematical or word boundaries."""
+    # NFC preserves subscripts/superscripts that NFKC would turn into digits.
+    text = unicodedata.normalize("NFC", str(text or "")).translate(_FULL_WIDTH_ASCII)
+    text = _TABLE_MARKUP.sub(" ", text)
+    text = _CJK_WRAP.sub("", text)
+    return " ".join(text.split())
 
 
 class AssessmentUnavailable(ValueError):
