@@ -93,6 +93,7 @@ dependencies = [
     "loguru>=0.7.3,<1.0.0",
     "json-repair>=0.57.0,<1.0.0",
     "croniter>=6.0.0,<7.0.0",
+    "python-dateutil>=2.9.0,<3.0.0",
     # Process-tree memory readings and Windows MinerU worker ownership.
     "psutil>=5.9.0,<8.0.0",
     "pywin32; sys_platform == 'win32'",  # MinerU Job Object ownership
@@ -165,6 +166,11 @@ codebuddy = ["codebuddy-agent-sdk>=0.3,<0.4"]
 # adapter enables transcript-grounded learning when public captions exist.
 video-learning = ["youtube-transcript-api>=1.0.0,<2.0.0"]
 
+# Microsoft Edge read-aloud voices as a free, keyless TTS provider.
+edge-tts = ["edge-tts>=7.0,<8.0"]
+# Compatibility extra for optional video lesson narration.
+video-lesson = ["deeptutor[edge-tts]"]
+
 # Compatibility extra for source installs and older docs. These packages are
 # already included in the public `deeptutor` wheel.
 server = [
@@ -180,6 +186,7 @@ server = [
     "loguru>=0.7.3,<1.0.0",
     "json-repair>=0.57.0,<1.0.0",
     "croniter>=6.0.0,<7.0.0",
+    "python-dateutil>=2.9.0,<3.0.0",
     "psutil>=5.9.0,<8.0.0",
 ]
 
@@ -310,6 +317,7 @@ all = [
     "deeptutor[math-animator]",
     "deeptutor[dev]",
     "deeptutor[video-learning]",
+    "deeptutor[edge-tts]",
 ]
 
 [tool.setuptools]
@@ -336,6 +344,9 @@ deeptutor = [
     "**/*.sh",
     "**/*.j2",
     "**/*.jinja",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.mjs",
 ]
 deeptutor_cli = ["**/*.md"]
 deeptutor_web = ["**/*", ".next/**/*"]
