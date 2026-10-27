@@ -1338,12 +1338,12 @@ class ListNotebookTool(_PromptHintsMixin, BaseTool):
         return ToolDefinition(
             name="list_notebook",
             description=(
-                "Discover the user's notebooks and the records inside "
+                "Discover the user's favorites collections and the records inside "
                 "them. Call with no arguments to list every notebook "
                 "the user owns (id + name + record count). Call with a "
                 "specific `notebook_id` to drill in and list its "
                 "records (record_id + title + summary + timestamp). "
-                "Use this BEFORE `write_note` in edit mode so you have "
+                "Use this BEFORE `save_favorite` in edit mode so you have "
                 "valid record ids."
             ),
             parameters=[
@@ -1373,6 +1373,14 @@ class ListNotebookTool(_PromptHintsMixin, BaseTool):
             content=outcome.text,
             metadata=outcome.summary or {},
         )
+
+
+class ListFavoritesTool(ListNotebookTool):
+    def get_definition(self) -> ToolDefinition:
+        definition = super().get_definition()
+        definition.name = "list_favorites"
+        definition.description = "List favorites collections and archived original records. Use notebook_id to open a collection. These are saved sources; authored pages are found with search_notes."
+        return definition
 
 
 class QuestionBankTool(_PromptHintsMixin, BaseTool):
@@ -1542,8 +1550,8 @@ class QuestionBankTool(_PromptHintsMixin, BaseTool):
         )
 
 
-class WriteNoteTool(_PromptHintsMixin, BaseTool):
-    """Create OR edit a notebook record from the chat agent.
+class SaveFavoriteTool(_PromptHintsMixin, BaseTool):
+    """Create OR edit a favorite record from the chat agent.
 
     Two modes mirror what a human sees in the notebook UI:
 
@@ -1551,8 +1559,8 @@ class WriteNoteTool(_PromptHintsMixin, BaseTool):
       a title; the body defaults to the actual chat transcript built
       from injected conversation history, or to an agent-authored
       markdown body if ``content`` is explicitly provided).
-    * ``edit`` — patch an existing record's title / body / summary.
-      Requires a known ``record_id`` (obtained via ``list_notebook``).
+    * ``edit`` — update an existing record's title or note, preserving its body.
+      Requires a known ``record_id`` (obtained via ``list_favorites``).
 
     Auto-mounted only when the user has at least one notebook. The
     pipeline injects ``conversation_history`` + ``current_user_message``
@@ -1561,14 +1569,14 @@ class WriteNoteTool(_PromptHintsMixin, BaseTool):
 
     def get_definition(self) -> ToolDefinition:
         return ToolDefinition(
-            name="write_note",
+            name="save_favorite",
             description=(
-                "Save or edit a notebook record. mode='append' creates "
+                "Save or edit a favorite record. mode='append' creates "
                 "a NEW record (default body = the actual recent chat "
                 "transcript built by the tool; pass `content` instead "
                 "to save an agent-authored markdown body). "
-                "mode='edit' patches an existing record's title / body "
-                "/ summary — `record_id` is required (call `list_notebook` "
+                "mode='edit' updates an existing record's title or note "
+                "/ summary — `record_id` is required (call `list_favorites` "
                 "first to discover valid ids)."
             ),
             parameters=[
@@ -1582,13 +1590,13 @@ class WriteNoteTool(_PromptHintsMixin, BaseTool):
                     name="notebook_id",
                     type="string",
                     description=(
-                        "Id of the target notebook from the schema enum (do not invent ids)."
+                        "Id of the target favorites collection from the schema enum (do not invent ids)."
                     ),
                 ),
                 ToolParameter(
                     name="record_id",
                     type="string",
-                    description=("Required for mode='edit'. Discover with `list_notebook` first."),
+                    description=("Required for mode='edit'. Discover with `list_favorites` first."),
                     required=False,
                 ),
                 ToolParameter(
@@ -1608,7 +1616,7 @@ class WriteNoteTool(_PromptHintsMixin, BaseTool):
                         "For append: optional agent-authored markdown body "
                         "(when omitted the tool inserts the real Q&A "
                         "transcript itself, the recommended default). "
-                        "For edit: replacement body (leave empty to keep "
+                        "For edit: must be omitted; favorites preserve "
                         "the existing body)."
                     ),
                     required=False,
@@ -1641,6 +1649,12 @@ class WriteNoteTool(_PromptHintsMixin, BaseTool):
     async def execute(self, **kwargs: Any) -> ToolResult:
         from deeptutor.tools.write_note import write_note
 
+        if kwargs.get("mode") == "edit" and kwargs.get("content"):
+            return ToolResult(
+                content="Favorites preserve original content; add to a notebook page to edit.",
+                success=False,
+            )
+
         outcome = write_note(
             mode=str(kwargs.get("mode") or ""),
             notebook_id=str(kwargs.get("notebook_id") or ""),
@@ -1657,7 +1671,7 @@ class WriteNoteTool(_PromptHintsMixin, BaseTool):
         action = "Saved new record" if outcome.mode == "append" else "Updated record"
         return ToolResult(
             content=(
-                f"{action} in notebook {outcome.notebook_name!r} (record id: {outcome.record_id})."
+                f"{action} in favorites collection {outcome.notebook_name!r} (record id: {outcome.record_id})."
             ),
             metadata={
                 "mode": outcome.mode,
@@ -2184,7 +2198,10 @@ CONFIGURABLE_BUILTIN_TOOL_NAMES: tuple[str, ...] = (
     "learning_update",
     "read_skill",
     "list_notebook",
+    "list_favorites",
     "write_note",
+    "save_favorite",
+    "search_notes",
     "question_bank",
     "web_fetch",
     "github",
