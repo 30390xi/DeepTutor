@@ -10,8 +10,8 @@ import asyncio
 import hashlib
 import json
 import re
-import unicodedata
 from typing import Literal
+import unicodedata
 
 from pydantic import BaseModel, ConfigDict, Field
 
