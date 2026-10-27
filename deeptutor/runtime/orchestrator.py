@@ -71,11 +71,15 @@ class ChatOrchestrator:
             context.session_id = str(uuid.uuid4())
 
         try:
-            from deeptutor.services.rag.pipelines.pageindex import (
-                validate_pageindex_oss_selection,
-            )
+            if context.knowledge_bases:
+                from deeptutor.modules.catalog import require_module
 
-            validate_pageindex_oss_selection(context.knowledge_bases)
+                require_module("knowledge")
+                from deeptutor.services.rag.pipelines.pageindex import (
+                    validate_pageindex_oss_selection,
+                )
+
+                validate_pageindex_oss_selection(context.knowledge_bases)
         except ValueError as exc:
             bus = StreamBus()
             await bus.error(

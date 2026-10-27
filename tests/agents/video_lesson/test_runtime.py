@@ -51,7 +51,8 @@ def test_video_lesson_available_without_docker(monkeypatch) -> None:
     from deeptutor.app.facade import DeepTutorApp
 
     monkeypatch.setattr(
-        "deeptutor.app.facade.shutil.which", lambda name: name if name in {"node", "npm"} else None
+        "deeptutor.modules.catalog.shutil.which",
+        lambda name: name if name in {"node", "npm"} else None,
     )
     app = SimpleNamespace(resolve_capability=lambda value: value)
     availability = DeepTutorApp.get_capability_availability(app, "video_lesson")

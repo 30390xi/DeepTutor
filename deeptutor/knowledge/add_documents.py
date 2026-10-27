@@ -23,7 +23,6 @@ from deeptutor.services.rag.factory import (
     has_ready_provider_index,
     normalize_provider_name,
 )
-from deeptutor.services.rag.file_routing import FileTypeRouter
 from deeptutor.services.rag.index_probe import provider_failure_summary
 from deeptutor.services.rag.index_versioning import list_kb_versions
 from deeptutor.services.rag.provider_binding import resolve_bound_provider
@@ -33,6 +32,7 @@ from deeptutor.services.setup.data_volume import (
     ensure_data_volume_writable,
     format_data_volume_permission_error,
 )
+from deeptutor.utils.file_types import FileTypeRouter
 
 logger = logging.getLogger(__name__)
 

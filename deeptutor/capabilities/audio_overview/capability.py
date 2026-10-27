@@ -11,29 +11,15 @@ from deeptutor.capabilities.audio_overview.pipeline import (
     AudioOverviewPipeline,
 )
 from deeptutor.capabilities.audio_overview.request_config import AudioOverviewRequestConfig
-from deeptutor.core.capability_protocol import CapabilityManifest, StreamBusProtocol, TurnCapability
+from deeptutor.core.capability_protocol import StreamBusProtocol, TurnCapability
 from deeptutor.core.context import UnifiedContext
 from deeptutor.i18n import StatusI18n
-from deeptutor.runtime.request_contracts import get_capability_request_schema
+from deeptutor.runtime.bootstrap.builtin_capabilities import builtin_capability_manifest
 from deeptutor.runtime.stream_bus import StreamBus
 
 
 class AudioOverviewCapability(TurnCapability):
-    manifest = CapabilityManifest(
-        name="audio_overview",
-        description="Create a grounded two-voice audio overview and transcript from a knowledge base.",
-        stages=["retrieving", "script_writing", "voice_generation", "publishing"],
-        tools_used=["rag"],
-        cli_aliases=["audio-overview", "overview"],
-        request_schema=get_capability_request_schema("audio_overview"),
-        config_defaults={
-            "topic": "",
-            "target_minutes": 5,
-            "host_voice": None,
-            "expert_voice": None,
-            "max_context_chunks": 6,
-        },
-    )
+    manifest = builtin_capability_manifest("audio_overview")
 
     async def run(self, context: UnifiedContext, protocol_stream: StreamBusProtocol) -> None:
         stream = cast(StreamBus, protocol_stream)
@@ -80,6 +66,9 @@ class AudioOverviewCapability(TurnCapability):
                     RetrievedContext,
                     SourceCitation,
                 )
+                from deeptutor.modules.catalog import require_module
+
+                require_module("co-writer")
                 from deeptutor.co_writer.storage import get_co_writer_storage
 
                 note = get_co_writer_storage().load_document(note_id)

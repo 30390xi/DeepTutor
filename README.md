@@ -324,11 +324,11 @@ shown as **best effort** in Workspace settings.
 <details>
 <summary><b>Option 1 — Install From PyPI</b> · full local Web app + CLI, no clone required</summary>
 
-Full local Web app + CLI, no clone required. Needs **Python 3.11–3.14** and a **Node.js 20+** runtime on PATH (the packaged Next.js standalone server is spawned by `deeptutor start`).
+Use `deeptutor[full]` for the Web app and CLI, or `deeptutor` for core chat. Needs **Python 3.11–3.14** and a **Node.js 20+** runtime on PATH (the packaged Next.js standalone server is spawned by `deeptutor start`).
 
 ```bash
 mkdir -p my-deeptutor && cd my-deeptutor
-pip install -U deeptutor
+pip install -U "deeptutor[full]"
 deeptutor init     # prompts for ports + LLM provider + optional embedding/search
 deeptutor start    # starts backend + frontend; keep the terminal open
 ```
@@ -356,7 +356,8 @@ python3 -m venv .venv && source .venv/bin/activate
 python -m pip install --upgrade pip
 
 # Install backend + frontend deps
-python -m pip install -e .
+python -m pip install -r requirements/full.txt
+python -m pip install -e . --no-deps
 ( cd web && npm ci --legacy-peer-deps )
 
 deeptutor init
@@ -384,7 +385,7 @@ pip install -e ".[rag-lightrag]"    # Built-in LightRAG engine (exact supported 
 pip install -e ".[graphrag]"        # Microsoft GraphRAG engine (Python 3.11–3.13)
 pip install -e ".[dev]"             # tests/lint tools
 pip install -e ".[partners]"        # Partner IM channel SDKs
-pip install -e ".[video-learning]"  # compatibility extra; captions ship in the full/CLI installs
+pip install -e ".[video-learning]"  # captions for reading/video-learning
 pip install -e ".[matrix]"          # Matrix channel without E2EE/libolm
 pip install -e ".[matrix-e2e]"      # Matrix E2EE; requires libolm
 pip install -e ".[math-animator]"   # Manim addon; requires LaTeX/ffmpeg/system libs
@@ -512,7 +513,7 @@ Docker Desktop (macOS/Windows) usually resolves `host.docker.internal` without `
 <details>
 <summary><b>Option 4 — CLI Only</b> · no Web UI, from a source checkout</summary>
 
-When you don't need the Web UI. The CLI-only package is installed from a source checkout, not from PyPI.
+When you do not need the Web UI, install the core from this checkout. Add feature modules separately as needed.
 
 ```bash
 git clone https://github.com/HKUDS/DeepTutor.git
@@ -523,7 +524,7 @@ cd DeepTutor
 python3 -m venv .venv-cli && source .venv-cli/bin/activate
 python -m pip install --upgrade pip
 
-python -m pip install -e ./packaging/deeptutor-cli
+python -m pip install -e .
 deeptutor init --cli
 deeptutor chat
 ```
@@ -1045,13 +1046,13 @@ Copilot-specific Responses compatibility is applied at dispatch without rewritin
 <details>
 <summary><b>CLI-only distribution</b></summary>
 
-The CLI-only package lives in `packaging/deeptutor-cli`. In this checkout, install it from source:
+The core supplies CLI and SDK; `deeptutor-cli` is a compatibility metapackage. Install core from this checkout:
 
 ```bash
-python -m pip install -e ./packaging/deeptutor-cli
+python -m pip install -e .
 ```
 
-It isn't published to PyPI yet, so the main [Get Started](#-get-started) section keeps the source-install path.
+Use `deeptutor module list` to inspect optional modules; install or remove them with the environment stopped. See [module installation](docs-for-dev/MODULES.md).
 
 </details>
 

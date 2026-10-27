@@ -1,5 +1,5 @@
 {
-  "fingerprint": "e6abfcb6ec2f17779189936a7f321054d1f1225282134d9a36dbc09eeec341e4",
+  "fingerprint": "84bafefe60e0e8504f8ac797383af66cf2066e325c9a441df16b889644421dc9",
   "routers": {
     "deeptutor.api.routers.auth:router": [
       {
@@ -5712,6 +5712,16 @@
         "name": "websocket_quiz_judge",
         "kind": "websocket",
         "methods": []
+      }
+    ],
+    "deeptutor.api.routers.modules:router": [
+      {
+        "path": "",
+        "name": "list_modules",
+        "kind": "http",
+        "methods": [
+          "GET"
+        ]
       }
     ]
   }

@@ -697,6 +697,8 @@ class AgenticLoopPipeline:
         )
 
     async def _pageindex_sdk_tool_bundles(self, context: UnifiedContext):
+        if not self._selected_kbs(context):
+            return []
         from deeptutor.multi_user.knowledge_access import resolve_kb
         from deeptutor.services.rag.factory import PAGEINDEX_OSS_PROVIDER, PAGEINDEX_PROVIDER
         from deeptutor.services.rag.pipelines.pageindex.tools import build_sdk_tool_bundle
@@ -766,16 +768,22 @@ class AgenticLoopPipeline:
 
     def _compose_enabled_tools(self, context: UnifiedContext) -> list[str]:
         is_partner = self._is_partner_turn(context)
-        from deeptutor.tools.research_tools import scientific_context
+        from deeptutor.modules.catalog import module_enabled
+
+        scientific = False
+        if module_enabled("research"):
+            from deeptutor.tools.research_tools import scientific_context
+
+            scientific = scientific_context(
+                context.user_message, context.active_capability, context.enabled_tools or []
+            )
 
         composed = compose_enabled_tools(
             registry=self.tool_lookup,
             requested_tools=context.enabled_tools,
             optional_whitelist=LOOP_OPTIONAL_TOOLS,
             mount_flags=ToolMountFlags(
-                has_scientific_research=scientific_context(
-                    context.user_message, context.active_capability, context.enabled_tools or []
-                ),
+                has_scientific_research=scientific,
                 # PageIndex KBs are read via the preloaded MCP tools, not rag —
                 # a conversation with only PageIndex KBs doesn't mount rag at all.
                 # Excludes KBs owned by an exclusive capability (an Obsidian vault
@@ -1837,6 +1845,8 @@ class AgenticLoopPipeline:
 
     def _rag_kbs(self, context: UnifiedContext) -> list[str]:
         """Attached KBs served by rag; PageIndex KBs use their SDK tools."""
+        if not self._selected_kbs(context):
+            return []
         from deeptutor.services.rag.pipelines.pageindex import is_pageindex_kb
 
         return [kb for kb in self._selected_kbs(context) if not is_pageindex_kb(kb)]

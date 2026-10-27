@@ -331,6 +331,10 @@ def _render_l3(cap: int) -> str:
     "Unsure"), and reading them is exactly the model's job; a lookup table here
     would be a second place for that vocabulary to drift.
     """
+    from deeptutor.modules.catalog import module_enabled
+
+    if not module_enabled("memory"):
+        return ""
     from deeptutor.services.memory import get_memory_store
 
     try:
@@ -382,6 +386,10 @@ def _collect_material(trace_count: int) -> _Material:
     what they are in the middle of, and which surface it happened on says
     nothing about that.
     """
+    from deeptutor.modules.catalog import module_enabled
+
+    if not module_enabled("memory"):
+        return _Material(profile="", topics=[])
     from deeptutor.services.memory import recall
 
     seen: set[str] = set()

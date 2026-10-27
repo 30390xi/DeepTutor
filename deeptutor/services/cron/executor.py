@@ -76,6 +76,9 @@ async def _maybe_send_desktop_notification(job: CronJob, text: str) -> None:
 
 async def _execute_partner_job(job: CronJob) -> tuple[str, str | None]:
     """Run the partner turn and publish the reply through the original channel."""
+    from deeptutor.modules.catalog import require_module
+
+    require_module("partners")
     from deeptutor.partners.bus.events import InboundMessage
     from deeptutor.services.partners import get_partner_manager
 

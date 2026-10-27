@@ -25,6 +25,7 @@ from dataclasses import dataclass
 import json
 from typing import Any
 
+from deeptutor.modules.catalog import module_enabled
 from deeptutor.tools.builtin import (
     BUILTIN_TOOL_NAMES,
     CONFIGURABLE_BUILTIN_TOOL_NAMES,
@@ -307,6 +308,8 @@ def user_has_memory() -> bool:
     a tool with no payload to read.
     """
     try:
+        if not module_enabled("memory"):
+            return False
         from deeptutor.services.memory import get_memory_store
 
         store = get_memory_store()
@@ -325,6 +328,8 @@ def user_has_notebooks() -> bool:
     fail-closed posture as :func:`user_has_memory`.
     """
     try:
+        if not module_enabled("notebook"):
+            return False
         from deeptutor.services.notebook import get_notebook_manager
 
         notebooks = get_notebook_manager().list_notebooks()
@@ -344,6 +349,8 @@ def user_has_mastery_topics() -> bool:
     ``LearningStore.default_db_path``).
     """
     try:
+        if not module_enabled("mastery"):
+            return False
         from deeptutor.learning.navigation import learner_has_topics
 
         return learner_has_topics()

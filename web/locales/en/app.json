@@ -6170,5 +6170,9 @@
   "Turn a question into an animated explainer you can play": "Turn a question into an animated explainer you can play",
   "View Remotion Code": "View Remotion Code",
   "{{seconds}} s": "{{seconds}} s",
-  "Fixed after {{count}} checks": "Fixed after {{count}} checks"
+  "Fixed after {{count}} checks": "Fixed after {{count}} checks",
+  "Modules": "Modules",
+  "Module": "Module",
+  "Stop DeepTutor before changing modules. Removing a module keeps your data.": "Stop DeepTutor before changing modules. Removing a module keeps your data.",
+  "This module is not installed or is disabled.": "This module is not installed or is disabled."
 }

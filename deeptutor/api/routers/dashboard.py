@@ -106,18 +106,22 @@ async def refresh_starter_suggestions():
 @router.get("/learning-index")
 async def get_learning_index():
     """Read-only entry points into the request's workspace."""
-    from deeptutor.api.routers.book import list_books
-    from deeptutor.api.routers.mastery_path import list_topics
-    from deeptutor.api.routers.reading import list_workspaces
+    from deeptutor.modules.catalog import module_enabled
     from deeptutor.multi_user.learning_access import learning_surface_allowed
 
     async def books():
+        from deeptutor.api.routers.book import list_books
+
         return (await list_books())["books"]
 
     async def mastery():
+        from deeptutor.api.routers.mastery_path import list_topics
+
         return (await list_topics())["topics"]
 
     async def reading():
+        from deeptutor.api.routers.reading import list_workspaces
+
         return (await list_workspaces(search=""))["workspaces"]
 
     async def watching():
@@ -151,7 +155,8 @@ async def get_learning_index():
         # Calling a route function directly bypasses its HTTP dependencies.
         # Never load a source that the learner could not open individually.
         result[kind] = []
-        if not learning_surface_allowed(surface):
+        owner = {"watching": "reading", "practice": "notebook"}.get(kind, kind)
+        if not module_enabled(owner) or not learning_surface_allowed(surface):
             continue
         try:
             result[kind] = await _workspace_rows(reader)

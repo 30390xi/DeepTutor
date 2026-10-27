@@ -730,6 +730,11 @@ def _timed_media_viewport(value: Any) -> dict[str, float]:
 def _reading_references(value: Any) -> list[dict[str, Any]]:
     """Normalize reading units explicitly attached to an ordinary chat turn."""
 
+    if not value:
+        return []
+    from deeptutor.modules.catalog import require_module
+
+    require_module("reading")
     from deeptutor.reading.references import normalize_reading_references
 
     return normalize_reading_references(value)

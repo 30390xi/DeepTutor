@@ -25,7 +25,11 @@ def _fake_skill_service() -> SimpleNamespace:
 
 @pytest.fixture(autouse=True)
 def _isolate_runtime_services(monkeypatch, tmp_path):
+    from deeptutor.services.path_service import PathService
     from deeptutor.services.task_board import TaskBoardStore
+
+    paths = PathService(workspace_root=tmp_path / "data")
+    monkeypatch.setattr("deeptutor.services.workspace.service.get_path_service", lambda: paths)
 
     board = TaskBoardStore(tmp_path / "tasks.sqlite")
     monkeypatch.setattr(

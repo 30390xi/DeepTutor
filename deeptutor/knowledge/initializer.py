@@ -21,13 +21,13 @@ from deeptutor.knowledge.progress_tracker import ProgressStage, ProgressTracker
 from deeptutor.services.config import resolve_llm_runtime_config
 from deeptutor.services.file_io import atomic_write_json
 from deeptutor.services.rag.factory import normalize_provider_name
-from deeptutor.services.rag.file_routing import FileTypeRouter
 from deeptutor.services.rag.service import RAGService
 from deeptutor.services.setup.data_volume import (
     DataVolumePermissionError,
     ensure_data_volume_writable,
     format_data_volume_permission_error,
 )
+from deeptutor.utils.file_types import FileTypeRouter
 
 logger = logging.getLogger(__name__)
 
