@@ -407,10 +407,24 @@ def set_application_container(container: ApplicationContainer | None) -> None:
     _default_container = container
 
 
+async def close_application_container() -> None:
+    """Close an existing default runtime without constructing one for cleanup."""
+    global _default_container
+    container = _default_container
+    if container is None:
+        return
+    try:
+        await container.close()
+    finally:
+        if _default_container is container:
+            _default_container = None
+
+
 __all__ = [
     "ApplicationContainer",
     "RuntimeRegistry",
     "StoreProvider",
     "get_application_container",
     "set_application_container",
+    "close_application_container",
 ]
