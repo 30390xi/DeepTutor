@@ -1036,6 +1036,140 @@ async def test_finish_first_round_no_tools(monkeypatch: pytest.MonkeyPatch) -> N
 
 
 @pytest.mark.asyncio
+async def test_anthropic_gateway_request_carries_cache_control_breakpoints(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The loop must apply the provider's prompt-caching treatment (#2078).
+
+    The loop builds its own request kwargs, so an ``anthropic/`` model on a
+    prompt-caching gateway used to send no ``cache_control`` breakpoint at all.
+    It now marks system, the last message, and the end of the durable history.
+    """
+    monkeypatch.setattr(
+        "deeptutor.agents.loop.pipeline.get_llm_config",
+        lambda: SimpleNamespace(
+            binding="openrouter",
+            model="anthropic/claude-haiku-5.5",
+            api_key="k",
+            base_url="https://openrouter.ai/api/v1",
+            api_version=None,
+            extra_headers={},
+            reasoning_effort=None,
+        ),
+    )
+    client = _ScriptedChatClient([[_llm_chunk(content="Answer", finish_reason="stop")]])
+    pipeline = AgenticChatPipeline(language="en")
+    pipeline.registry = _Registry()
+    monkeypatch.setattr(pipeline, "_compose_enabled_tools", lambda _context: [])
+    monkeypatch.setattr(pipeline, "_build_openai_client", lambda: client)
+
+    durable = [
+        {"role": "user", "content": "Question one"},
+        {"role": "assistant", "content": "Answer one"},
+    ]
+    await _run(
+        pipeline,
+        UnifiedContext(
+            session_id="s1",
+            user_message="Question two",
+            runtime=TurnRuntimeContext(model_history=list(durable)),
+        ),
+    )
+
+    sent = client.calls[0]["messages"]
+    marked = [
+        index
+        for index, message in enumerate(sent)
+        if isinstance(message.get("content"), list)
+        and any(
+            isinstance(block, dict) and "cache_control" in block
+            for block in message["content"]
+        )
+    ]
+    # system + end-of-stable-history (the durable assistant turn) + last message.
+    assert len(marked) == 3
+    assert sent[0]["role"] == "system"
+    # The middle breakpoint sits on the last durable assistant turn, before the
+    # trailing (possibly multi-message) user block of this turn.
+    assert sent[marked[1]]["role"] == "assistant"
+    assert sent[marked[1]]["content"][-1]["text"] == "Answer one"
+    assert marked[-1] == len(sent) - 1
+    assert sent[-1]["role"] == "user"
+    assert all(
+        block.get("cache_control") == {"type": "ephemeral"}
+        for index in marked
+        for block in sent[index]["content"]
+        if isinstance(block, dict) and "cache_control" in block
+    )
+
+
+@pytest.mark.asyncio
+async def test_non_anthropic_gateway_request_gets_no_cache_control(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A non-Anthropic model on the same gateway must not receive markers."""
+    monkeypatch.setattr(
+        "deeptutor.agents.loop.pipeline.get_llm_config",
+        lambda: SimpleNamespace(
+            binding="openrouter",
+            model="google/gemini-2.0-flash",
+            api_key="k",
+            base_url="https://openrouter.ai/api/v1",
+            api_version=None,
+            extra_headers={},
+            reasoning_effort=None,
+        ),
+    )
+    client = _ScriptedChatClient([[_llm_chunk(content="Answer", finish_reason="stop")]])
+    pipeline = AgenticChatPipeline(language="en")
+    pipeline.registry = _Registry()
+    monkeypatch.setattr(pipeline, "_compose_enabled_tools", lambda _context: [])
+    monkeypatch.setattr(pipeline, "_build_openai_client", lambda: client)
+
+    await _run(pipeline, UnifiedContext(session_id="s1", user_message="Hi"))
+
+    assert all(
+        not isinstance(message.get("content"), list)
+        for message in client.calls[0]["messages"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_native_anthropic_binding_leaves_markers_to_the_provider(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The native Anthropic adapter applies its own cache_control.
+
+    The loop must not pre-mark that path, or the adapter's own breakpoints
+    would be added on top of the loop's.
+    """
+    monkeypatch.setattr(
+        "deeptutor.agents.loop.pipeline.get_llm_config",
+        lambda: SimpleNamespace(
+            binding="anthropic",
+            model="claude-sonnet-4-5",
+            api_key="k",
+            base_url="https://api.anthropic.com",
+            api_version=None,
+            extra_headers={},
+            reasoning_effort=None,
+        ),
+    )
+    client = _ScriptedChatClient([[_llm_chunk(content="Answer", finish_reason="stop")]])
+    pipeline = AgenticChatPipeline(language="en")
+    pipeline.registry = _Registry()
+    monkeypatch.setattr(pipeline, "_compose_enabled_tools", lambda _context: [])
+    monkeypatch.setattr(pipeline, "_build_openai_client", lambda: client)
+
+    await _run(pipeline, UnifiedContext(session_id="s1", user_message="Hi"))
+
+    assert all(
+        not isinstance(message.get("content"), list)
+        for message in client.calls[0]["messages"]
+    )
+
+
+@pytest.mark.asyncio
 async def test_finish_round_persists_provider_response_state(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

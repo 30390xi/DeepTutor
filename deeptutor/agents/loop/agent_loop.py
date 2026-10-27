@@ -1105,6 +1105,53 @@ class AgentLoop:
 
     # ---- LLM call ----------------------------------------------------------
 
+    def _apply_prompt_caching(self, kwargs: dict[str, Any]) -> None:
+        """Attach Anthropic-style ``cache_control`` breakpoints to the request.
+
+        The loop builds its own ``chat.completions.create`` kwargs and calls the
+        SDK client directly, so it never passes through
+        ``OpenAICompatProvider._build_kwargs`` — the only other place cache
+        breakpoints are added. Without this, an ``anthropic/`` model on a
+        prompt-caching gateway (OpenRouter) sends no breakpoint and Anthropic
+        caches nothing. Reuse the provider's helper so both paths mark requests
+        identically, and add the end-of-stable-history breakpoint the loop
+        needs: its transient per-turn context message sits just before the
+        learner's message and is never persisted, so the next turn's prefix
+        only matches up to the last durable message.
+        """
+        from deeptutor.services.llm.provider_core.openai_compat_provider import (
+            OpenAICompatProvider,
+        )
+
+        model = str(kwargs.get("model") or "")
+        if not OpenAICompatProvider.supports_prompt_caching_for(model):
+            return
+        if not self._binding_supports_prompt_caching():
+            return
+        messages, tools = OpenAICompatProvider._apply_cache_control(
+            kwargs["messages"],
+            kwargs.get("tools"),
+            stable_history_end=True,
+        )
+        kwargs["messages"] = messages
+        if tools is not None:
+            kwargs["tools"] = tools
+
+    def _binding_supports_prompt_caching(self) -> bool:
+        """Whether this binding reaches the model through OpenAICompatProvider.
+
+        Native Anthropic-backed bindings apply their own ``cache_control``
+        inside their provider, so the loop must only add markers for the
+        OpenAI-compatible path (gateways such as OpenRouter) that otherwise
+        never sees them.
+        """
+        from deeptutor.services.provider_registry import find_by_name
+
+        spec = find_by_name(self.pipeline.binding)
+        if spec is None or not spec.supports_prompt_caching:
+            return False
+        return spec.backend == "openai_compat"
+
     async def _call_llm(
         self,
         *,
@@ -1222,6 +1269,8 @@ class AgentLoop:
         self._last_request = LLMRequestSnapshot(
             messages=list(kwargs["messages"]), tool_schemas=carried
         )
+
+        self._apply_prompt_caching(kwargs)
 
         chunk_meta = merge_trace_metadata(trace_meta, {"trace_kind": "llm_chunk"})
 
