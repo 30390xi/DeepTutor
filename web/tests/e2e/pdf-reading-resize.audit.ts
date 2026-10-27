@@ -1,3 +1,4 @@
+import { emptyLearningIndex } from "./fixtures/learning-index";
 import { expect, test, type Locator } from "@playwright/test";
 import { jsPDF } from "jspdf";
 import { emptyTaskBoard } from "./fixtures/task-board";
@@ -75,6 +76,7 @@ test.beforeEach(async ({ page }) => {
         ],
       });
     }
+    if (path === "/api/dashboard/learning-index") return json(emptyLearningIndex);
     if (path === "/api/partners" || path === "/api/partner-groups")
       return json([]);
     if (path === "/api/sessions") return json({ sessions: [] });

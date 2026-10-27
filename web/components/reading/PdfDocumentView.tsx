@@ -28,6 +28,8 @@ import { PdfPage } from "./PdfPage";
 
 /** Pages kept rendered on each side of the viewport. */
 const RENDER_MARGIN = 1;
+/** Pages this close keep their parsed form after their canvas is freed. */
+const RETAIN_MARGIN = 6;
 /** How long a `reader_goto` highlight pulses before fading. */
 const PAGE_GAP = 16;
 
@@ -138,6 +140,11 @@ export function PdfDocumentView({
           // The raw route sits behind the session cookie like every other API
           // route; pdf.js does its own fetching, so it needs telling.
           withCredentials: true,
+          // pdf.js asks for the file in 64 KB ranges by default. Behind the
+          // app's proxy each range is a full request, and a browser runs six
+          // at a time, so a few-MB paper queued dozens of them before its
+          // pages could draw. 1 MB ranges ask for the same bytes in a handful.
+          rangeChunkSize: 1 << 20,
         });
         task = loadingTask;
         const opened: PdfDocument = await loadingTask.promise;
@@ -506,6 +513,7 @@ export function PdfDocumentView({
                 width={pageWidth}
                 fallbackRatio={fallbackRatio}
                 active={isActive(locator)}
+                retain={Math.abs(locator - visibleLocator) <= RETAIN_MARGIN || isActive(locator)}
                 annotations={annotations}
                 highlightedAnnotationId={highlightedAnnotationId}
                 flashRects={
