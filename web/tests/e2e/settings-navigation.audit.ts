@@ -202,7 +202,7 @@ test.describe("Independent settings", () => {
     await nav(page)
       .getByRole("link", { name: "Appearance", exact: true })
       .click();
-    await expect(page).toHaveURL(/\/settings\/appearance$/);
+    await expect(page).toHaveURL((url) => url.pathname === "/settings/appearance");
     await expect(page.getByLabel("Model ID", { exact: true })).toHaveCount(0);
     await nav(page)
       .getByRole("link", { name: "Language models", exact: true })
@@ -348,12 +348,12 @@ test.describe("Independent settings", () => {
     await nav(page)
       .getByRole("link", { name: "Embedding models", exact: true })
       .click();
-    await expect(page).toHaveURL(/\/settings\/embedding$/);
+    await expect(page).toHaveURL((url) => url.pathname === "/settings/embedding");
     await expect(page.locator("[data-settings-page]")).toHaveCount(1);
     await page.goBack();
-    await expect(page).toHaveURL(/\/settings\/general$/);
+    await expect(page).toHaveURL((url) => url.pathname === "/settings/general");
     await page.goto("/settings#about", { waitUntil: "domcontentloaded" });
-    await expect(page).toHaveURL(/\/settings\/about$/);
+    await expect(page).toHaveURL((url) => url.pathname === "/settings/about");
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
   });
 
@@ -493,7 +493,7 @@ test("setup links lead to providers, language models, and runtime status", async
   ]) {
     await page.goto("/settings/general", { waitUntil: "domcontentloaded" });
     await page.getByRole("link", { name: new RegExp(label.replaceAll(".", "\\.")) }).click();
-    await expect(page).toHaveURL(new RegExp(destination + "$"));
+    await expect(page).toHaveURL((url) => url.pathname === destination);
     await expect(page.locator("[data-settings-page]")).toHaveCount(1);
   }
 });
