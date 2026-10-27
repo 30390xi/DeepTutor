@@ -62,6 +62,10 @@ it("unlocks the audio element during the click before speech synthesis resolves"
   expect(instances).toHaveLength(1);
   expect(instances[0].play).toHaveBeenCalledTimes(1);
   expect(instances[0].src).toContain("data:audio/wav");
+  const bytes = Uint8Array.from(atob(instances[0].src.split(",")[1]), (c) => c.charCodeAt(0));
+  const wav = new DataView(bytes.buffer);
+  expect(wav.getUint32(40, true)).toBeGreaterThan(0);
+  expect(bytes.length).toBe(44 + wav.getUint32(40, true));
   expect(URL.createObjectURL).not.toHaveBeenCalled();
 
   await act(async () => {
