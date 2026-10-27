@@ -196,6 +196,11 @@ def is_image_input_unsupported(exc: Exception) -> bool:
             "expected a string",
             "expected string",
             "invalid type for 'messages",
+            # Zhipu/GLM rejects multimodal blocks with a Chinese message whose
+            # path is dotted ("messages.content.type ... 参数非法，取值范围 ['text']"),
+            # which none of the English markers above match.
+            "content.type",
+            "取值范围",
         )
     )
 
