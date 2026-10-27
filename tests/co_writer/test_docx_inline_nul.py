@@ -9,7 +9,10 @@ the whole export instead of treating the NUL as ordinary text.
 
 from __future__ import annotations
 
+from io import BytesIO
 from unittest.mock import MagicMock
+
+import pytest
 
 from deeptutor.co_writer.docx_converter import _add_inline_runs
 
@@ -44,3 +47,27 @@ def test_nul_next_to_real_escape_is_handled() -> None:
 
     rendered = "".join(paragraph.texts)
     assert rendered == "a*bc"
+
+
+@pytest.mark.parametrize(
+    "markdown",
+    [
+        "hello{bad}world",
+        "# hello{bad}world",
+        "```\nhello{bad}world\n```",
+        "| Column |\n| --- |\n| hello{bad}world |",
+    ],
+)
+@pytest.mark.parametrize("bad", ["\x00", "\x0b", "\x1f", "\ud800", "\ufffe"])
+def test_export_sanitizes_xml_text_in_every_markdown_block(markdown, bad):
+    docx = pytest.importorskip("docx")
+    from deeptutor.co_writer.docx_converter import markdown_to_docx
+
+    data = markdown_to_docx(markdown.format(bad=bad))
+    document = docx.Document(BytesIO(data))
+    text = "\n".join(p.text for p in document.paragraphs)
+    text += "\n".join(
+        cell.text for table in document.tables for row in table.rows for cell in row.cells
+    )
+    assert "helloworld" in text
+    assert bad not in text
