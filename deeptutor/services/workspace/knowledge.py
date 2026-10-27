@@ -11,6 +11,10 @@ from pathlib import Path
 from fastapi import HTTPException
 
 library_request: ContextVar[bool] = ContextVar("knowledge_library_request", default=False)
+# The workspace whose library page made a library request. Library requests
+# run unscoped so qualified ids resolve into any store, but the page lists only
+# the knowledge bases stored in the workspace it is opened in.
+library_viewer: ContextVar[str | None] = ContextVar("knowledge_library_viewer", default=None)
 
 
 def qualified_kb_id(name: str, workspace_id: str = "") -> str:

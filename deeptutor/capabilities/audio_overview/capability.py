@@ -39,7 +39,8 @@ class AudioOverviewCapability(TurnCapability):
         stream = cast(StreamBus, protocol_stream)
         i18n = StatusI18n(self.name, context.language, module="capabilities")
         kb_name = str(context.knowledge_bases[0]) if context.knowledge_bases else ""
-        if not kb_name:
+        note_id = str(context.metadata.get("note_document_id") or "")
+        if not kb_name and not note_id:
             raise AudioOverviewError(
                 i18n.t("missing_kb", "Attach a knowledge base to create an audio overview.")
             )
@@ -74,11 +75,31 @@ class AudioOverviewCapability(TurnCapability):
 
         turn_id = str(context.metadata.get("turn_id", "") or context.session_id or uuid.uuid4().hex)
         async with stream.stage("retrieving", source=self.name):
-            retrieved = await pipeline.retrieve(
-                topic=topic,
-                kb_name=kb_name,
-                request_config=request_config,
-            )
+            if note_id:
+                from deeptutor.capabilities.audio_overview.pipeline import (
+                    RetrievedContext,
+                    SourceCitation,
+                )
+                from deeptutor.co_writer.storage import get_co_writer_storage
+
+                note = get_co_writer_storage().load_document(note_id)
+                if note is None or not note.content.strip():
+                    raise AudioOverviewError("The notebook page is missing or empty.")
+                retrieved = RetrievedContext(
+                    answer=note.content[:16000],
+                    citations=[
+                        SourceCitation(
+                            source_id="note-1",
+                            title=note.title,
+                            locator=f"/co-writer/{note.id}",
+                            snippet=note.content[:2000],
+                        )
+                    ],
+                )
+            else:
+                retrieved = await pipeline.retrieve(
+                    topic=topic, kb_name=kb_name, request_config=request_config
+                )
             if retrieved.citations:
                 await stream.sources(
                     [
