@@ -231,7 +231,8 @@ async def test_native_cancel_and_worker_loss_never_replay(native):
     task = asyncio.create_task(
         native.client.run_native(Port(), payload(native.endpoint, "stall-fixture"))
     )
-    await asyncio.wait_for(native.entered.wait(), 2)
+    # Cold worker startup is not the cancellation deadline; allow CI process scheduling.
+    await asyncio.wait_for(native.entered.wait(), 10)
     native.client._process.kill()
     with pytest.raises(LLMProviderTransportError) as raised:
         await asyncio.wait_for(task, 2)
@@ -241,7 +242,8 @@ async def test_native_cancel_and_worker_loss_never_replay(native):
     task = asyncio.create_task(
         native.client.run_native(Port(), payload(native.endpoint, "stall-fixture"))
     )
-    await asyncio.wait_for(native.entered.wait(), 2)
+    # Cold worker startup is not the cancellation deadline; allow CI process scheduling.
+    await asyncio.wait_for(native.entered.wait(), 10)
     task.cancel()
     with pytest.raises(asyncio.CancelledError):
         await task
