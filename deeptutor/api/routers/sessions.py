@@ -93,7 +93,6 @@ class BranchSelectionRequest(BaseModel):
 class SessionOrganizationRequest(BaseModel):
     """User-controlled organization metadata stored with the conversation."""
 
-    course_id: str | None = None
     workspace_id: str | None = None
     parent_session_id: str | None = None
     session_kind: Literal["chat", "selection_tutor", "immersive_reading"] | None = None
@@ -251,6 +250,8 @@ async def list_sessions(
     all_workspaces: bool = False,
 ):
     if all_workspaces:
+        # Account management (Settings › Archive) only; every navigation
+        # surface lists the request's own workspace.
         from deeptutor.services.workspace.navigation import session_index
 
         return await session_index(limit, offset)
@@ -260,7 +261,15 @@ async def list_sessions(
         offset=offset,
         **({"workspace_id": workspace_id} if workspace_id is not None else {}),
     )
-    return {"sessions": sessions}
+    return {"sessions": _with_source_workspace(sessions)}
+
+
+def _with_source_workspace(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Name the store a row was read from; a legacy preference may disagree."""
+    from deeptutor.services.workspace.context import current_workspace_id
+
+    workspace_id = current_workspace_id()
+    return [{**row, "content_workspace_id": workspace_id} for row in rows]
 
 
 @router.get("/search")
@@ -268,18 +277,13 @@ async def search_sessions(
     q: str = Query(..., min_length=1, max_length=MAX_SEARCH_QUERY_CHARS),
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
-    all_workspaces: bool = False,
 ):
     """Search titles and persisted user/assistant messages for a literal term."""
     if not q.strip():
         raise HTTPException(status_code=400, detail="Search query cannot be empty")
-    if all_workspaces:
-        from deeptutor.services.workspace.navigation import session_index
-
-        return await session_index(limit, offset, q)
     result = await get_session_store().search_sessions(q, limit=limit, offset=offset)
     return {
-        "sessions": result["sessions"],
+        "sessions": _with_source_workspace(result["sessions"]),
         "total": result["total"],
         "limit": limit,
         "offset": offset,
@@ -457,6 +461,38 @@ async def get_session(session_id: str):
     return session
 
 
+@router.get("/{session_id}/organization")
+async def get_session_organization(session_id: str):
+    """Title, status and preferences without the transcript.
+
+    The chat header reads this to show the conversation's own menu (pinned,
+    archived, filed under) — refetching the full message list for that would
+    cost a long conversation its whole history on every sidebar change.
+    """
+    store = get_session_store()
+    session = await store.get_session(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {"session": session}
+
+
+@router.get("/{session_id}/threads")
+async def list_session_threads(session_id: str):
+    """Little Tutor threads opened from this conversation, newest first."""
+    store = get_session_store()
+    if await store.get_session(session_id) is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    candidates = await list_all_sessions_snapshot(store)
+    threads = [
+        row
+        for row in candidates
+        if str((row.get("preferences") or {}).get("parent_session_id") or "") == session_id
+        and (row.get("preferences") or {}).get("session_kind") == "selection_tutor"
+    ]
+    threads.sort(key=lambda row: float(row.get("updated_at") or 0), reverse=True)
+    return {"threads": _with_source_workspace(threads)}
+
+
 @router.get("/{session_id}/messages/{message_id}/events")
 async def get_message_events(
     session_id: str,
@@ -567,16 +603,6 @@ async def update_session_organization(
                 raise HTTPException(status_code=409, detail=str(exc)) from exc
             return {"session": moved}
         updates["workspace_id"] = workspace_id or None
-    if "course_id" in fields:
-        course_id = str(payload.course_id or "").strip()
-        if course_id:
-            from deeptutor.services.courses import CourseNotFoundError, get_course_service
-
-            try:
-                get_course_service().get(course_id)
-            except CourseNotFoundError as exc:
-                raise HTTPException(status_code=404, detail="Course not found") from exc
-        updates["course_id"] = course_id
     if "parent_session_id" in fields:
         parent_id = str(payload.parent_session_id or "").strip()
         if parent_id == session_id:
@@ -603,7 +629,7 @@ async def update_session_organization(
     if updates:
         await store.update_session_preferences(session_id, updates)
         cascade_updates = {
-            key: updates[key] for key in ("course_id", "archived", "workspace_id") if key in updates
+            key: updates[key] for key in ("archived", "workspace_id") if key in updates
         }
         if cascade_updates:
             # Selected-text tutor threads stay with their source conversation.
