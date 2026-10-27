@@ -411,6 +411,69 @@ async def test_question_support_must_quote_real_evidence(service, monkeypatch):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "source_text, quote",
+    [
+        # A PDF line wrap and indentation split the parsed words.
+        (
+            "…看出如何組織、表達與連結數學想\n   法；…",
+            "…看出如何組織、表達與連結數學想法；…",
+        ),
+        # HTML table markup is present only in the parsed text.
+        (
+            "<tr><td>alpha</td><td>is</td></tr> the first letter",
+            "alpha is the first letter",
+        ),
+        # Full-width parentheses in the parsed text vs. half-width in the quote.
+        (
+            "The set （alpha, beta） is ordered",
+            "The set (alpha, beta) is ordered",
+        ),
+    ],
+)
+async def test_faithful_citation_tolerates_formatting_only_differences(
+    service, monkeypatch, source_text, quote
+):
+    from deeptutor.learning import lesson_evidence
+    from deeptutor.learning import semantic_assessment as semantic
+
+    progress = service.store.load("p")
+    progress.lesson_evidence["kp1"] = {"sources": [{"ref": {}, "text": source_text}]}
+    monkeypatch.setattr(lesson_evidence, "validate_evidence", lambda *args, **kwargs: None)
+
+    async def request(*args, **kwargs):
+        return {
+            "supported": True,
+            "citations": [{"index": 0, "quote": quote}],
+            "provenance": "adapted",
+        }
+
+    monkeypatch.setattr(semantic, "_request", request)
+    question = leaf()
+    await semantic.bind_question(service.store, progress, question)
+    assert question.source_evidence["assessment_contract"]["citations"] == [
+        {"index": 0, "quote": quote}
+    ]
+
+
+@pytest.mark.asyncio
+async def test_whitespace_only_quote_still_rejected_after_normalization(service, monkeypatch):
+    from deeptutor.learning import lesson_evidence
+    from deeptutor.learning import semantic_assessment as semantic
+
+    progress = service.store.load("p")
+    progress.lesson_evidence["kp1"] = {"sources": [{"ref": {}, "text": "alpha and beta"}]}
+    monkeypatch.setattr(lesson_evidence, "validate_evidence", lambda *args, **kwargs: None)
+
+    async def request(*args, **kwargs):
+        return {"supported": True, "citations": [{"index": 0, "quote": " \n\t*_`| "}]}
+
+    monkeypatch.setattr(semantic, "_request", request)
+    with pytest.raises(semantic.AssessmentUnavailable, match="absent"):
+        await semantic.bind_question(service.store, progress, leaf())
+
+
+@pytest.mark.asyncio
 async def test_group_source_binding_is_one_call_with_individual_contracts(service, monkeypatch):
     from deeptutor.learning import lesson_evidence
     from deeptutor.learning import semantic_assessment as semantic

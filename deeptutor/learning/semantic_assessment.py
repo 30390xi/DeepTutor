@@ -9,9 +9,25 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
+import re
+import unicodedata
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
+_MARKUP = re.compile(r"<[^>]+>")
+_FORMATTING = re.compile(r"[\s*_`#|]+")
+
+
+def _comparable(text: str) -> str:
+    """Fold formatting-only differences so faithful citations still match.
+
+    Verifier quotes are transcribed from page pixels, so line wraps,
+    indentation, HTML table markup and full-width/half-width variants differ
+    from the parsed text even though the words are identical.
+    """
+    text = unicodedata.normalize("NFKC", str(text or ""))
+    return _FORMATTING.sub("", _MARKUP.sub("", text))
 
 
 class AssessmentUnavailable(ValueError):
@@ -288,7 +304,12 @@ def _attach_support(question, sources, data):
         if not isinstance(quote, str) or not quote.strip():
             raise AssessmentUnavailable("Invalid question support citation.")
         if quote not in sources[index]["text"] and quote not in sources[index]["quote"]:
-            raise AssessmentUnavailable("Question support quote is absent from the source.")
+            needle = _comparable(quote)
+            if not needle or (
+                needle not in _comparable(sources[index]["text"])
+                and needle not in _comparable(sources[index]["quote"])
+            ):
+                raise AssessmentUnavailable("Question support quote is absent from the source.")
     # A choice label occurring somewhere on a page cannot prove the original
     # answer-key relationship. Conservatively label such questions adapted.
     exact_original = not question.choice_map and any(
