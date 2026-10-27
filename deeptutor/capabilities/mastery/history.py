@@ -60,9 +60,9 @@ def project_mastery_replay(messages: list[dict[str, Any]]) -> list[dict[str, Any
 def share_mastery_history(messages: list[dict[str, Any]], history_end: int) -> None:
     """Share exact repeated state in the owned historical request copy in-place.
 
-    References point forward to full values, never to another reference. Current
-    messages are anchors only. No messages are added/removed, so turn boundaries
-    and tool protocol remain unchanged. Ambiguous call IDs are not eligible.
+    References point back to the earliest full values, never to another reference.
+    Current messages are anchors only. No messages are added/removed, so turn
+    boundaries and tool protocol remain unchanged. Ambiguous call IDs are not eligible.
     """
     calls = [call for m in messages for call in m.get("tool_calls", [])]
     counts = Counter(call.get("id") for call in calls)
@@ -103,8 +103,8 @@ def share_mastery_history(messages: list[dict[str, Any]], history_end: int) -> N
             anchors.setdefault(encoded, {**locator, "pointer": pointer})
         return result, changed
 
-    for index in range(len(messages) - 1, -1, -1):
-        message = messages[index]
+    # Appended state must not rewrite prefixes sent in earlier requests.
+    for index, message in enumerate(messages):
         content = message.get("content")
         if not isinstance(content, str):
             continue
