@@ -274,7 +274,12 @@ async def test_flash_real_sdk_payload(api_format, host, effort):
         assert "service_tier" not in body
         assert body.get("reasoning_split") is not False
         if anthropic:
-            assert request.headers["x-api-key"] == "fixture-key"
+            # Anthropic 2.x sends api_key as Bearer auth; 0.x uses X-Api-Key.
+            # Verify the exact configured credential with either supported SDK.
+            assert (
+                request.headers.get("x-api-key"),
+                request.headers.get("authorization"),
+            ) in {("fixture-key", None), (None, "Bearer fixture-key")}
             assert body.get("output_config", {}).get("effort") == (
                 effort if effort in {"low", "medium", "high", "xhigh", "max"} else None
             )
