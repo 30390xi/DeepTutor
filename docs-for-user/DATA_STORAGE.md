@@ -18,9 +18,11 @@ The default admin scope uses this layout:
 | Path | Contents |
 | --- | --- |
 | `data/user/settings/` | JSON/YAML settings and provider credentials |
-| `data/user/chat_history.db` | SQLite sessions, messages, turns, notebook, and practice data |
+| `data/user/chat_history.db` | SQLite sessions, messages, turns, question-bank entries, and practice data |
 | `data/user/.runtime/` | Private runtime state such as `workspaces.sqlite3` |
 | `data/user/workspace/` | Default Content Workspace and generated artifacts |
+| `data/user/workspace/notebook/` | Favorite collections and their index as JSON files (legacy directory name) |
+| `data/user/workspace/co-writer/documents/doc_<id>/manifest.json` | Authored note pages, blocks, revisions, and page metadata |
 | `data/user/logs/` | Application logs |
 | `data/knowledge_bases/` | Knowledge-base indexes and versioned source data |
 | `data/parse_cache/` | Shared document-parse cache |
@@ -33,6 +35,14 @@ private learning state is under `<workspace>/.deeptutor/data/`, while account
 settings, credentials, Memory, and workspace registrations remain in the
 runtime home. Run `deeptutor workspace show` to print the selected workspace
 path.
+
+Favorites and authored notes are separate stores. The legacy `notebook_entries`
+SQLite table holds question-bank entries; it is not the storage for authored
+note blocks or favorite collections. In a selected external workspace, those
+file-based stores live under its private `.deeptutor/data/workspace/` tree,
+using the same `notebook/` and `co-writer/documents/` subdirectories. Back up
+the full workspace, including hidden `.deeptutor` files, to preserve both the
+learning records and the note/favorite content.
 
 ## Database Support
 
