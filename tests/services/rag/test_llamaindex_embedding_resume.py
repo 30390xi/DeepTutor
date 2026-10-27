@@ -34,8 +34,9 @@ def _records(kb_dir: Path, names: list[str]) -> dict[str, object]:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("interrupted_swap", [False, True])
 async def test_rebuild_resumes_completed_documents_after_failure(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, interrupted_swap: bool
 ) -> None:
     from llama_index.core import Settings
     from llama_index.core.embeddings import MockEmbedding
@@ -92,6 +93,9 @@ async def test_rebuild_resumes_completed_documents_after_failure(
     assert failed_run["documents"]["first.txt"]["status"] == "completed"
     assert failed_run["documents"]["first.txt"]["embedding_reused"] is False
 
+    if interrupted_swap:
+        candidate.rename(candidate.with_name(f".{candidate.name}.previous-crash"))
+
     monkeypatch.setattr(storage, "_write_embedding_snapshot", original_snapshot)
     embedded_sources: list[str] = []
     original_documents_to_nodes = storage.ingestion.documents_to_nodes
@@ -112,6 +116,18 @@ async def test_rebuild_resumes_completed_documents_after_failure(
     assert resumed_run["documents"]["second.txt"]["embedding_reused"] is False
     assert embedded_sources == [second.name]
     storage.verify_persisted_index(candidate)
+    # Shape validation alone does not detect silently replacing the old index
+    # with one containing only the remaining sources.
+    restored = storage.vector_store.load_index(candidate)
+    retained = {
+        Path(node.metadata["file_path"]).name
+        for node in restored.docstore.docs.values()
+        if node.metadata.get("file_path")
+    }
+    assert retained == {first.name, second.name}
+    retained_text = "\n".join(node.get_content() for node in restored.docstore.docs.values())
+    assert "Fourier transforms" in retained_text
+    assert "sampling" in retained_text
     assert checkpoint["signature"] == _signature().hash()
 
 

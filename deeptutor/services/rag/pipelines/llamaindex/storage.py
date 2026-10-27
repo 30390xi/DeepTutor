@@ -46,6 +46,7 @@ class EmbeddingSourceRecord:
 class ResumeCandidate:
     storage_dir: Path
     completed_keys: frozenset[str]
+    index: Any
 
 
 def _storage_path_from_version_entry(entry: dict[str, Any]) -> Path | None:
@@ -132,9 +133,16 @@ def resolve_resumable_rebuild_dir(
         candidate.resolve().relative_to(kb_dir.resolve())
     except (OSError, ValueError):
         return None
-    if candidate.parent.resolve() != kb_dir.resolve() or not _is_unpublished_building_dir(
-        candidate
+    if (
+        candidate.parent.resolve() != kb_dir.resolve()
+        or not candidate.name.startswith("version-")
+        or (candidate / "meta.json").exists()
     ):
+        return None
+    # A crash can occur after moving the candidate aside but before publishing
+    # its replacement. Restore that checkpoint before testing its build marker.
+    _recover_candidate_swap(candidate)
+    if not _is_unpublished_building_dir(candidate):
         return None
 
     payload = _read_embedding_checkpoint(candidate)
@@ -215,7 +223,9 @@ def _resume_candidate(
     for key in completed_keys:
         if str(source_records[key].path.resolve()) not in indexed_paths:
             return None
-    return ResumeCandidate(storage_dir=storage_dir, completed_keys=frozenset(completed_keys))
+    return ResumeCandidate(
+        storage_dir=storage_dir, completed_keys=frozenset(completed_keys), index=index
+    )
 
 
 def _fsync_directory(path: Path) -> None:
@@ -342,7 +352,7 @@ def create_resumable_index(
 
     _recover_candidate_swap(storage_dir)
     resume = _resume_candidate(storage_dir, source_records)
-    index: Any = None
+    index: Any = resume.index if resume else None
     completed_keys = set(resume.completed_keys if resume else set())
     if resume is not None and checkpoint_callback is not None:
         for key in sorted(completed_keys):
