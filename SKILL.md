@@ -23,7 +23,7 @@ Use this skill when the user wants to:
 ## Prerequisites
 
 - Python 3.11–3.14
-- For the upcoming modular release, `pip install "deeptutor[full]"` installs the packaged Web app; bare `deeptutor` (or the `deeptutor-cli` compatibility alias) installs core CLI/SDK only. Before publication, use source or local wheels. Source installs require `pip install -r requirements/full.txt` followed by `pip install -e . --no-deps`; add Node.js 22 LTS and `npm ci --legacy-peer-deps` in `web/` for the Web UI. See the setup guide for upgrading from 1.6.15 without changing the runtime home.
+- For the 1.7.0 modular release, `pip install "deeptutor[full]"` installs the packaged Web app; bare `deeptutor` (or the `deeptutor-cli` compatibility alias) installs core CLI/SDK only. For development, use source or local wheels. Source installs require `pip install -r requirements/full.txt` followed by `pip install -e . --no-deps`; add Node.js 22 LTS and `npm ci --legacy-peer-deps` in `web/` for the Web UI. See the setup guide for upgrading from 1.6.15 without changing the runtime home.
 - Run `deeptutor init` for first-time interactive setup. It walks a guided wizard (ports → LLM → embedding → search → review) and writes the same settings as the Web Settings page under `data/user/settings`. Add `--cli` to skip the ports step for CLI-only use, or `--home <path>` to target a specific workspace.
 
 ## Agent Setup
@@ -60,7 +60,7 @@ their owning modules. Check `deeptutor module list` for installed/enabled/ready
 states and `deeptutor plugin list` for registered capabilities and tools. Stop
 DeepTutor before changing modules. Source checkouts use `module enable/disable`
 and `python scripts/install_extras.py <extra>` for optional dependencies;
-wheel installations also support `module install/uninstall`. Before publication,
+wheel installations also support `module install/uninstall`. For local builds,
 pass `--wheelhouse /path/to/wheels` to `module install` (see [Modules](docs-for-dev/MODULES.md)).
 
 ### Chat & Capabilities

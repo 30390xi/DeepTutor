@@ -92,7 +92,7 @@ prompts are i18n'd via `capabilities/prompts/{en,zh}/<name>.yaml`.
 python -m pip install -r requirements/full.txt
 python -m pip install -e . --no-deps
 
-# Alternative after 1.7.0 publication: choose one in a separate wheel environment
+# Alternative in 1.7.0: choose one in a separate wheel environment
 python -m pip install "deeptutor[full]"  # Full app, CLI + Web/API
 python -m pip install deeptutor         # Core CLI/SDK (chat + ask_questions)
 python -m pip install deeptutor-cli     # Compatibility alias for core
@@ -146,10 +146,10 @@ setup, but still need the full Python dependencies. Follow
 
 ## Dependency Layers
 
-The current `dev` layout is modular; published 1.6.15 packages still use the
+The 1.7.0 layout is modular; 1.6.15 and earlier packages use the
 previous layout. Core owns the CLI, SDK and shared runtime; feature wheels must
 match its version. `deeptutor-cli` is a metadata-only compatibility alias.
-Before publication, use source or [local wheels](docs-for-dev/MODULES.md).
+For development, use source or [local wheels](docs-for-dev/MODULES.md).
 
 Module manifests own dependency groups; generated requirements files support
 source, Docker and CI installs. `pyproject.toml` stores extra templates under

@@ -7,9 +7,9 @@ is a compatibility metapackage: it depends on core and owns no Python files or
 console scripts. `deeptutor[full]` is an installation profile, not a permanent
 metapackage that would prevent removing individual applications.
 
-These package changes are prepared in source; the new distribution family must
-be published together at the next release. Do not expect the currently published
-1.6.15 package to have these boundaries. Local wheel builds are supported now.
+The modular distribution family starts with 1.7.0 and must be published together
+at each release. The 1.6.15 and earlier packages use the previous layout and do
+not have these boundaries. Local wheel builds are also supported.
 
 ## Source checkout
 

@@ -1,7 +1,6 @@
 <div align="center">
 
 <p align="center"><img src="assets/figs/logo/color-full.png" alt="DeepTutor" width="480"></p>
-
 # DeepTutor: Lifelong Personalized Tutoring
 
 <p align="center">
@@ -48,10 +47,12 @@
 
 ### 📦 Releases
 
-> **[2026.10.19]** [v1.6.15](https://github.com/HKUDS/DeepTutor/releases/tag/v1.6.15) — Reviewed learning-path changes, grouped assessments, bounded tutoring memory, reliable chat recovery, sturdier parsing, retrieval comparisons, and native Gemini speech.
+> **[2026.10.28]** [v1.7.0](https://github.com/HKUDS/DeepTutor/releases/tag/v1.7.0) — Modular installation, a refreshed learning workspace, block notebooks with Dito, narrated video lessons, resumable embedding checkpoints, and more reliable tutoring.
 
 <details>
 <summary><b>Past releases (more than 1 week ago)</b></summary>
+
+> **[2026.10.19]** [v1.6.15](https://github.com/HKUDS/DeepTutor/releases/tag/v1.6.15) — Reviewed learning-path changes, grouped assessments, bounded tutoring memory, reliable chat recovery, sturdier parsing, retrieval comparisons, and native Gemini speech.
 
 > **[2026.10.8]** [v1.6.14](https://github.com/HKUDS/DeepTutor/releases/tag/v1.6.14) — Original-source visual practice, recoverable indexing, unified video Reading, scientific research tools, managed plugins, a learning journal, and provider setup improvements.
 
@@ -223,7 +224,7 @@
 
 </details>
 
-> ✨ **v1.6.15 is live.** `pip install -U deeptutor` picks up the latest stable release.
+> ✨ **v1.7.0 is live.** `pip install -U "deeptutor[full]"` installs the full Web app and CLI; bare `deeptutor` installs core only. See the upgrade steps below for legacy CLI installations.
 
 ### 📰 News
 
@@ -241,7 +242,7 @@ DeepTutor is an agent-native learning workspace that connects tutoring, problem 
 
 - **One runtime for every mode** — Chat, Ask Questions, Quiz, Research, Visualize, Solve, Mastery Path, Immersive Reading, and Audio Overview share one capability runtime and session context while keeping purpose-built loops and pipelines.
 - **Task Board** — Track study tasks in To do, In progress, and Done, with notes, drag-and-drop or keyboard-accessible move buttons, and an archive you can restore from. Cards stay in the current workspace and follow the existing appearance and language settings; no model configuration is required.
-- **Connected learning context** — Knowledge bases, books, Co-Writer drafts, notebooks, question banks, personas, and Memory can be reused across the workflows that support them, subject to account grants and learning policies.
+- **Connected learning context** — Knowledge bases, books, Learning notebook pages, Favorites, question banks, personas, and Memory can be reused across the workflows that support them, subject to account grants and learning policies.
 - **Immersive video learning** — add YouTube or Bilibili links to Reading for native playback, transcript search, timestamp-grounded tutoring, saved notes, and resumable progress; YouTube captions and browsing can use an administrator-configured Invidious instance.
 - **Subagents and Partners** — from Chat, consult a live agent harness (Claude Code, Codex, Grok CLI, Antigravity, Kimi, opencode, MiMo, Hermes, OpenClaw, or DeepSeek) or a Partner, import past conversations, and run persistent IM companions on the same brain.
 - **Multi-engine knowledge** — versioned RAG libraries across LlamaIndex, PageIndex, GraphRAG, LightRAG, a remote LightRAG Server, a self-hosted WeKnora knowledge base, a Tencent IMA or MarginNote 4 library, a connected Kiwix ZIM archive, or a linked Obsidian vault, with pluggable document parsing. See [native LightRAG role models](deeptutor/services/rag/pipelines/lightrag/README.md) for independent extraction, query and vision settings, default-only creation and confirmed rebuilds.
@@ -324,7 +325,7 @@ shown as **best effort** in Workspace settings.
 <details>
 <summary><b>Option 1 — Install From PyPI</b> · full local Web app + CLI, no clone required</summary>
 
-**Upcoming 1.7.0 modular release:** use `deeptutor[full]` for the Web app and CLI, or `deeptutor` for core chat. The commands below apply after publication; current PyPI 1.6.15 uses the previous layout. To try current `dev`, use the source instructions below or build [local wheels](docs-for-dev/MODULES.md). Needs **Python 3.11–3.14** and a **Node.js 20+** runtime on PATH (the packaged Next.js standalone server is spawned by `deeptutor start`).
+**1.7.0 modular installation:** use `deeptutor[full]` for the Web app and CLI, or `deeptutor` for core chat. Feature modules must match the core version; 1.6.15 and earlier use the previous package layout. To develop against current `dev`, use the source instructions below or build [local wheels](docs-for-dev/MODULES.md). Needs **Python 3.11–3.14** and a **Node.js 20+** runtime on PATH (the packaged Next.js standalone server is spawned by `deeptutor start`).
 
 ```bash
 mkdir -p my-deeptutor && cd my-deeptutor
@@ -335,7 +336,7 @@ deeptutor start    # starts backend + frontend; keep the terminal open
 
 `deeptutor init` prompts for backend port (default `8001`), frontend port (default `3782`), LLM provider / base URL / API key / model, an optional embedding provider for Knowledge Base / RAG, and an optional search provider for Web Search.
 
-**Upgrading to the upcoming 1.7.0:** stop the app and back up your runtime home. After publication, use `python -m pip install --upgrade "deeptutor[full]==1.7.0"`, then `python -m pip check` and `deeptutor module list`. If the legacy `deeptutor-cli` package is installed, first run `python -m pip uninstall deeptutor-cli`, then run the upgrade command (optionally adding `deeptutor-cli==1.7.0`). The old CLI owns shared Python files, so upgrading it in the same transaction can delete the new core. Uninstalling the package leaves your runtime-home data intact. Keep the same `DEEPTUTOR_HOME` and existing settings. In 1.7.0, bare `pip install -U deeptutor` selects core only; use `[full]` to request the full-app installation profile. Before publication, follow the [local wheel upgrade instructions](docs-for-dev/MODULES.md#upgrade-from-1615).
+**Upgrading to 1.7.0:** stop the app and back up your runtime home. Use `python -m pip install --upgrade "deeptutor[full]==1.7.0"`, then `python -m pip check` and `deeptutor module list`. If the legacy `deeptutor-cli` package is installed, first run `python -m pip uninstall deeptutor-cli`, then run the upgrade command (optionally adding `deeptutor-cli==1.7.0`). The old CLI owns shared Python files, so upgrading it in the same transaction can delete the new core. Uninstalling the package leaves your runtime-home data intact. Keep the same `DEEPTUTOR_HOME` and existing settings. In 1.7.0, bare `pip install -U deeptutor` selects core only; use `[full]` to request the full-app installation profile. For locally built packages, follow the [local wheel upgrade instructions](docs-for-dev/MODULES.md#upgrade-from-1615).
 
 After `deeptutor start`, open the frontend URL printed in the terminal — by default [http://127.0.0.1:3782](http://127.0.0.1:3782). Press `Ctrl+C` in that terminal to stop both backend and frontend. Skipping `deeptutor init` is fine for a quick trial; the app boots with default ports and empty model settings, configure them later in **Settings → Providers** and **Language models**.
 
@@ -515,7 +516,7 @@ Docker Desktop (macOS/Windows) usually resolves `host.docker.internal` without `
 <details>
 <summary><b>Option 4 — CLI Only</b> · no Web UI, from a source checkout</summary>
 
-When you do not need the Web UI, use the CLI from this checkout and skip Node/npm. Source exposes all checked-in modules and needs their Python dependencies. For a minimal installation after the modular release is published, use the core `deeptutor` wheel and add feature modules separately.
+When you do not need the Web UI, use the CLI from this checkout and skip Node/npm. Source exposes all checked-in modules and needs their Python dependencies. For a minimal installation with the 1.7.0 modular release, use the core `deeptutor` wheel and add feature modules separately.
 
 ```bash
 git clone --branch dev https://github.com/HKUDS/DeepTutor.git
@@ -685,7 +686,6 @@ If an answer loses an earlier constraint, cites weak evidence, or disagrees with
 <img src="assets/figs/web-dev/overview.png" alt="DeepTutor Home and workspace navigation" width="900">
 </div>
 
-> Screenshots show the current dev interface with fictional demonstration materials, except the Memory Graph supplied by the project maintainer.
 
 <details>
 <summary><b>🏗️ System architecture</b></summary>
@@ -711,7 +711,7 @@ The tutor calls tools as needed and can pause to ask clarifying questions. **Cus
 <img src="assets/figs/system/chat-agent-loop.svg" alt="DeepTutor chat agent loop" width="900">
 </div>
 
-User-toggleable tools are `brainstorm`, `web_search`, `paper_search`, `zotero_search`, `reason`, and `geogebra_analysis` — plus `imagegen` and `videogen` once you configure the matching generation model. Contextual tools such as `rag`, `kb_files`, `knowledge_frontier`, `read_source`, `read_memory`, `write_memory`, `read_skill`, `load_tools`, `exec`, `web_fetch`, `ask_user`, `list_notebook`, `write_note`, `question_bank`, `github`, `consult_subagent`, `workspace_list`, `workspace_read`, `workspace_search`, `workspace_present`, and `workspace_export` mount automatically when the turn has the right context.
+User-toggleable tools are `brainstorm`, `web_search`, `paper_search`, `zotero_search`, `reason`, and `geogebra_analysis` — plus `imagegen` and `videogen` once you configure the matching generation model. Contextual tools such as `rag`, `kb_files`, `knowledge_frontier`, `read_source`, `read_memory`, `write_memory`, `read_skill`, `load_tools`, `exec`, `web_fetch`, `ask_user`, `list_favorites`, `save_favorite`, `write_note`, `search_notes`, `question_bank`, `github`, `consult_subagent`, `workspace_list`, `workspace_read`, `workspace_search`, `workspace_present`, and `workspace_export` mount automatically when the turn has the right context.
 
 Context comes in two kinds: **sticky session context** (capability, workspace or course, tools, knowledge bases, persona, model, and Reading / Mastery state) persists across turns; **one-time references** (files, chat history, books, reading sections, notebooks, selected question-bank entries, imported agents) come from the `+` menu for a single turn. The voice button only transcribes the current message.
 
@@ -726,13 +726,13 @@ With the full profile, Home keeps **Chat**, **Ask Questions**, **Quiz**, **Visua
 <img src="assets/figs/web-dev/partners.png" alt="DeepTutor partners workspace" width="900">
 </div>
 
-Partners are persistent companions with their own soul, model policy, library, memory, and channels. They are not a separate bot engine: every inbound web or IM message becomes a normal `ChatOrchestrator` turn inside a partner-scoped workspace. A partner is "a chat that has a personality and a phone number."
+Partners are persistent companions with their own soul, model policy, library, memory, and channels. They are not a separate bot engine: every inbound web or IM message becomes a normal `ChatOrchestrator` turn inside its private or bound content workspace. A partner is "a chat that has a personality and a phone number."
 
 <div align="center">
 <img src="assets/figs/system/partners-architecture.png" alt="DeepTutor partners architecture" width="900">
 </div>
 
-Each partner has a `SOUL.md`, model selection, channels, tool policy, and assigned library. Its library either copies knowledge bases, skills, and notebooks into `data/partners/<id>/workspace/`, or stays linked to an existing workspace's files and resources; soul, conversations, and Partner memory remain separate. Authenticated non-admin users keep private partner sessions and relationship memory while the partner reads their personal memory read-only; admin, group, and unbound traffic use the shared partner scope.
+Each partner has a `SOUL.md`, model selection, channels, tool policy, and assigned library. Its library either copies knowledge bases, skills, and Favorites collections into `data/partners/<id>/workspace/`, or stays linked to an existing workspace's files and resources; soul, conversations, and Partner memory remain separate. Authenticated non-admin users keep private partner sessions and relationship memory while the partner reads their personal memory read-only; admin, group, and unbound traffic use the shared partner scope.
 
 <div align="center">
 <img src="assets/figs/web-dev/partners-channels.png" alt="Per-partner IM channel configuration" width="900">
@@ -810,7 +810,7 @@ Discuss a passage or block with **Dito**: ask for an explanation, example, rewri
 <img src="assets/figs/web-dev/books.png" alt="DeepTutor book library" width="900">
 </div>
 
-Book turns selected sources into an interactive **living book** — not a static PDF, but a reading environment built from typed blocks. A book can start from knowledge bases, notebooks, question banks, or chat history; the creation flow proposes a chapter outline before content is generated, so you review the shape instead of accepting a blind one-shot output.
+Book turns selected sources into an interactive **living book** — not a static PDF, but a reading environment built from typed blocks. A book can start from knowledge bases, Favorites, question banks, or chat history; the creation flow proposes a chapter outline before content is generated, so you review the shape instead of accepting a blind one-shot output.
 
 <p align="center">
 <img src="assets/figs/web-dev/book-quiz.png" alt="Book quiz block" width="31%">
@@ -831,7 +831,7 @@ Each chapter compiles into editable typed blocks — text, callouts, quizzes, fl
 <img src="assets/figs/web-dev/knowledge.png" alt="DeepTutor Knowledge Center" width="900">
 </div>
 
-Knowledge bases are the document collections behind RAG — they ground Chat turns, Co-Writer edits, Book generation, and Partner conversations. What's distinctive is a **choice of retrieval engines**: **LlamaIndex** (the default, hybrid vector + BM25 with optional cross-encoder reranking and exact-flat or HNSW FAISS indexes), **PageIndex** (reasoning retrieval with page-level citations, hosted or self-hosted OSS), **GraphRAG** and **LightRAG** (knowledge-graph retrieval), **LightRAG Server** (retrieval offloaded to an external LightRAG instance you connect over HTTP), **WeKnora** (retrieval from a knowledge base in your self-hosted deployment, without a local index or document copy), **Tencent IMA** (a library you curate in IMA — searched, browsed, and written back to over its OpenAPI), **MarginNote 4** (your MN4 study data — documents, excerpts, mind-map cards and the links between them — pushed in by the app's Add-on and navigated with dedicated tools), **Kiwix** (a searchable ZIM archive served over HTTP without local indexing), or a linked **Obsidian** vault the tutor reads and writes in place. Each KB is bound to one engine.
+Knowledge bases are the document collections behind RAG — they ground Chat turns, Learning notebook edits, Book generation, and Partner conversations. What's distinctive is a **choice of retrieval engines**: **LlamaIndex** (the default, hybrid vector + BM25 with optional cross-encoder reranking and exact-flat or HNSW FAISS indexes), **PageIndex** (reasoning retrieval with page-level citations, hosted or self-hosted OSS), **GraphRAG** and **LightRAG** (knowledge-graph retrieval), **LightRAG Server** (retrieval offloaded to an external LightRAG instance you connect over HTTP), **WeKnora** (retrieval from a knowledge base in your self-hosted deployment, without a local index or document copy), **Tencent IMA** (a library you curate in IMA — searched, browsed, and written back to over its OpenAPI), **MarginNote 4** (your MN4 study data — documents, excerpts, mind-map cards and the links between them — pushed in by the app's Add-on and navigated with dedicated tools), **Kiwix** (a searchable ZIM archive served over HTTP without local indexing), or a linked **Obsidian** vault the tutor reads and writes in place. Each KB is bound to one engine.
 
 <div align="center">
 <img src="assets/figs/web-dev/knowledge-create.png" alt="Create a knowledge base" width="900">
@@ -1077,9 +1077,9 @@ deeptutor chat                              # restart the CLI; use start for an 
 
 Examples: `solve`, `research`, `questions`, `knowledge`, `parsing`, `reading`, `mastery`, `books`, `memory`, `notebook`, and `partners`. Dependents block removal; core cannot be removed through the module command. Disabling or uninstalling preserves settings, conversations, knowledge bases, and generated files. Shared third-party dependencies are retained.
 
-**In the browser:** **Settings → Runtime → Modules** shows module status and the corresponding terminal commands. Package changes require a stopped environment and are performed in the CLI. **Chat → Customize page** and **Learning → New learning → Customize page** change personal page choices immediately; hiding an entry does not uninstall its module or revoke access.
+**In the browser:** **Settings → Runtime status → Modules** shows module status and the corresponding terminal commands. Package changes require a stopped environment and are performed in the CLI. **Chat → Customize page** and **Learning → New learning → Customize page** change personal page choices immediately; hiding an entry does not uninstall its module or revoke access.
 
-The new package family has not been published to PyPI yet. For local wheel installation, pass `--wheelhouse /path/to/wheels` to `module install`. See [module installation and source development](docs-for-dev/MODULES.md) for building the wheels and deployment details.
+The 1.7.0 package family uses matching versions across core and feature wheels. For local wheel installation, pass `--wheelhouse /path/to/wheels` to `module install`. See [module installation and source development](docs-for-dev/MODULES.md) for building the wheels and deployment details.
 
 </details>
 

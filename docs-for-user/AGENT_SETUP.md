@@ -15,7 +15,7 @@ waiting:
 - Installation folder and any existing DeepTutor checkout.
 - Full Web app or CLI-only; default to the full app for the README setup prompt.
 - Target version or branch. This guide describes current `dev`, including the
-  upcoming 1.7.0 modular layout; use matching documentation for a stable release.
+  1.7.0 modular layout; use matching documentation for an older stable release.
 - LLM provider, exact model ID, and any custom/local endpoint.
 - Credential source: an existing environment variable, a private local file
   the user identifies, or provider login. Do not ask for keys in chat.
@@ -56,14 +56,14 @@ dependencies. In the 1.7.0 package layout, `deeptutor` provides the minimal CLI;
 `deeptutor-cli` is a compatibility alias for the same core. Add feature modules
 as needed; this is not the layout of the published 1.6.15 packages.
 
-The upcoming 1.7.0 package layout uses `python -m pip install "deeptutor[full]"`
+The 1.7.0 package layout uses `python -m pip install "deeptutor[full]"`
 for the complete Web app. Bare `deeptutor` contains core chat, CLI and SDK;
-it does not contain the server or Web assets. Until the split packages are
-published, use the source flow above or the local wheels described in
+it does not contain the server or Web assets. For development builds,
+use the source flow above or the local wheels described in
 [Modules](../docs-for-dev/MODULES.md).
 
 When upgrading from 1.6.15, stop DeepTutor, back up the existing runtime home,
-and keep using the same `DEEPTUTOR_HOME`. Once 1.7.0 is published, run
+and keep using the same `DEEPTUTOR_HOME`. To install 1.7.0, run
 `python -m pip install --upgrade "deeptutor[full]==1.7.0"`, then
 `python -m pip check` and `deeptutor module list` before restarting.
 If the legacy `deeptutor-cli` package is installed, uninstall it **before**
