@@ -35,7 +35,8 @@ cd DeepTutor
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -e .
+python -m pip install -r requirements/full.txt
+python -m pip install -e . --no-deps
 cd web
 npm ci --legacy-peer-deps
 cd ..
@@ -47,12 +48,32 @@ Windows, use a supported `py -3.X` and `.venv\Scripts\Activate.ps1`. If shell
 state does not persist between tool calls, invoke the environment's Python
 and `deeptutor` by absolute path and pass environment variables to each process.
 
-For CLI-only, replace the editable install with
-`python -m pip install -e ./packaging/deeptutor-cli` and skip Node/npm. CLI-only
-is currently installed from source. A packaged full app can use
-`python -m pip install deeptutor` without cloning; it includes Web assets. Check
-that installed version's `--help`: the non-interactive commands below are
-available in the checkout containing this guide and releases that include it.
+For CLI use from source, keep the Python installation above and skip Node/npm.
+A source tree exposes all checked-in modules, so it still needs their Python
+dependencies. For a minimal packaged CLI, install `deeptutor`; `deeptutor-cli`
+is a compatibility alias for the same core. Add feature modules as needed.
+
+The upcoming 1.7.0 package layout uses `python -m pip install "deeptutor[full]"`
+for the complete Web app. Bare `deeptutor` contains core chat, CLI and SDK;
+it does not contain the server or Web assets. Until the split packages are
+published, use the source flow above or the local wheels described in
+[Modules](../docs-for-dev/MODULES.md).
+
+When upgrading from 1.6.15, stop DeepTutor, back up the existing runtime home,
+and keep using the same `DEEPTUTOR_HOME`. Once 1.7.0 is published, run
+`python -m pip install --upgrade "deeptutor[full]==1.7.0"`, then
+`python -m pip check` and `deeptutor module list` before restarting.
+If the legacy `deeptutor-cli` package is installed, uninstall it **before**
+installing the new packages: `python -m pip uninstall deeptutor-cli`. Its old
+wheel owns shared Python files, and a one-command upgrade can remove the newly
+installed core. This does not remove runtime-home data. You can then add
+`deeptutor-cli==1.7.0` to the installation command for the new metadata-only
+compatibility alias. For CLI-only migration, install `deeptutor-cli==1.7.0`
+after removing the old CLI, and add any feature modules you need.
+
+Upgrading bare `deeptutor` no longer installs the full app. Do not reset
+settings or change the runtime-home directory during this upgrade.
+
 
 ## 3. Initialize without prompts
 

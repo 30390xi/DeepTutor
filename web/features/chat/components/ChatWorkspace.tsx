@@ -48,7 +48,7 @@ import StarterSuggestions from "@/components/chat/home/StarterSuggestions";
 // clicking a chip becomes a single CSS class flip, no chunk fetch + double
 // render. The heavy renderers inside still load lazily.
 import FilePreviewDrawer from "@/components/chat/preview/FilePreviewDrawer";
-import { buildSessionActivity } from "@/components/chat/home/SessionActivityPanel";
+import { buildSessionActivity } from "@/lib/session-activity";
 import Tooltip from "@/shared/ui/Tooltip";
 import SessionViewerPanel, {
   type SessionViewerPanelHandle,
@@ -3092,4 +3092,3 @@ function SubagentTabWatcher({
   }, [messages, viewerPanelRef]);
   return null;
 }
-

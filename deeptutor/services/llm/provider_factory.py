@@ -81,6 +81,7 @@ def _build_runtime_provider(
         # These profiles attach SDK-specific prompt caching or model rewrites.
         if spec and (spec.supports_prompt_caching or spec.strip_model_prefix):
             native = False
+    provider: LLMProvider
     if native:
         from deeptutor.services.llm.provider_core.typescript_provider import TypeScriptProvider
 

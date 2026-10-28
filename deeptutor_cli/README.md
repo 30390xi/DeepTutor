@@ -7,28 +7,32 @@ Agent-first 的命令行界面。两条核心路径：
 
 ## 安装
 
+以下描述即将发布的 1.7.0 模块化布局；拆分包发布前请使用源码或 [本地 wheels](../docs-for-dev/MODULES.md)。发布后，`pip install deeptutor` 安装最小聊天 CLI，`deeptutor-cli` 是它的兼容别名，RAG 等功能按模块添加。
+
 ```bash
-# 仅 CLI（本地源码安装，含 RAG / 文档解析 / 各家 LLM provider SDK）
+# 从源码使用 CLI（包含各功能模块的 Python 依赖，不安装前端）
 git clone https://github.com/HKUDS/DeepTutor.git
 cd DeepTutor
 python3 -m venv .venv-cli
 source .venv-cli/bin/activate
 python -m pip install --upgrade pip
-python -m pip install -e ./packaging/deeptutor-cli
+python -m pip install -r requirements/full.txt
+python -m pip install -e . --no-deps
 deeptutor init --cli
 
 # CLI + Web/API 服务
-pip install deeptutor
+pip install "deeptutor[full]"
 deeptutor init
 
 # 源码开发
-pip install -e .
+pip install -r requirements/full.txt
+pip install -e . --no-deps
 deeptutor init
 
 # 可选附加组件
-pip install -e ".[partners]"       # Partners 渠道 SDK + MCP 客户端
-pip install -e ".[math-animator]"  # 数学动画（另需系统 LaTeX/ffmpeg）
-pip install -e ".[all]"            # 全部依赖（含开发工具）
+python scripts/install_extras.py partners       # Partners 渠道 SDK + MCP 客户端
+python scripts/install_extras.py math-animator  # 数学动画（另需系统 LaTeX/ffmpeg）
+python scripts/install_extras.py all            # 全部依赖（含开发工具）
 ```
 
 `deeptutor init --cli` 和普通 `deeptutor init` 使用同一套 `data/user/settings/` 配置目录；区别是 `--cli` 不询问 Web 后端/前端端口，仍会创建 `system.json`、`auth.json`、`integrations.json`、`model_catalog.json`、`main.yaml` 和 `agents.yaml`，并继续询问 LLM 配置。Embedding 配置默认跳过；如果要使用 `deeptutor kb ...` 或 RAG，请在向导里选择配置 embedding，或稍后编辑 `data/user/settings/model_catalog.json`。
@@ -39,11 +43,16 @@ Windows PowerShell 可使用：
 py -3.11 -m venv .venv-cli
 .\.venv-cli\Scripts\Activate.ps1
 python -m pip install --upgrade pip
-python -m pip install -e ./packaging/deeptutor-cli
+python -m pip install -r requirements/full.txt
+python -m pip install -e . --no-deps
 deeptutor init --cli
 ```
 
 ---
+
+## 从 1.6.15 CLI 升级
+
+停止程序并备份 runtime home 后，先运行 `python -m pip uninstall deeptutor-cli`，再安装 `deeptutor-cli==1.7.0`（完整 Web 应用安装 `deeptutor[full]==1.7.0`）。旧 CLI 包拥有共享代码，直接升级会在卸载旧包时删掉新核心；先卸载可避免这一冲突，且不会删除用户数据。保持原 `DEEPTUTOR_HOME`，安装后运行 `python -m pip check` 和 `deeptutor module list`。拆分包发布前使用本地 wheelhouse 的 `--find-links` 参数。
 
 ## `run` — 执行 Capability
 
@@ -161,7 +170,7 @@ deeptutor chat [options]
 deeptutor serve [--host 0.0.0.0] [--port 8001] [--reload]
 ```
 
-`deeptutor serve` 需要完整 Web/API 依赖；如果你是通过本地 `./packaging/deeptutor-cli` 安装的 CLI-only 包，请先卸载本地 CLI 包并切换到 `pip install -U deeptutor`。
+`deeptutor serve` 需要 server 模块。wheel 安装可在停止服务后运行 `deeptutor module install server`；完整 Web 应用使用 `pip install -U "deeptutor[full]"`。源码安装使用 `requirements/full.txt`。
 
 ---
 
