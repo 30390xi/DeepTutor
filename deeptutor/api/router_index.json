@@ -1,5 +1,5 @@
 {
-  "fingerprint": "83363f052eafc8a39b8d91e575ee819a8aa01b7b86d06a19167c718f5abcf757",
+  "fingerprint": "6d90ec2c45a1d9f3f152c7577772bcdd05ea8b8f2b22a7dcca57e0d09db0097b",
   "routers": {
     "deeptutor.api.routers.auth:router": [
       {
@@ -3830,6 +3830,30 @@
       {
         "path": "/chat-response-timeout",
         "name": "update_chat_response_timeout",
+        "kind": "http",
+        "methods": [
+          "PUT"
+        ]
+      },
+      {
+        "path": "/page-customization",
+        "name": "get_page_customization",
+        "kind": "http",
+        "methods": [
+          "GET"
+        ]
+      },
+      {
+        "path": "/page-customization/chat",
+        "name": "update_chat_page_customization",
+        "kind": "http",
+        "methods": [
+          "PUT"
+        ]
+      },
+      {
+        "path": "/page-customization/learning",
+        "name": "update_learning_page_customization",
         "kind": "http",
         "methods": [
           "PUT"

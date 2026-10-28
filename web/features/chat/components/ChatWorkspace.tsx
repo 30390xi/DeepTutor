@@ -42,6 +42,7 @@ import {
   SESSION_LOAD_TIMEOUT_MS,
   shouldSurfaceLoadFailure,
 } from "@/lib/session-load";
+import { PageCustomizeButton } from "@/components/customization/PageCustomizeButton";
 import StarterSuggestions from "@/components/chat/home/StarterSuggestions";
 // Imported eagerly so the drawer shell is always mounted off-screen —
 // clicking a chip becomes a single CSS class flip, no chunk fetch + double
@@ -2558,6 +2559,7 @@ export default function ChatWorkspace() {
                 ) : null}
               </PageBarSlot>
               <PageBarSlot name="actions" className="flex shrink-0 items-center gap-0.5">
+                <PageCustomizeButton page="chat" capabilities={visibleCapabilities} compact />
                 <HeaderActionButton
                   onClick={() => viewerPanelRef.current?.openMarkdownNoteTab()}
                   icon={NotebookPen}
@@ -2768,6 +2770,7 @@ export default function ChatWorkspace() {
                 </div>
               ) : null}
               <ChatComposer
+                customizable
                 composerRef={composerRef}
                 capMenuRef={capMenuRef}
                 capBtnRef={capBtnRef}
