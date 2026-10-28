@@ -54,6 +54,15 @@ is not proof of readiness: report actual verification and any unfinished step.
 
 ## Commands
 
+Examples below cover the full installation and optional add-ons. Core provides
+`chat` and `ask_questions`; other capabilities and resource commands require
+their owning modules. Check `deeptutor module list` for installed/enabled/ready
+states and `deeptutor plugin list` for registered capabilities and tools. Stop
+DeepTutor before changing modules. Source checkouts use `module enable/disable`
+and `python scripts/install_extras.py <extra>` for optional dependencies;
+wheel installations also support `module install/uninstall`. Before publication,
+pass `--wheelhouse /path/to/wheels` to `module install` (see [Modules](docs-for-dev/MODULES.md)).
+
 ### Chat & Capabilities
 
 ```bash
@@ -86,7 +95,7 @@ deeptutor run math_animator "Visualize a Fourier series"
 
 `deeptutor chat` accepts the same `--session / --tool / --kb / --notebook-ref / --history-ref / --language / --config / --config-json` options, plus `--capability/-c <name>` to set the initial capability.
 
-**Tools** for `--tool` / `-t`: user-toggleable tools are `brainstorm`, `web_search`, `paper_search`, `reason`, `geogebra_analysis`, `imagegen`, and `videogen`. Context-gated tools (`rag`, `exec`, memory, notebook, …) mount according to context/capability rules; `--tool` does not bypass those rules. Mount a knowledge base with `--kb` for RAG. Run `deeptutor plugin list` for the registered set.
+**Tools** for `--tool` / `-t`: user-toggleable tools are `brainstorm`, `web_search`, `paper_search`, `zotero_search`, `reason`, `geogebra_analysis`, `imagegen`, and `videogen`. Context-gated tools (`rag`, `exec`, memory, notebook, …) mount according to context/capability rules; `--tool` does not bypass those rules. Mount a knowledge base with `--kb` for RAG; Knowledge Frontier also needs the research module. Run `deeptutor plugin list` for the registered set.
 
 ### Knowledge Bases
 
@@ -185,6 +194,7 @@ deeptutor config providers                          # Supported setup providers 
 deeptutor config apply <file.json> [--check] [--home <path>] # Apply/validate setup JSON
 deeptutor plugin list                               # List registered tools and capabilities
 deeptutor plugin info <name>                         # Show a tool/capability's schema + availability
+deeptutor module list                               # Inspect installed / enabled / ready states
 deeptutor serve [--host 0.0.0.0] [--port 8001] [--reload]   # Start the API server
 deeptutor start [--home <path>] [--detach] [--no-browser] # Launch backend + frontend
 deeptutor stop [--home <path>]                      # Stop a detached launcher
@@ -214,12 +224,19 @@ Inside `deeptutor chat`, use these:
 
 ## Typical Workflows
 
-**First-time setup:**
+**First-time source setup (after preparing the environment in the setup guide):**
 ```bash
 cd DeepTutor
-pip install -e .
+python -m pip install -r requirements/full.txt
+python -m pip install -e . --no-deps
+python -m pip check
+deeptutor module list
 deeptutor init        # Interactive guided setup (add --cli for CLI-only)
 ```
+
+For the Web UI, install Node.js 22 LTS and run `npm ci --legacy-peer-deps`
+in `web/` before starting. CLI-only users can skip frontend setup. Follow the
+setup guide's readiness checks; initialization alone does not verify the model.
 
 **Daily learning:**
 ```bash

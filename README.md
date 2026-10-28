@@ -257,8 +257,8 @@ DeepTutor is an agent-native learning workspace that connects tutoring, problem 
 Copy this prompt into your terminal-capable AI agent (such as Codex or Claude Code):
 
 ```text
-Help me install and configure DeepTutor locally from https://github.com/HKUDS/DeepTutor.
-Clone the repository, or reuse my existing checkout, and read SKILL.md and
+Help me install and configure the current dev version of DeepTutor from https://github.com/HKUDS/DeepTutor.
+Clone the dev branch, or inspect and reuse my existing checkout, and read SKILL.md and
 docs-for-user/AGENT_SETUP.md first. Follow that guide to prepare the environment,
 configure my model provider, verify the setup, and start the Web app.
 Ask me for any missing provider, model, or credential-source information;
