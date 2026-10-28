@@ -11,6 +11,9 @@ data/
 # Local development documents; public guides live in docs-for-user/.
 /docs/
 /design-qa.md
+# Local development screenshots, acceptance snapshots, and task reports.
+/artifacts/
+/.github/tdd/
 /site/
 .claude
 .agents/

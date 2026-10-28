@@ -118,6 +118,8 @@ run_code_workspace/
 # Development and Testing
 # ============================================
 develop/
+artifacts/
+.github/tdd/
 .claude/
 .agents/
 .playwright-cli/
