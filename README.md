@@ -324,7 +324,7 @@ shown as **best effort** in Workspace settings.
 <details>
 <summary><b>Option 1 — Install From PyPI</b> · full local Web app + CLI, no clone required</summary>
 
-Use `deeptutor[full]` for the Web app and CLI, or `deeptutor` for core chat. Needs **Python 3.11–3.14** and a **Node.js 20+** runtime on PATH (the packaged Next.js standalone server is spawned by `deeptutor start`).
+**Upcoming modular release:** use `deeptutor[full]` for the Web app and CLI, or `deeptutor` for core chat. The split packages are not yet published; current PyPI 1.6.15 uses the previous layout. To try modular installation now, build [local wheels](docs-for-dev/MODULES.md). Needs **Python 3.11–3.14** and a **Node.js 20+** runtime on PATH (the packaged Next.js standalone server is spawned by `deeptutor start`).
 
 ```bash
 mkdir -p my-deeptutor && cd my-deeptutor
@@ -702,7 +702,7 @@ Chat is the default capability and where most work begins. A single thread can t
 <img src="assets/figs/web-1.4.6+/home/00-overview.png" alt="DeepTutor chat workspace" width="900">
 </div>
 
-The loop is deliberately simple: the model thinks in rounds, calls tools when useful, observes the results, and finishes with a tool-free message. `ask_user` is special — instead of guessing, the agent can pause the turn, ask a structured clarifying question, and resume once you answer.
+The tutor calls tools as needed and can pause to ask clarifying questions. **Customize page**, at the upper right, chooses the visible modes and Skills, MCP, Partners, Preferences, and voice-input controls. Under **Starting prompts**, add, edit, or remove the titles and prompts in Explain, Solve, Practice, Plan, and Research. Save applies your account preferences; Cancel discards edits, and Restore defaults brings back the original choices.
 
 <div align="center">
 <img src="assets/figs/system/chat-agent-loop.png" alt="DeepTutor chat agent loop" width="900">
@@ -712,7 +712,7 @@ User-toggleable tools are `brainstorm`, `web_search`, `paper_search`, `zotero_se
 
 Context comes in two kinds: **sticky session context** (capability, workspace or course, tools, knowledge bases, persona, model, and Reading / Mastery state) persists across turns; **one-time references** (files, chat history, books, reading sections, notebooks, selected question-bank entries, imported agents) come from the `+` menu for a single turn. The voice button only transcribes the current message.
 
-Home keeps **Chat**, **Ask Questions**, **Quiz**, and **Visualize** one click away; **Research** for cited reports and **Solve** for worked reasoning sit under *More Capabilities*. **Personalized Learning** groups Book, **Mastery Path**, **Immersive Reading**, and **Practice**; Reading brings documents, video, and audio together with verified citations, saved notes, natural read-aloud from source passages / study guidance / vocabulary / quiz / translation actions, and notebook capture.
+Home keeps **Chat**, **Ask Questions**, **Quiz**, and **Visualize** one click away; **Research** for cited reports and **Solve** for worked reasoning sit under *More Capabilities*. **Learning → New learning**, above All learning, opens a dedicated page for Books, **Mastery Path**, **Immersive Reading**, and **Practice**. Its **Customize page** control hides or restores learning methods without changing existing records; unavailable modules remain excluded. Reading brings documents, video, and audio together with verified citations, saved notes, natural read-aloud from source passages / study guidance / vocabulary / quiz / translation actions, and notebook capture.
 
 </details>
 
@@ -1010,6 +1010,7 @@ The repo ships a root [`SKILL.md`](SKILL.md) — a compact handover doc for the 
 | `deeptutor start [--home PATH] [--dev] [--detach] [--no-browser]` | Launch backend + frontend together; optionally detach or suppress browser opening |
 | `deeptutor stop [--home PATH]` | Stop a launcher started with `--detach` |
 | `deeptutor serve [--port PORT]` | Start only the FastAPI backend |
+| `deeptutor module list/install/uninstall/enable/disable` | Inspect modules and change them with DeepTutor stopped; source checkouts support enable/disable |
 | `deeptutor workspace show/set/reset` | Inspect, select, or restore the per-user Content Workspace |
 | `deeptutor run <capability> <message>` | Run a single capability turn (`chat`, `ask_questions`, `deep_solve`, `deep_question`, `deep_research`, `visualize`, `math_animator`, `video_lesson`, `mastery_path`, `immersive_reading`, `audio_overview`); add `--format json` for NDJSON output |
 | `deeptutor chat` | Interactive REPL with capability, tool, KB, notebook, and history controls |
@@ -1052,7 +1053,27 @@ The core supplies CLI and SDK; `deeptutor-cli` is a compatibility metapackage. I
 python -m pip install -e .
 ```
 
-Use `deeptutor module list` to inspect optional modules; install or remove them with the environment stopped. See [module installation](docs-for-dev/MODULES.md).
+The core owns chat, the shared turn runtime, CLI, and SDK. Optional distributions contribute tools, capabilities, API routes, background services, and navigation. Modules share one Python environment and must match the core version. `deeptutor[full]` selects the common app modules at installation; it does not prevent removing individual features later.
+
+Stop DeepTutor (`Ctrl+C` in its terminal), then use the same Python environment and `DEEPTUTOR_HOME`:
+
+```bash
+deeptutor module list                       # installed / enabled / ready
+deeptutor module disable research           # hide and deactivate; keep code
+deeptutor module enable research            # restore it and required modules
+
+# Package installations only; source checkouts use enable / disable:
+deeptutor module install solve              # install the matching module and dependencies
+deeptutor module uninstall solve --dry-run  # inspect the plan and dependency blockers
+deeptutor module uninstall solve            # remove only this module's distribution
+deeptutor start                             # restart the Web app
+```
+
+Examples: `solve`, `research`, `questions`, `knowledge`, `parsing`, `reading`, `mastery`, `books`, `memory`, `notebook`, and `partners`. Dependents block removal; core cannot be removed through the module command. Disabling or uninstalling preserves settings, conversations, knowledge bases, and generated files. Shared third-party dependencies are retained.
+
+**In the browser:** **Settings → Runtime → Modules** shows module status and the corresponding terminal commands. Package changes require a stopped environment and are performed in the CLI. **Chat → Customize page** and **Learning → New learning → Customize page** change personal page choices immediately; hiding an entry does not uninstall its module or revoke access.
+
+The new package family has not been published to PyPI yet. For local wheel installation, pass `--wheelhouse /path/to/wheels` to `module install`. See [module installation and source development](docs-for-dev/MODULES.md) for building the wheels and deployment details.
 
 </details>
 
@@ -1201,23 +1222,3 @@ Licensed under the [Apache License 2.0](LICENSE).
 </p>
 
 </div>
-
-### Mastery turn grounding
-
-Mastery turns read the active path's status before the first model request, using
-the same status tool and mastery gates as an explicit tool call. This snapshot is
-fresh for each turn, includes the active session mode, and is never cached across
-turns. A failed read falls back to `mastery_status`; after changing the path, mode,
-outline, or progress, the tutor can refresh through that tool. Card grading and
-its existing handoff remain unchanged.
-
-### Repeated image attachments
-
-The agent loop sends identical inline user images once per request and replaces later
-copies with references to the retained image. Stable request-only labels identify
-the retained inline images across provider translations and appended turns. Unique
-image blocks, remote URLs, differing
-image options, assistant messages, and tool results remain complete. Saved history
-keeps every original attachment; references are rebuilt after history is trimmed.
-This reduces repeated image payloads, but provider-reported usage remains the
-source of truth for billing and cache hits.
