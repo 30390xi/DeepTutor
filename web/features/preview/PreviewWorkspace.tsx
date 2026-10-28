@@ -1042,7 +1042,7 @@ function Conversation({
     <div className="preview-conversation">
       {!messages.length && (
         <div className="preview-conversation-empty">
-          <Image src="/logo.png" alt="" width={38} height={38} />
+          <Image src="/brand/color-logo.png" alt="" width={38} height={38} />
           <h2>{context === 'chat' ? '想从哪里开始？' : '我就在这里'}</h2>
           <p>
             {context === 'chat'

@@ -1,6 +1,6 @@
 <div align="center">
 
-<p align="center"><img src="assets/figs/logo/logo.png" alt="DeepTutor logo" height="56" style="vertical-align: middle;">&nbsp;<img src="assets/figs/logo/banner.png" alt="DeepTutor" height="48" style="vertical-align: middle;"></p>
+<p align="center"><img src="assets/figs/logo/color-full.png" alt="DeepTutor" width="480"></p>
 
 # DeepTutor: Lifelong Personalized Tutoring
 
@@ -677,21 +677,21 @@ uninstalling DeepTutor.
 
 ## 📖 Explore DeepTutor
 
-Start with the main surfaces you will use day to day: Chat, Partners, My Agents, Co-Writer, Book, Knowledge Center, Learning Space, Memory, and Settings. The tour then covers Multi-User deployments for shared, isolated workspaces.
+Start with a **workspace** for a subject or project. Its **Home**, **Learning**, and **Resources** hold your conversations, learning activities, and materials. **Partners** and **Personalization** stay with your account across workspaces. The tour below shows how these surfaces connect, followed by settings and multi-user deployment.
 
 If an answer loses an earlier constraint, cites weak evidence, or disagrees with selected material, collect the diagnostics in [`REASONING_SAFETY_CHECKLIST.md`](./docs-for-user/REASONING_SAFETY_CHECKLIST.md) before opening an issue.
 
 <div align="center">
-<img src="assets/figs/web-1.6.5/OVERVIEW.png" alt="DeepTutor home — the Chat workspace with every surface in the sidebar" width="900">
+<img src="assets/figs/web-dev/overview.png" alt="DeepTutor Home and workspace navigation" width="900">
 </div>
 
-> **Screenshot status:** The overview is current for v1.6.5. The surface screenshots below remain v1.4.6 references while a versioned refresh is in progress. Use them to understand workflows, not as exact navigation.
+> Screenshots show the current dev interface with fictional demonstration materials, except the Memory Graph supplied by the project maintainer.
 
 <details>
 <summary><b>🏗️ System architecture</b></summary>
 
 <div align="center">
-<img src="assets/figs/system/system%20architecture.png" alt="DeepTutor system architecture" width="900">
+<img src="assets/figs/system/system-architecture.svg" alt="DeepTutor system architecture" width="900">
 </div>
 
 </details>
@@ -702,13 +702,13 @@ If an answer loses an earlier constraint, cites weak evidence, or disagrees with
 Chat is the default capability and where most work begins. A single thread can talk normally, call tools, ground itself in selected knowledge bases, read attachments, generate images, consult subagents, write notebook records, and continue with the same context across turns.
 
 <div align="center">
-<img src="assets/figs/web-1.4.6+/home/00-overview.png" alt="DeepTutor chat workspace" width="900">
+<img src="assets/figs/web-dev/chat.png" alt="DeepTutor chat workspace" width="900">
 </div>
 
 The tutor calls tools as needed and can pause to ask clarifying questions. **Customize page**, at the upper right, chooses the visible modes and Skills, MCP, Partners, Preferences, and voice-input controls. Under **Starting prompts**, add, edit, or remove the titles and prompts in Explain, Solve, Practice, Plan, and Research. Save applies your account preferences; Cancel discards edits, and Restore defaults brings back the original choices.
 
 <div align="center">
-<img src="assets/figs/system/chat-agent-loop.png" alt="DeepTutor chat agent loop" width="900">
+<img src="assets/figs/system/chat-agent-loop.svg" alt="DeepTutor chat agent loop" width="900">
 </div>
 
 User-toggleable tools are `brainstorm`, `web_search`, `paper_search`, `zotero_search`, `reason`, and `geogebra_analysis` — plus `imagegen` and `videogen` once you configure the matching generation model. Contextual tools such as `rag`, `kb_files`, `knowledge_frontier`, `read_source`, `read_memory`, `write_memory`, `read_skill`, `load_tools`, `exec`, `web_fetch`, `ask_user`, `list_notebook`, `write_note`, `question_bank`, `github`, `consult_subagent`, `workspace_list`, `workspace_read`, `workspace_search`, `workspace_present`, and `workspace_export` mount automatically when the turn has the right context.
@@ -723,7 +723,7 @@ With the full profile, Home keeps **Chat**, **Ask Questions**, **Quiz**, **Visua
 <summary><b>🤝 Partner — Persistent Companions on the Same Brain</b></summary>
 
 <div align="center">
-<img src="assets/figs/web-1.4.6+/partners/00-partners%20overview.png" alt="DeepTutor partners workspace" width="900">
+<img src="assets/figs/web-dev/partners.png" alt="DeepTutor partners workspace" width="900">
 </div>
 
 Partners are persistent companions with their own soul, model policy, library, memory, and channels. They are not a separate bot engine: every inbound web or IM message becomes a normal `ChatOrchestrator` turn inside a partner-scoped workspace. A partner is "a chat that has a personality and a phone number."
@@ -735,7 +735,7 @@ Partners are persistent companions with their own soul, model policy, library, m
 Each partner has a `SOUL.md`, model selection, channels, tool policy, and assigned library. Its library either copies knowledge bases, skills, and notebooks into `data/partners/<id>/workspace/`, or stays linked to an existing workspace's files and resources; soul, conversations, and Partner memory remain separate. Authenticated non-admin users keep private partner sessions and relationship memory while the partner reads their personal memory read-only; admin, group, and unbound traffic use the shared partner scope.
 
 <div align="center">
-<img src="assets/figs/web-1.4.6+/partners/02-IM%20config%20for%20each%20partner.png" alt="Per-partner IM channel configuration" width="900">
+<img src="assets/figs/web-dev/partners-channels.png" alt="Per-partner IM channel configuration" width="900">
 </div>
 
 The channel layer is schema-driven and can connect to IM platforms such as Feishu, Telegram, Slack, Discord, DingTalk, QQ/NapCat, WeCom, WhatsApp, Zulip, Mattermost, Matrix, Mochat, and Microsoft Teams depending on installed extras and configured credentials. A partner can also be connected as a subagent and consulted from a normal chat turn — see **My Agents** below.
@@ -748,7 +748,7 @@ For faster setup, the Partner channel page can create a Feishu/Lark app or WeCom
 <summary><b>🧑‍🚀 My Agents — Consult & Import Other Agents</b></summary>
 
 <div align="center">
-<img src="assets/figs/web-1.4.6+/myagents/00-overview.png" alt="DeepTutor My Agents workspace" width="900">
+<img src="assets/figs/web-dev/agents.png" alt="DeepTutor My Agents workspace" width="900">
 </div>
 
 My Agents turns other agents into context for DeepTutor, and does two distinct things. **Connect a live agent** — Claude Code, Codex, Grok CLI, Antigravity, Kimi, opencode, MiMo Code, Hermes Agent, OpenClaw, or DeepSeek Harness on your machine, a remote Hermes gateway, or one of your Partners — and consult it from inside a chat turn: DeepTutor actually *runs* the other agent and streams its work into the Activity panel via the `consult_subagent` tool. Select it and its round limit with the Agent chip, or filter the same connected-agent list with `@`; the choice stays attached to the session.
@@ -779,7 +779,7 @@ Grok conversations. In Docker, install and authenticate Grok inside the backend
 container; a CLI installed only on the browser's computer is not reachable.
 
 <div align="center">
-<img src="assets/figs/web-1.4.6+/home/08-subagent%20demo%20with%20claude%20code.png" alt="Consulting a Claude Code subagent live" width="900">
+<img src="assets/figs/web-dev/personalization.png" alt="Account personalization: agents, personas, skills, and connections" width="900">
 </div>
 
 **Import past conversations** — bring in your existing ChatGPT, Claude Code, and Codex history as searchable, resumable conversations. Select `conversations.json` from an official ChatGPT data export for a safe, idempotent snapshot import, choose Claude history by project / working directory, or choose Codex history by calendar date. Folder-based agents remain refreshable so their selected scope can pull in new conversations. Reference one from a Chat turn via `+` → My Agents, and DeepTutor reads it as a third-party transcript — it stays *their* conversation, not DeepTutor's own voice.
@@ -787,19 +787,19 @@ container; a CLI installed only on the browser's computer is not reachable.
 </details>
 
 <details>
-<summary><b>✍️ Co-Writer — Selection-Aware Markdown Drafting</b></summary>
+<summary><b>✍️ Learning Notebook — Pages, Sources, and Dito</b></summary>
 
 <div align="center">
-<img src="assets/figs/web-1.4.6+/co-writer/00-overview.png" alt="DeepTutor Co-Writer workspace" width="900">
+<img src="assets/figs/web-dev/co-writer.png" alt="Learning notebook pages" width="900">
 </div>
 
-Co-Writer is a split-view Markdown workspace for reports, tutorials, notes, and long-form learning artifacts. Documents autosave and render a live preview (KaTeX math, diagram fences), and can be saved back into notebooks when a draft becomes reusable context. Import a `.docx` to start a new draft, and export the current editor as Markdown or Word.
+The Learning notebook, formerly Co-Writer, organizes your own writing into pages, subpages, and blocks within the active workspace. Import Word documents, arrange a page tree, and insert original records from Favorites as evidence. Pages keep their save status visible and export as Markdown or Word; interactive content becomes static in Word.
 
 <div align="center">
-<img src="assets/figs/web-1.4.6+/co-writer/01-edit%20panel.png" alt="Co-Writer editor with live preview" width="900">
+<img src="assets/figs/web-dev/notebook-detail.png" alt="Learning notebook block editor and Dito" width="900">
 </div>
 
-Its defining idea is **surgical editing**: select a span and ask DeepTutor to rewrite, expand, or shorten it. Choose the edit model; it can use a knowledge base or web evidence and keeps a trace of its tool calls. If the draft has not changed while it works, the result replaces the selected text directly and remains reversible with **Undo**.
+Discuss a passage or block with **Dito**: ask for an explanation, example, rewrite, or practice question. Conversations remain attached to the relevant page and line. Review proposed changes before accepting them, or insert an answer below the line and keep working. Favorites preserve source records; the notebook is where you build your own understanding.
 
 </details>
 
@@ -807,17 +807,17 @@ Its defining idea is **surgical editing**: select a span and ask DeepTutor to re
 <summary><b>📖 Book — Living Books from Your Materials</b></summary>
 
 <div align="center">
-<img src="assets/figs/web-1.4.6+/book/00-book_overview.png" alt="DeepTutor book library" width="900">
+<img src="assets/figs/web-dev/books.png" alt="DeepTutor book library" width="900">
 </div>
 
 Book turns selected sources into an interactive **living book** — not a static PDF, but a reading environment built from typed blocks. A book can start from knowledge bases, notebooks, question banks, or chat history; the creation flow proposes a chapter outline before content is generated, so you review the shape instead of accepting a blind one-shot output.
 
 <p align="center">
-<img src="assets/figs/web-1.4.6+/book/01-book-demo-quiz%20card.png" alt="Book quiz block" width="31%">
+<img src="assets/figs/web-dev/book-quiz.png" alt="Book quiz block" width="31%">
 &nbsp;
-<img src="assets/figs/web-1.4.6+/book/02-book-demo-manim%20video.png" alt="Book Manim animation block" width="31%">
+<img src="assets/figs/web-dev/book-detail.png" alt="Book outline and chapters" width="31%">
 &nbsp;
-<img src="assets/figs/web-1.4.6+/book/03-book-demo%20interactive%20module.png" alt="Book interactive widget block" width="31%">
+<img src="assets/figs/web-dev/book-widget.png" alt="Book interactive widget block" width="31%">
 </p>
 
 Each chapter compiles into editable typed blocks — text, callouts, quizzes, flash cards, timelines, code, figures, interactive HTML, animations, concept graphs, deep dives, and user notes — with its own Page Chat. Insert, move, regenerate, rewrite, or switch a block type; selected passages enter a reviewable learning-capture inbox. Progress, bookmarks, quiz attempts, captures, and Page Chat stay private per reader even when an admin book is shared read-only or for collaborative editing; shared deletion stays admin-only. Any book exports to Markdown, long compiles pause and resume, and `deeptutor book health` / `refresh-fingerprints` flag source drift.
@@ -828,13 +828,13 @@ Each chapter compiles into editable typed blocks — text, callouts, quizzes, fl
 <summary><b>📚 Knowledge Center — Multi-Engine RAG Libraries</b></summary>
 
 <div align="center">
-<img src="assets/figs/web-1.4.6+/knowledge/00-overview.png" alt="DeepTutor Knowledge Center" width="900">
+<img src="assets/figs/web-dev/knowledge.png" alt="DeepTutor Knowledge Center" width="900">
 </div>
 
 Knowledge bases are the document collections behind RAG — they ground Chat turns, Co-Writer edits, Book generation, and Partner conversations. What's distinctive is a **choice of retrieval engines**: **LlamaIndex** (the default, hybrid vector + BM25 with optional cross-encoder reranking and exact-flat or HNSW FAISS indexes), **PageIndex** (reasoning retrieval with page-level citations, hosted or self-hosted OSS), **GraphRAG** and **LightRAG** (knowledge-graph retrieval), **LightRAG Server** (retrieval offloaded to an external LightRAG instance you connect over HTTP), **WeKnora** (retrieval from a knowledge base in your self-hosted deployment, without a local index or document copy), **Tencent IMA** (a library you curate in IMA — searched, browsed, and written back to over its OpenAPI), **MarginNote 4** (your MN4 study data — documents, excerpts, mind-map cards and the links between them — pushed in by the app's Add-on and navigated with dedicated tools), **Kiwix** (a searchable ZIM archive served over HTTP without local indexing), or a linked **Obsidian** vault the tutor reads and writes in place. Each KB is bound to one engine.
 
 <div align="center">
-<img src="assets/figs/web-1.4.6+/knowledge/01-create%20knowledge%20base.png" alt="Create a knowledge base" width="900">
+<img src="assets/figs/web-dev/knowledge-create.png" alt="Create a knowledge base" width="900">
 </div>
 
 Migrating an existing Obsidian, Hermes, or Markdown library? See [Knowledge migration guide](./docs-for-user/KNOWLEDGE_MIGRATION.md) for connected-vault and indexed-copy paths.
@@ -854,16 +854,16 @@ Native LightRAG queries and incremental indexing require the embedding configura
 </details>
 
 <details>
-<summary><b>🌐 Learning Space — Skills, Personas, and Reusable Context</b></summary>
+<summary><b>🌐 Resources & Personalization — Materials and Reusable Assistance</b></summary>
 
 <div align="center">
-<img src="assets/figs/web-1.4.6+/learning-space/00-overview.png" alt="DeepTutor Learning Space hub" width="900">
+<img src="assets/figs/web-dev/resources.png" alt="Resources in the active workspace" width="900">
 </div>
 
 **Resources** groups Chat History, **Favorites** with movable records and Markdown export, the **Learning journal**, Knowledge Center, and a question bank with answers and explanations. Start **Practice** from a question-bank selection or **Learning → Practice** for review sessions, mistake tracking, and scheduled repetition. The separate **Personalization** page holds personas, skills (`SKILL.md` playbooks), one-click **MCP Services**, and **CLI Apps** from the [CLI-Anything](https://github.com/HKUDS/CLI-Anything) catalog, each with an on-demand usage guide. **Learning** groups books, mastery paths, reading collections, and their tutor conversations; each asset is offered only in the workflows that support it.
 
 <div align="center">
-<img src="assets/figs/web-1.4.6+/learning-space/07-%20download%20skills%20from%20eduhub.png" alt="Import skills from EduHub" width="900">
+<img src="assets/figs/web-dev/skills.png" alt="Personalization skill library" width="900">
 </div>
 
 You don't have to write every skill yourself — **Import from EduHub** browses the community catalog and downloads a skill straight into your library through a security gate (see [Ecosystem](#-ecosystem--eduhub--the-skills-community)).
@@ -874,13 +874,13 @@ You don't have to write every skill yourself — **Import from EduHub** browses 
 <summary><b>🧠 Memory — Inspectable Personalization</b></summary>
 
 <div align="center">
-<img src="assets/figs/web-1.4.6+/memory/00-overview.png" alt="DeepTutor memory overview" width="900">
+<img src="assets/figs/web-dev/memory.png" alt="DeepTutor memory overview" width="900">
 </div>
 
 Memory is a file-backed, three-layer system you can read, curate, and audit — deliberately *not* a hidden vector store. **L1** is the workspace mirror plus an append-only event trace (`trace/<surface>/<date>.jsonl`); **L2** is per-surface curated facts (`L2/<surface>.md`) with references to L1 entities; **L3** is cross-surface synthesis (`L3/<profile|recent|scope|preferences>.md`) that records its contributing L2 surfaces.
 
 <div align="center">
-<img src="assets/figs/web-1.4.6+/memory/01-3%20layer%20memory%20graph.png" alt="DeepTutor memory graph" width="900">
+<img src="assets/figs/web-dev/memory-graph.png" alt="DeepTutor memory graph" width="900">
 </div>
 
 The Memory Graph shows the whole pyramid — L3 synthesis at the centre, L2 in the middle ring, L1 traces on the outside — with exact L2 → L1 evidence edges and L3 → contributing-surface links. Memory is tracked across `chat`, `notebook`, `quiz`, `kb`, `book`, partner, and `cowriter` surfaces; the consolidator's Update / Audit / Dedup budgets are tuned in **Settings → Memory**.
@@ -891,7 +891,7 @@ The Memory Graph shows the whole pyramid — L3 synthesis at the centre, L2 in t
 <summary><b>⚙️ Settings — One Control Plane</b></summary>
 
 <div align="center">
-<img src="assets/figs/web-1.4.6+/settings/00-setting%20overview.png" alt="DeepTutor settings hub" width="900">
+<img src="assets/figs/web-dev/settings.png" alt="Settings navigator" width="900">
 </div>
 
 Settings is the operational control plane, opening on **General** for interface and model output language. Its searchable navigator links to independent pages: **Personal** covers Workspaces, Data migration, Appearance, and Usage statistics; **Learning & conversation** covers starting points, attachments, Video Learning, learner and guardian controls, Learning progress, and Memory; **Models & services** covers Providers, Language models, Task models, Embedding, Search, Voice, and Multimodal generation; **Features & integrations** covers tools, capability parameters, Partners & agents, and Knowledge & documents. **System** holds Network, Runtime status, and About; **Archived chats** lets you search, restore, or permanently delete archived conversations. Runtime status contains backend health, resident memory, and the **Readiness** matrix grading capability blockers, warnings, and suggestions. Workspaces keeps topic files and learning state separate, with verified migration and export under Data migration. A **provider** holds a vendor's address and credential for reuse by its service models; the model pages choose saved providers and configure model names and capabilities. **Task models** pin a small, fast model for background work — naming conversations and writing starting points — and resolve to the active default when empty. Voice groups speech synthesis and transcription; Multimodal generation groups image and video models. Partners & agents configures local harnesses and a remote Hermes gateway.
@@ -904,7 +904,7 @@ Settings is the operational control plane, opening on **General** for interface 
 **Video Learning** under Settings → Learning & conversation configures YouTube captions and Invidious access for Reading. To use Invidious, set its administrator-managed backend API origin (for example `http://127.0.0.1:3000`) and browser-accessible public origin, test the connection, select Invidious, and save. **Browse Invidious** in Reading's add-material dialog searches videos and accesses connected subscriptions and playlists. YouTube playback uses the official privacy-enhanced player; missing captions remain visible and limit the tutor's evidence without blocking native playback. In a source checkout, run `python scripts/install_extras.py video-learning` for the default YouTube caption loader. Existing Watching links migrate into Reading with conversation history, compatible transcripts, notes, and progress preserved; new timestamp notes are Reading annotations. Bilibili uses its own playback and caption path.
 
 <div align="center">
-<img src="assets/figs/web-1.4.6+/settings/01-appearance%20settings.png" alt="DeepTutor appearance settings and themes" width="900">
+<img src="assets/figs/web-dev/appearance.png" alt="DeepTutor appearance settings and themes" width="900">
 </div>
 
 Most sections use a draft-and-apply flow, so you can test a provider before committing it. You can also just ask in Chat: the assistant reads the current configuration, applies a change, and says whether it needs a restart or a re-index — probing a new model before it commits, so it cannot switch itself onto something unreachable. API keys never pass through the model, which opens the matching form for you instead. Four themes ship in the box — Default, Cream, Dark, and Glass. Project-root `.env` files are intentionally ignored; runtime configuration lives under `data/user/settings/*.json` unless `DEEPTUTOR_HOME` or `deeptutor start --home` points the app elsewhere.

@@ -1,6 +1,6 @@
 <div align="center">
 
-<p align="center"><img src="../../assets/figs/logo/logo.png" alt="โลโก้ DeepTutor" height="56" style="vertical-align: middle;">&nbsp;<img src="../../assets/figs/logo/banner.png" alt="DeepTutor" height="48" style="vertical-align: middle;"></p>
+<p align="center"><img src="../../assets/figs/logo/color-full.png" alt="DeepTutor" width="480"></p>
 
 # DeepTutor: การสอนพิเศษส่วนตัวตลอดชีวิต
 
@@ -430,16 +430,15 @@ DeepTutor แยกโค้ดที่ติดตั้ง, runtime home ส�
 หากคำตอบทำข้อกำหนดก่อนหน้าหลุดหาย, อ้างหลักฐานที่อ่อน หรือไม่สอดคล้องกับสื่อที่เลือก ให้รวบรวมข้อมูลวินิจฉัยตาม [`REASONING_SAFETY_CHECKLIST.md`](../../docs-for-user/REASONING_SAFETY_CHECKLIST.md) ก่อนเปิด issue
 
 <div align="center">
-<img src="../../assets/figs/web-1.6.5/OVERVIEW.png" alt="หน้าแรก DeepTutor — workspace Chat พร้อมทุกส่วนในแถบด้านข้าง" width="900">
+<img src="../../assets/figs/web-dev/overview.png" alt="DeepTutor Home and workspace navigation" width="900">
 </div>
 
-> **สถานะภาพหน้าจอ:** ภาพภาพรวมเป็นเวอร์ชัน v1.6.5 ส่วนภาพหน้าจอรายการด้านล่างยังเป็นข้อมูลอ้างอิง v1.4.6 ระหว่างการอัปเดต ใช้เพื่อทำความเข้าใจขั้นตอนการใช้งาน ไม่ใช่การนำทางปัจจุบันแบบเป๊ะ
 
 <details>
 <summary><b>🏗️ สถาปัตยกรรมระบบ</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/system/system%20architecture.png" alt="สถาปัตยกรรมระบบ DeepTutor" width="900">
+<img src="../../assets/figs/system/system-architecture.svg" alt="สถาปัตยกรรมระบบ DeepTutor" width="900">
 </div>
 
 </details>
@@ -450,13 +449,13 @@ DeepTutor แยกโค้ดที่ติดตั้ง, runtime home ส�
 Chat คือความสามารถเริ่มต้นและสถานที่ที่งานส่วนใหญ่เริ่มต้น thread เดียวสามารถพูดคุยตามปกติ, เรียกเครื่องมือ, อ้างอิงใน knowledge bases ที่เลือก, อ่านไฟล์แนบ, สร้างรูปภาพ, ปรึกษา subagents, เขียน notebook records และดำเนินการต่อด้วยบริบทเดียวกันตลอด turns
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/home/00-overview.png" alt="workspace Chat ของ DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/chat.png" alt="workspace Chat ของ DeepTutor" width="900">
 </div>
 
 ลูปนั้นเรียบง่ายโดยเจตนา: model คิดในรอบ ๆ, เรียกเครื่องมือเมื่อมีประโยชน์, สังเกตผลลัพธ์ และจบด้วยข้อความที่ไม่มีเครื่องมือ `ask_user` เป็นพิเศษ — แทนที่จะเดา agent สามารถหยุด turn, ถามคำถามชี้แจงที่มีโครงสร้าง และดำเนินการต่อเมื่อคุณตอบ
 
 <div align="center">
-<img src="../../assets/figs/system/chat-agent-loop.png" alt="ลูป agent ของ Chat ใน DeepTutor" width="900">
+<img src="../../assets/figs/system/chat-agent-loop.svg" alt="ลูป agent ของ Chat ใน DeepTutor" width="900">
 </div>
 
 เครื่องมือที่ผู้ใช้สลับได้ ได้แก่ `brainstorm`, `web_search`, `paper_search`, `zotero_search`, `reason`, และ `geogebra_analysis` — รวมถึง `imagegen` และ `videogen` เมื่อคุณกำหนดค่าโมเดลสร้างที่ตรงกัน เครื่องมือตามบริบทเช่น `rag`, `kb_files`, `knowledge_frontier`, `read_source`, `read_memory`, `write_memory`, `read_skill`, `load_tools`, `exec`, `web_fetch`, `ask_user`, `list_notebook`, `write_note`, `question_bank`, `github`, `consult_subagent`, `workspace_list`, `workspace_read`, `workspace_search`, `workspace_present` และ `workspace_export` จะ mount อัตโนมัติเมื่อ turn มีบริบทที่ถูกต้อง
@@ -471,7 +470,7 @@ Home ทำให้ **Chat**, **Ask Questions**, **Quiz** และ **Visualize
 <summary><b>🤝 Partner — เพื่อนถาวรบนสมองเดียวกัน</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/partners/00-partners%20overview.png" alt="workspace Partners ของ DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/partners.png" alt="workspace Partners ของ DeepTutor" width="900">
 </div>
 
 Partners คือเพื่อนถาวรที่มี soul, นโยบาย model, ห้องสมุด, memory และช่องทางของตัวเอง พวกเขาไม่ใช่เอ็นจิน bot แยกต่างหาก: ทุกข้อความ web หรือ IM ที่เข้ามาจะกลายเป็น turn ปกติของ `ChatOrchestrator` ภายใน workspace ที่มีขอบเขต partner partner คือ "chat ที่มีบุคลิกภาพและหมายเลขโทรศัพท์"
@@ -483,7 +482,7 @@ Partners คือเพื่อนถาวรที่มี soul, นโย�
 แต่ละ partner มี `SOUL.md`, การเลือก model, ช่องทาง, นโยบายเครื่องมือ และไลบรารีที่กำหนด ไลบรารีสามารถคัดลอก knowledge bases, skills และ notebooks ไปยัง `data/partners/<id>/workspace/` หรือคงการเชื่อมโยงกับไฟล์และทรัพยากรของ workspace ที่มีอยู่ โดย soul, บทสนทนา และ Partner memory ยังคงแยกจากกัน ผู้ใช้ที่ผ่านการยืนยันตัวตนและไม่ใช่ admin จะมี Partner sessions และ relationship memory แบบส่วนตัว ขณะที่ Partner อ่าน personal memory ของพวกเขาแบบ read-only; traffic ของ admin, group และที่ไม่ผูกบัญชีจะใช้ shared Partner scope
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/partners/02-IM%20config%20for%20each%20partner.png" alt="การกำหนดค่าช่องทาง IM ต่อ partner" width="900">
+<img src="../../assets/figs/web-dev/partners-channels.png" alt="การกำหนดค่าช่องทาง IM ต่อ partner" width="900">
 </div>
 
 ชั้น channel ที่ขับเคลื่อนด้วย schema สามารถเชื่อมต่อกับแพลตฟอร์ม IM ได้แก่ Feishu, Telegram, Slack, Discord, DingTalk, QQ/NapCat, WeCom, WhatsApp, Zulip, Mattermost, Matrix, Mochat และ Microsoft Teams ขึ้นอยู่กับ extras ที่ติดตั้งและ credentials ที่กำหนดค่า partner ยังสามารถเชื่อมต่อเป็น subagent และปรึกษาได้จาก chat turn ปกติ — ดู **My Agents** ด้านล่าง
@@ -496,7 +495,7 @@ Partners คือเพื่อนถาวรที่มี soul, นโย�
 <summary><b>🧑‍🚀 My Agents — ปรึกษาและนำเข้า Agents อื่น ๆ</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/myagents/00-overview.png" alt="workspace My Agents ของ DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/agents.png" alt="workspace My Agents ของ DeepTutor" width="900">
 </div>
 
 My Agents เปลี่ยน agent อื่น ๆ ให้กลายเป็นบริบทสำหรับ DeepTutor และทำสองสิ่งที่แตกต่างกัน **เชื่อมต่อ agent แบบสด** — Claude Code, Codex, Grok CLI, Antigravity, Kimi, opencode, MiMo Code, Hermes Agent, OpenClaw หรือ DeepSeek Harness บนเครื่องของคุณ, Hermes gateway ระยะไกล หรือหนึ่งใน Partners ของคุณ — และปรึกษามันจากภายใน chat turn: DeepTutor จริง ๆ *รัน* agent อื่นและ stream งานเข้าสู่แผง Activity ผ่านเครื่องมือ `consult_subagent` เลือก agent และขีดจำกัดจำนวนรอบด้วย Agent chip หรือใช้ `@` กรองรายการ agent ที่เชื่อมต่อชุดเดียวกัน; การเลือกนี้จะผูกติดกับ session
@@ -528,7 +527,7 @@ private thought payloads จะถูกละเว้น Cross-session memory 
 ของเบราว์เซอร์จะเข้าไม่ถึง
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/home/08-subagent%20demo%20with%20claude%20code.png" alt="การปรึกษา subagent Claude Code แบบสด" width="900">
+<img src="../../assets/figs/web-dev/personalization.png" alt="Account personalization: agents, personas, skills, and connections" width="900">
 </div>
 
 **นำเข้าบทสนทนาในอดีต** — นำประวัติ ChatGPT, Claude Code และ Codex ที่มีอยู่ของคุณมาเป็นบทสนทนาที่ค้นหาได้และสามารถดำเนินการต่อได้ เลือก `conversations.json` จาก official ChatGPT data export เพื่อทำ snapshot import ที่ปลอดภัยและ idempotent, เลือกประวัติ Claude ตาม project / working directory หรือเลือกประวัติ Codex ตามวันที่ในปฏิทิน agent แบบโฟลเดอร์ยังคงรีเฟรชได้ ทำให้ขอบเขตที่เลือกไว้ดึงบทสนทนาใหม่เข้ามาได้ อ้างอิงรายการหนึ่งจาก Chat turn ผ่าน `+` → My Agents และ DeepTutor จะอ่านมันเป็น transcript ของบุคคลที่สาม — มันยังคงเป็นบทสนทนา *ของพวกเขา* ไม่ใช่เสียงของ DeepTutor เอง
@@ -539,13 +538,13 @@ private thought payloads จะถูกละเว้น Cross-session memory 
 <summary><b>✍️ Co-Writer — การร่าง Markdown ที่รับรู้การเลือก</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/co-writer/00-overview.png" alt="workspace Co-Writer ของ DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/co-writer.png" alt="Learning notebook pages" width="900">
 </div>
 
 Co-Writer คือ workspace Markdown แบบ split-view สำหรับรายงาน, บทเรียน, บันทึก และ artifacts การเรียนรู้แบบยาว เอกสารบันทึกอัตโนมัติและแสดงตัวอย่างสด (คณิตศาสตร์ KaTeX, diagram fences) และสามารถบันทึกกลับเข้า notebooks เมื่อร่างกลายเป็นบริบทที่นำมาใช้ซ้ำได้ นำเข้า `.docx` เพื่อเริ่มร่างใหม่ และส่งออกตัวแก้ไขปัจจุบันเป็น Markdown หรือ Word
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/co-writer/01-edit%20panel.png" alt="ตัวแก้ไข Co-Writer พร้อมตัวอย่างแบบสด" width="900">
+<img src="../../assets/figs/web-dev/notebook-detail.png" alt="Learning notebook block editor and Dito" width="900">
 </div>
 
 แนวคิดหลักคือ **การแก้ไขเฉพาะจุด**: เลือกช่วงและขอให้ DeepTutor เขียนใหม่, ขยาย หรือย่อ เลือกโมเดลสำหรับการแก้ไขได้; โมเดลสามารถใช้ knowledge base หรือหลักฐานเว็บ และเก็บ trace ของ tool calls หาก draft ไม่เปลี่ยนระหว่างทำงาน ผลลัพธ์จะแทนที่ข้อความที่เลือกโดยตรงและยังย้อนกลับได้ด้วย **Undo**
@@ -556,17 +555,17 @@ Co-Writer คือ workspace Markdown แบบ split-view สำหรับ�
 <summary><b>📖 Book — หนังสือมีชีวิตจากเนื้อหาของคุณ</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/book/00-book_overview.png" alt="คลังหนังสือของ DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/books.png" alt="คลังหนังสือของ DeepTutor" width="900">
 </div>
 
 Book แปลงแหล่งที่มาที่เลือกให้เป็น **หนังสือมีชีวิต** แบบโต้ตอบ — ไม่ใช่ PDF แบบคงที่ แต่เป็นสภาพแวดล้อมการอ่านที่สร้างจาก typed blocks หนังสือสามารถเริ่มจาก knowledge bases, notebooks, question banks หรือประวัติ chat; ขั้นตอนการสร้างจะเสนอ outline บทก่อนที่จะสร้างเนื้อหา ดังนั้นคุณจะตรวจสอบรูปร่างแทนที่จะยอมรับ output แบบ one-shot ที่มองไม่เห็น
 
 <p align="center">
-<img src="../../assets/figs/web-1.4.6+/book/01-book-demo-quiz%20card.png" alt="บล็อก quiz ใน Book" width="31%">
+<img src="../../assets/figs/web-dev/book-quiz.png" alt="บล็อก quiz ใน Book" width="31%">
 &nbsp;
-<img src="../../assets/figs/web-1.4.6+/book/02-book-demo-manim%20video.png" alt="บล็อกแอนิเมชัน Manim ใน Book" width="31%">
+<img src="../../assets/figs/web-dev/book-detail.png" alt="Book outline and chapters" width="31%">
 &nbsp;
-<img src="../../assets/figs/web-1.4.6+/book/03-book-demo%20interactive%20module.png" alt="บล็อกวิดเจ็ตแบบโต้ตอบใน Book" width="31%">
+<img src="../../assets/figs/web-dev/book-widget.png" alt="บล็อกวิดเจ็ตแบบโต้ตอบใน Book" width="31%">
 </p>
 
 แต่ละบทคอมไพล์เป็น typed blocks ที่แก้ไขได้ — text, callouts, quizzes, flash cards, timelines, code, figures, interactive HTML, animations, concept graphs, deep dives และ user notes — พร้อม Page Chat ของบทนั้นเอง คุณสามารถแทรก, ย้าย, สร้างใหม่, เขียนใหม่ หรือสลับประเภท block ได้; ข้อความบางช่วงที่เลือกไว้จะเข้าสู่กล่องรายการ learning capture สำหรับตรวจทาน ความคืบหน้า, bookmarks, ครั้งที่ทำ quiz, captures และ Page Chat ยังคงเป็นส่วนตัวสำหรับผู้อ่านแต่ละคน แม้หนังสือจาก admin จะถูกแชร์แบบอ่านอย่างเดียวหรือเปิดให้แก้ไขร่วมกัน; การลบหนังสือที่แชร์ยังคงทำได้เฉพาะ admin หนังสือทุกเล่ม export เป็น Markdown ได้, การคอมไพล์ที่ใช้เวลานานหยุดพักและทำต่อได้ และ `deeptutor book health` / `refresh-fingerprints` จะตรวจจับความเปลี่ยนแปลงของแหล่งข้อมูล
@@ -577,13 +576,13 @@ Book แปลงแหล่งที่มาที่เลือกให้
 <summary><b>📚 Knowledge Center — ไลบรารี RAG หลายเอ็นจิน</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/knowledge/00-overview.png" alt="DeepTutor Knowledge Center" width="900">
+<img src="../../assets/figs/web-dev/knowledge.png" alt="DeepTutor Knowledge Center" width="900">
 </div>
 
 Knowledge bases คือคอลเลกชันเอกสารที่อยู่เบื้องหลัง RAG — รองรับ Chat turns, Co-Writer edits, Book generation และบทสนทนา Partner สิ่งที่โดดเด่นคือ **การเลือกเอ็นจิน retrieval**: **LlamaIndex** (ค่าเริ่มต้น, hybrid vector + BM25 พร้อม cross-encoder reranking แบบเสริม และ FAISS indexes แบบ exact-flat หรือ HNSW), **PageIndex** (reasoning retrieval พร้อม page-level citations, hosted หรือ self-hosted OSS), **GraphRAG** และ **LightRAG** (knowledge-graph retrieval), **LightRAG Server** (retrieval ที่ offload ไปยัง LightRAG instance ภายนอกที่คุณเชื่อมต่อผ่าน HTTP), **WeKnora** (retrieval จาก knowledge base ใน deployment แบบ self-hosted ของคุณ โดยไม่มี local index หรือสำเนาเอกสาร), **Tencent IMA** (ไลบรารีที่คุณคัดสรรใน IMA — ค้นหา เรียกดู และเขียนกลับผ่าน OpenAPI ของมัน), **MarginNote 4** (ข้อมูลการเรียนใน MN4 ของคุณ — เอกสาร ข้อความที่คัดไว้ การ์ด mind-map และความเชื่อมโยงระหว่างสิ่งเหล่านั้น — ที่ถูกส่งเข้ามาโดย Add-on ของแอปและนำทางได้ด้วยเครื่องมือเฉพาะ), **Kiwix** (ZIM archive ที่ค้นหาได้ซึ่งให้บริการผ่าน HTTP โดยไม่ต้องทำ local indexing) หรือ **Obsidian** vault ที่เชื่อมโยง tutor อ่านและเขียนในที่ KB แต่ละอันถูกผูกกับเอ็นจินหนึ่ง
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/knowledge/01-create%20knowledge%20base.png" alt="สร้าง knowledge base" width="900">
+<img src="../../assets/figs/web-dev/knowledge-create.png" alt="สร้าง knowledge base" width="900">
 </div>
 
 กำลังย้ายไลบรารี Obsidian, Hermes หรือ Markdown ที่มีอยู่ใช่ไหม ดู [คู่มือการย้ายข้อมูล Knowledge](../../docs-for-user/KNOWLEDGE_MIGRATION.md) สำหรับเส้นทางแบบ connected-vault และ indexed-copy
@@ -606,13 +605,13 @@ Knowledge bases คือคอลเลกชันเอกสารที่�
 <summary><b>🌐 Learning Space — Skills, Personas และบริบทที่นำมาใช้ซ้ำได้</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/learning-space/00-overview.png" alt="ศูนย์กลาง Learning Space ของ DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/resources.png" alt="Resources in the active workspace" width="900">
 </div>
 
 Learning Space คือชั้น library, organization และ personalization **Conversations & Materials** เก็บ Chat History, notebooks ที่ย้าย records และ export เป็น Markdown ได้ และ question bank พร้อมคำตอบและคำอธิบาย เริ่ม **Practice** จากคำถามที่เลือกใน question bank หรือจาก Personalized Learning เพื่อทบทวน ติดตามข้อผิดพลาด และทบทวนซ้ำตามกำหนด **Personalization** เก็บ personas, skills (`SKILL.md` playbooks), **MCP Services** แบบคลิกเดียว และ **CLI Apps** จาก catalog [CLI-Anything](https://github.com/HKUDS/CLI-Anything) โดยแต่ละรายการมีคู่มือการใช้งานที่โหลดตามต้องการ workspace **My Courses** ที่แยกออกมาจะจัดกลุ่มบทสนทนาตามวิชาและ tutor threads; asset แต่ละรายการจะแสดงเฉพาะในเวิร์กโฟลว์ที่รองรับเท่านั้น
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/learning-space/07-%20download%20skills%20from%20eduhub.png" alt="นำเข้า skills จาก EduHub" width="900">
+<img src="../../assets/figs/web-dev/skills.png" alt="Personalization skill library" width="900">
 </div>
 
 คุณไม่จำเป็นต้องเขียน skill ทุกอันเอง — **นำเข้าจาก EduHub** จะเรียกดู catalog ชุมชนและดาวน์โหลด skill ตรงเข้า library ผ่านประตูความปลอดภัย (ดู [ระบบนิเวศ](#-ระบบนิเวศ--eduhub-และชุมชน-skills))
@@ -623,13 +622,13 @@ Learning Space คือชั้น library, organization และ personaliza
 <summary><b>🧠 Memory — การปรับแต่งส่วนบุคคลที่ตรวจสอบได้</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/memory/00-overview.png" alt="ภาพรวม Memory ของ DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/memory.png" alt="ภาพรวม Memory ของ DeepTutor" width="900">
 </div>
 
 Memory คือระบบไฟล์สามชั้นที่คุณอ่าน, จัดการ และตรวจสอบได้ — โดยเจตนาไม่ใช่ vector store ที่ซ่อนอยู่ **L1** คือ workspace mirror พร้อม append-only event trace (`trace/<surface>/<date>.jsonl`); **L2** คือข้อเท็จจริงที่จัดการต่อพื้นผิว (`L2/<surface>.md`) พร้อมการอ้างอิงถึงเอนทิตี L1; **L3** คือการสังเคราะห์ข้ามพื้นผิว (`L3/<profile|recent|scope|preferences>.md`) ที่บันทึกพื้นผิว L2 ซึ่งมีส่วนร่วม
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/memory/01-3%20layer%20memory%20graph.png" alt="กราฟ Memory ของ DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/memory-graph.png" alt="กราฟ Memory ของ DeepTutor" width="900">
 </div>
 
 Memory Graph แสดงพีระมิดทั้งหมด — การสังเคราะห์ L3 ที่ศูนย์กลาง, L2 ในวงกลาง, L1 traces ด้านนอก — พร้อมเส้นเชื่อมหลักฐาน L2 → L1 ที่ตรงตัว และลิงก์ L3 → พื้นผิวที่มีส่วนร่วม Memory ถูกติดตามใน surfaces: `chat`, `notebook`, `quiz`, `kb`, `book`, partner และ `cowriter`; งบประมาณ Update / Audit / Dedup ของ consolidator ปรับได้ใน **Settings → Memory**
@@ -640,7 +639,7 @@ Memory Graph แสดงพีระมิดทั้งหมด — กา�
 <summary><b>⚙️ Settings — Control Plane เดียว</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/settings/00-setting%20overview.png" alt="ศูนย์กลาง Settings ของ DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/settings.png" alt="Settings navigator" width="900">
 </div>
 
 Settings คือศูนย์ควบคุมการทำงาน โดยเปิดที่หน้า **General** สำหรับภาษา UI และภาษา output ของ model ตัวนำทางที่ค้นหาได้เชื่อมไปยังหน้าแยกกัน: **Personal** ครอบคลุม Workspaces, Data migration, Appearance และ Usage statistics; **Learning & conversation** ครอบคลุมจุดเริ่มต้น ไฟล์แนบ Video Learning การควบคุมผู้เรียนและผู้ปกครอง Learning progress และ Memory; **Models & services** ครอบคลุม Providers, Language models, Task models, Embedding, Search, Voice และ Multimodal generation; **Features & integrations** ครอบคลุมเครื่องมือ พารามิเตอร์ความสามารถ Partners & agents และ Knowledge & documents **System** มี Network, Runtime status และ About; **Archived chats** ใช้ค้นหา กู้คืน หรือลบบทสนทนาที่เก็บถาวรอย่างถาวร Runtime status แสดงสถานะ backend, resident memory และเมทริกซ์ **Readiness** ที่ประเมินปัญหาที่ขัดขวาง คำเตือน และข้อเสนอแนะของความสามารถ Workspaces แยกไฟล์แต่ละหัวข้อและสถานะการเรียน โดยมีการย้ายข้อมูลที่ตรวจสอบแล้วและการส่งออกใน Data migration **provider** เก็บที่อยู่และ credential ของผู้ให้บริการเพื่อให้ model ของบริการนั้นใช้ซ้ำได้ หน้า model เลือก provider ที่บันทึกไว้และกำหนดชื่อและความสามารถของ model **Task models** กำหนด model ขนาดเล็กที่รวดเร็วสำหรับงานเบื้องหลัง เช่น การตั้งชื่อบทสนทนาและเขียนจุดเริ่มต้น และใช้ model เริ่มต้นที่ใช้งานอยู่เมื่อปล่อยว่าง Voice รวมการสังเคราะห์เสียงพูดและการถอดเสียง ส่วน Multimodal generation รวม model ภาพและวิดีโอ Partners & agents กำหนดค่า harness ในเครื่องและ Hermes gateway ระยะไกล
@@ -653,7 +652,7 @@ Settings คือศูนย์ควบคุมการทำงาน โ�
 **Video Learning** ภายใต้ Settings → Learning & conversation กำหนดค่าคำบรรยาย YouTube และการเข้าถึง Invidious สำหรับ Reading หากต้องการใช้ Invidious ให้ตั้งค่า backend API origin ที่ผู้ดูแลระบบจัดการ (ตัวอย่างเช่น `http://127.0.0.1:3000`) และ public origin ที่เบราว์เซอร์เข้าถึงได้ ทดสอบการเชื่อมต่อ เลือก Invidious แล้วบันทึก **Browse Invidious** ในกล่องเพิ่มสื่อของ Reading ใช้ค้นหาวิดีโอและเข้าถึง subscriptions และ playlists ที่เชื่อมต่อไว้ การเล่น YouTube ใช้ player อย่างเป็นทางการที่เพิ่มความเป็นส่วนตัว; หากไม่มีคำบรรยาย ระบบจะแสดงสถานะนี้และจำกัดหลักฐานที่ tutor ใช้ โดยไม่ปิดกั้นการเล่นแบบ native ติดตั้ง `.[video-learning]` สำหรับตัวโหลดคำบรรยาย YouTube เริ่มต้น ลิงก์ Watching ที่มีอยู่จะย้ายเข้า Reading โดยรักษาประวัติการสนทนา transcript ที่เข้ากันได้ notes และความคืบหน้าไว้; notes ที่อ้างอิง timestamp รายการใหม่จะเป็น annotations ของ Reading ส่วน Bilibili ใช้เส้นทางการเล่นและคำบรรยายของตัวเอง
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/settings/01-appearance%20settings.png" alt="การตั้งค่ารูปลักษณ์และธีมของ DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/appearance.png" alt="การตั้งค่ารูปลักษณ์และธีมของ DeepTutor" width="900">
 </div>
 
 ส่วนส่วนใหญ่ใช้ draft-and-apply flow เพื่อให้คุณทดสอบ provider ก่อนยืนยัน คุณยังสามารถแค่ถามใน Chat ได้เช่นกัน: ผู้ช่วยจะอ่านการกำหนดค่าปัจจุบัน, ใช้การเปลี่ยนแปลง และบอกว่าจำเป็นต้องรีสตาร์ทหรือ re-index หรือไม่ — โดยทดสอบ model ใหม่ก่อนที่จะยืนยัน จึงไม่สามารถเปลี่ยนตัวเองไปยังสิ่งที่เข้าถึงไม่ได้ API keys จะไม่ผ่านเข้าไปใน model เลย ซึ่งจะเปิดฟอร์มที่ตรงกันให้คุณแทน ธีมสี่แบบมาในกล่อง — Default, Cream, Dark และ Glass ไฟล์ `.env` ที่ root ของโปรเจกต์ถูกเพิกเฉยโดยเจตนา; การกำหนดค่า runtime อยู่ใน `data/user/settings/*.json` เว้นแต่ `DEEPTUTOR_HOME` หรือ `deeptutor start --home` จะชี้แอปไปที่อื่น

@@ -1,6 +1,6 @@
 <div align="center">
 
-<p align="center"><img src="../../assets/figs/logo/logo.png" alt="DeepTutor लोगो" height="56" style="vertical-align: middle;">&nbsp;<img src="../../assets/figs/logo/banner.png" alt="DeepTutor" height="48" style="vertical-align: middle;"></p>
+<p align="center"><img src="../../assets/figs/logo/color-full.png" alt="DeepTutor" width="480"></p>
 
 # DeepTutor: लाइफलॉन्ग व्यक्तिगत ट्यूटरिंग
 
@@ -422,16 +422,15 @@ DeepTutor अपने installed code, private runtime home, और optional Con
 अगर कोई answer पहले का constraint खो दे, weak evidence cite करे, या selected material से disagree करे, तो issue खोलने से पहले [`REASONING_SAFETY_CHECKLIST.md`](../../docs-for-user/REASONING_SAFETY_CHECKLIST.md) में diagnostics collect करें।
 
 <div align="center">
-<img src="../../assets/figs/web-1.6.5/OVERVIEW.png" alt="DeepTutor होम — sidebar में हर surface के साथ Chat workspace" width="900">
+<img src="../../assets/figs/web-dev/overview.png" alt="DeepTutor Home and workspace navigation" width="900">
 </div>
 
-> **Screenshot स्थिति:** overview v1.6.5 के लिए current है। नीचे दी गई surface screenshots अभी v1.4.6 references हैं और versioned refresh जारी है। इन्हें workflows समझने के लिए उपयोग करें, current exact navigation के रूप में नहीं।
 
 <details>
 <summary><b>🏗️ सिस्टम आर्किटेक्चर</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/system/system%20architecture.png" alt="DeepTutor सिस्टम आर्किटेक्चर" width="900">
+<img src="../../assets/figs/system/system-architecture.svg" alt="DeepTutor सिस्टम आर्किटेक्चर" width="900">
 </div>
 
 </details>
@@ -442,13 +441,13 @@ DeepTutor अपने installed code, private runtime home, और optional Con
 Chat default capability है और जहां से अधिकांश काम शुरू होता है। एक single thread normally बात कर सकता है, tools call कर सकता है, selected knowledge bases में खुद को ground कर सकता है, attachments पढ़ सकता है, images generate कर सकता है, subagents से consult कर सकता है, notebook records लिख सकता है, और turns के पार same context के साथ जारी रह सकता है।
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/home/00-overview.png" alt="DeepTutor Chat workspace" width="900">
+<img src="../../assets/figs/web-dev/chat.png" alt="DeepTutor Chat workspace" width="900">
 </div>
 
 Loop जानबूझकर simple है: model rounds में सोचता है, जब उपयोगी हो tools call करता है, results observe करता है, और tool-free message के साथ finish करता है। `ask_user` special है — guess करने की बजाय, agent turn pause कर सकता है, एक structured clarifying question पूछ सकता है, और आपके जवाब देने के बाद resume कर सकता है।
 
 <div align="center">
-<img src="../../assets/figs/system/chat-agent-loop.png" alt="DeepTutor Chat agent loop" width="900">
+<img src="../../assets/figs/system/chat-agent-loop.svg" alt="DeepTutor Chat agent loop" width="900">
 </div>
 
 User-toggleable tools हैं `brainstorm`, `web_search`, `paper_search`, `zotero_search`, `reason`, और `geogebra_analysis` — साथ ही `imagegen` और `videogen` जब आप matching generation model configure करें। Contextual tools जैसे `rag`, `kb_files`, `knowledge_frontier`, `read_source`, `read_memory`, `write_memory`, `read_skill`, `load_tools`, `exec`, `web_fetch`, `ask_user`, `list_notebook`, `write_note`, `question_bank`, `github`, `consult_subagent`, `workspace_list`, `workspace_read`, `workspace_search`, `workspace_present`, और `workspace_export` तब automatically mount होते हैं जब turn के पास सही context हो।
@@ -463,7 +462,7 @@ Home **Chat**, **Ask Questions**, **Quiz**, और **Visualize** को एक �
 <summary><b>🤝 Partner — एक ही बुद्धि पर चलने वाले स्थायी साथी</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/partners/00-partners%20overview.png" alt="DeepTutor Partners workspace" width="900">
+<img src="../../assets/figs/web-dev/partners.png" alt="DeepTutor Partners workspace" width="900">
 </div>
 
 Partners अपनी soul, model policy, library, memory, और channels वाले persistent companions हैं। वे एक अलग bot engine नहीं हैं: हर inbound web या IM message partner-scoped workspace के अंदर एक normal `ChatOrchestrator` turn बन जाता है। एक partner "एक chat है जिसकी personality और phone number है।"
@@ -475,7 +474,7 @@ Partners अपनी soul, model policy, library, memory, और channels व�
 हर partner के पास एक `SOUL.md`, model selection, channels, tool policy, और assigned library है। इसकी library knowledge bases, skills और notebooks को `data/partners/<id>/workspace/` में copy कर सकती है, या किसी existing workspace की files और resources से linked रह सकती है; soul, conversations और Partner memory अलग रहते हैं। Authenticated non-admin users private Partner sessions और relationship memory रखते हैं, जबकि Partner उनकी personal memory को read-only पढ़ता है; admin, group, और unbound traffic shared Partner scope उपयोग करते हैं।
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/partners/02-IM%20config%20for%20each%20partner.png" alt="प्रत्येक partner के लिए per-partner IM channel configuration" width="900">
+<img src="../../assets/figs/web-dev/partners-channels.png" alt="प्रत्येक partner के लिए per-partner IM channel configuration" width="900">
 </div>
 
 Channel layer schema-driven है और installed extras और configured credentials के आधार पर Feishu, Telegram, Slack, Discord, DingTalk, QQ/NapCat, WeCom, WhatsApp, Zulip, Mattermost, Matrix, Mochat, और Microsoft Teams जैसे IM platforms से connect हो सकती है। एक partner को subagent के रूप में भी connect किया जा सकता है और normal chat turn से consult किया जा सकता है — नीचे **My Agents** देखें।
@@ -488,7 +487,7 @@ Channel layer schema-driven है और installed extras और configured cre
 <summary><b>🧑‍🚀 My Agents — दूसरे एजेंट से सलाह लें और उन्हें इम्पोर्ट करें</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/myagents/00-overview.png" alt="DeepTutor My Agents workspace" width="900">
+<img src="../../assets/figs/web-dev/agents.png" alt="DeepTutor My Agents workspace" width="900">
 </div>
 
 My Agents दूसरे agents को DeepTutor के लिए context बनाता है, और दो अलग काम करता है। **लाइव एजेंट connect करें** — आपकी machine पर Claude Code, Codex, Grok CLI, Antigravity, Kimi, opencode, MiMo Code, Hermes Agent, OpenClaw, या DeepSeek Harness, कोई remote Hermes gateway, या आपके Partners में से एक — और इसे chat turn के अंदर से consult करें: DeepTutor actually दूसरे agent को *run* करता है और इसके काम को `consult_subagent` tool के जरिए Activity panel में stream करता है। Agent chip से इसे और इसकी round limit select करें, या `@` से connected agents की उसी list को filter करें; यह selection session से जुड़ा रहता है।
@@ -500,7 +499,7 @@ My Agents दूसरे agents को DeepTutor के लिए context ब�
 Grok अपनी खुद की authentication और session storage उपयोग करता है; DeepTutor इसके credentials copy नहीं करता। Follow-up consults same working directory में connection के session को resume करते हैं। Text और tool activity live stream होती है; private thought payloads omit किए जाते हैं। Cross-session Grok memory default रूप से disabled है। यह connector text questions और CLI tools support करता है, image forwarding या past Grok conversations import करना नहीं। Docker में, Grok को backend container के अंदर install और authenticate करें; केवल browser की machine पर installed CLI reachable नहीं है।
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/home/08-subagent%20demo%20with%20claude%20code.png" alt="Claude Code subagent को live consult करना" width="900">
+<img src="../../assets/figs/web-dev/personalization.png" alt="Account personalization: agents, personas, skills, and connections" width="900">
 </div>
 
 **पिछली conversations import करें** — अपनी existing ChatGPT, Claude Code, और Codex history को searchable, resumable conversations के रूप में bring in करें। एक safe, idempotent snapshot import के लिए किसी official ChatGPT data export से `conversations.json` select करें, Claude history को project / working directory के अनुसार चुनें, या Codex history को calendar date के अनुसार चुनें। Folder-based agents refreshable बने रहते हैं इसलिए उनका selected scope नई conversations खींच सकता है। Chat turn से किसी एक को `+` → My Agents के जरिए reference करें, और DeepTutor इसे एक third-party transcript के रूप में पढ़ता है — यह उनकी conversation रहती है, DeepTutor की अपनी आवाज नहीं।
@@ -511,13 +510,13 @@ Grok अपनी खुद की authentication और session storage उप�
 <summary><b>✍️ Co-Writer — चुने हुए पाठ के अनुसार Markdown लेखन</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/co-writer/00-overview.png" alt="DeepTutor Co-Writer workspace" width="900">
+<img src="../../assets/figs/web-dev/co-writer.png" alt="Learning notebook pages" width="900">
 </div>
 
 Co-Writer reports, tutorials, notes, और long-form learning artifacts के लिए एक split-view Markdown workspace है। Documents autosave होते हैं और live preview render करते हैं (KaTeX math, diagram fences), और जब draft reusable context बन जाए तो notebooks में save किए जा सकते हैं। नया draft शुरू करने के लिए `.docx` import करें, और वर्तमान editor को Markdown या Word के रूप में export करें।
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/co-writer/01-edit%20panel.png" alt="live preview वाला Co-Writer editor" width="900">
+<img src="../../assets/figs/web-dev/notebook-detail.png" alt="Learning notebook block editor and Dito" width="900">
 </div>
 
 इसका defining idea **surgical editing** है: एक span select करें और DeepTutor से rewrite, expand, या shorten करने के लिए कहें। Edit model चुनें; वह knowledge base या web evidence उपयोग कर सकता है और अपने tool calls का trace रखता है। अगर उसके काम के दौरान draft नहीं बदला है, तो result selected text को directly replace करता है और **Undo** से reversible रहता है।
@@ -528,17 +527,17 @@ Co-Writer reports, tutorials, notes, और long-form learning artifacts के 
 <summary><b>📖 Book — आपकी सामग्री से जीवंत पुस्तकें</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/book/00-book_overview.png" alt="DeepTutor पुस्तक लाइब्रेरी" width="900">
+<img src="../../assets/figs/web-dev/books.png" alt="DeepTutor पुस्तक लाइब्रेरी" width="900">
 </div>
 
 Book selected sources को एक interactive **living book** में बदलता है — एक static PDF नहीं, बल्कि typed blocks से बना एक reading environment। एक book knowledge bases, notebooks, question banks, या chat history से शुरू हो सकती है; creation flow content generate होने से पहले एक chapter outline propose करता है, इसलिए आप blind one-shot output accept करने की बजाय shape review करते हैं।
 
 <p align="center">
-<img src="../../assets/figs/web-1.4.6+/book/01-book-demo-quiz%20card.png" alt="पुस्तक quiz block" width="31%">
+<img src="../../assets/figs/web-dev/book-quiz.png" alt="पुस्तक quiz block" width="31%">
 &nbsp;
-<img src="../../assets/figs/web-1.4.6+/book/02-book-demo-manim%20video.png" alt="पुस्तक Manim animation block" width="31%">
+<img src="../../assets/figs/web-dev/book-detail.png" alt="Book outline and chapters" width="31%">
 &nbsp;
-<img src="../../assets/figs/web-1.4.6+/book/03-book-demo%20interactive%20module.png" alt="पुस्तक interactive widget block" width="31%">
+<img src="../../assets/figs/web-dev/book-widget.png" alt="पुस्तक interactive widget block" width="31%">
 </p>
 
 हर chapter editable typed blocks में compile होता है — text, callouts, quizzes, flash cards, timelines, code, figures, interactive HTML, animations, concept graphs, deep dives, और user notes — और उसका अपना Page Chat होता है। किसी block को insert, move, regenerate, rewrite, या उसका type switch करें; selected passages review की जा सकने वाली learning-capture inbox में जाते हैं। Progress, bookmarks, quiz attempts, captures, और Page Chat हर reader के लिए private रहते हैं, भले admin की book read-only या collaborative editing के लिए share की गई हो; shared book delete करना admin-only रहता है। कोई भी book Markdown में export हो सकती है, लंबी compiles pause और resume होती हैं, और `deeptutor book health` / `refresh-fingerprints` source drift को flag करते हैं।
@@ -549,13 +548,13 @@ Book selected sources को एक interactive **living book** में बद
 <summary><b>📚 Knowledge Center — कई इंजन वाली RAG लाइब्रेरी</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/knowledge/00-overview.png" alt="DeepTutor ज्ञान केंद्र" width="900">
+<img src="../../assets/figs/web-dev/knowledge.png" alt="DeepTutor ज्ञान केंद्र" width="900">
 </div>
 
 Knowledge bases RAG के पीछे document collections हैं — वे Chat turns, Co-Writer edits, Book generation, और Partner conversations को ground करते हैं। जो distinctive है वह है **retrieval engines का choice**: **LlamaIndex** (default, hybrid vector + BM25 के साथ optional cross-encoder reranking और exact-flat या HNSW FAISS indexes), **PageIndex** (reasoning retrieval with page-level citations, hosted या self-hosted OSS), **GraphRAG** और **LightRAG** (knowledge-graph retrieval), **LightRAG Server** (retrieval एक external LightRAG instance पर offload किया जाता है जिसे आप HTTP पर connect करते हैं), **WeKnora** (आपके self-hosted deployment की knowledge base से retrieval, बिना local index या document copy के), **Tencent IMA** (एक library जिसे आप IMA में curate करते हैं — इसके OpenAPI पर search, browse, और write back किया जाता है), **MarginNote 4** (आपका MN4 study data — documents, excerpts, mind-map cards और उनके बीच के links — जिन्हें app का Add-on push करता है और dedicated tools से navigate किया जाता है), **Kiwix** (बिना local indexing के HTTP पर serve किया गया searchable ZIM archive), या एक linked **Obsidian** vault जिसे tutor in-place पढ़ता और लिखता है। हर KB एक engine से bound होती है।
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/knowledge/01-create%20knowledge%20base.png" alt="एक knowledge base बनाएं" width="900">
+<img src="../../assets/figs/web-dev/knowledge-create.png" alt="एक knowledge base बनाएं" width="900">
 </div>
 
 Existing Obsidian, Hermes, या Markdown library migrate कर रहे हैं? Connected-vault और indexed-copy paths के लिए [Knowledge migration guide](../../docs-for-user/KNOWLEDGE_MIGRATION.md) देखें।
@@ -578,13 +577,13 @@ Native LightRAG queries और incremental indexing को उस embedding conf
 <summary><b>🌐 Learning Space — Skills, Personas और दोबारा उपयोग योग्य संदर्भ</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/learning-space/00-overview.png" alt="DeepTutor Learning Space केंद्र" width="900">
+<img src="../../assets/figs/web-dev/resources.png" alt="Resources in the active workspace" width="900">
 </div>
 
 Learning Space library, organization, और personalization layer है। **Conversations & Materials** में Chat History, movable records और Markdown export वाले notebooks, तथा answers और explanations वाला question bank है। Review sessions, mistake tracking और scheduled repetition के लिए question bank में चुने गए प्रश्नों या Personalized Learning से **Practice** शुरू करें। **Personalization** में personas, skills (`SKILL.md` playbooks), one-click **MCP Services**, और [CLI-Anything](https://github.com/HKUDS/CLI-Anything) catalog के **CLI Apps** हैं, जिनकी usage guide on-demand load होती है। अलग **My Courses** workspace subject conversations और tutor threads को group करता है; हर asset केवल उन workflows में उपलब्ध होता है जो उसे support करते हैं।
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/learning-space/07-%20download%20skills%20from%20eduhub.png" alt="EduHub से skills import करें" width="900">
+<img src="../../assets/figs/web-dev/skills.png" alt="Personalization skill library" width="900">
 </div>
 
 आपको हर skill खुद नहीं लिखनी है — **Import from EduHub** community catalog browse करता है और एक security gate के जरिए directly आपकी library में skill download करता है (देखें [Ecosystem](#-इकोसिस्टम--eduhub-और-skills-community))।
@@ -595,13 +594,13 @@ Learning Space library, organization, और personalization layer है। **C
 <summary><b>🧠 Memory — जांचा जा सकने वाला वैयक्तिकरण</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/memory/00-overview.png" alt="DeepTutor memory अवलोकन" width="900">
+<img src="../../assets/figs/web-dev/memory.png" alt="DeepTutor memory अवलोकन" width="900">
 </div>
 
 Memory एक file-backed, three-layer system है जिसे आप पढ़, curate, और audit कर सकते हैं — जानबूझकर एक hidden vector store नहीं। **L1** workspace mirror plus एक append-only event trace (`trace/<surface>/<date>.jsonl`) है; **L2** per-surface curated facts (`L2/<surface>.md`) है, जिसमें L1 entities के references होते हैं; **L3** cross-surface synthesis (`L3/<profile|recent|scope|preferences>.md`) है, जो अपनी contributing L2 surfaces record करता है।
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/memory/01-3%20layer%20memory%20graph.png" alt="DeepTutor memory graph" width="900">
+<img src="../../assets/figs/web-dev/memory-graph.png" alt="DeepTutor memory graph" width="900">
 </div>
 
 Memory Graph पूरा pyramid दिखाता है — L3 synthesis centre में, L2 middle ring में, L1 traces outside में — exact L2 → L1 evidence edges और L3 → contributing-surface links के साथ। Memory `chat`, `notebook`, `quiz`, `kb`, `book`, partner, और `cowriter` surfaces पर track किया जाता है; consolidator के Update / Audit / Dedup budgets **Settings → Memory** में tune किए जाते हैं।
@@ -612,7 +611,7 @@ Memory Graph पूरा pyramid दिखाता है — L3 synthesis cen
 <summary><b>⚙️ Settings — नियंत्रण का एक केंद्र</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/settings/00-setting%20overview.png" alt="DeepTutor Settings केंद्र" width="900">
+<img src="../../assets/figs/web-dev/settings.png" alt="Settings navigator" width="900">
 </div>
 
 Settings operational control plane है, जो interface और model output language के लिए **General** पर खुलता है। इसका searchable navigator independent pages से जोड़ता है: **Personal** में Workspaces, Data migration, Appearance और Usage statistics हैं; **Learning & conversation** में starting points, attachments, Video Learning, learner और guardian controls, Learning progress, तथा Memory हैं; **Models & services** में Providers, Language models, Task models, Embedding, Search, Voice और Multimodal generation हैं; **Features & integrations** में tools, capability parameters, Partners & agents और Knowledge & documents हैं। **System** में Network, Runtime status और About हैं; **Archived chats** archived conversations खोजने, restore करने या permanently delete करने देता है। Runtime status में backend health, resident memory और capability blockers, warnings तथा suggestions बताने वाला **Readiness** matrix है। Workspaces topic files और learning state अलग रखता है, जबकि Data migration में verified migration और export उपलब्ध हैं। एक **provider** vendor का address और credential रखता है ताकि उसके service models उन्हें reuse कर सकें; model pages saved providers चुनते हैं और model names तथा capabilities configure करते हैं। **Task models** background work — conversations को नाम देना और starting points लिखना — के लिए छोटा, तेज़ model pin करते हैं, और खाली होने पर active default उपयोग करते हैं। Voice में speech synthesis और transcription एक साथ हैं; Multimodal generation में image और video models हैं। Partners & agents local harnesses और remote Hermes gateway configure करता है।
@@ -624,7 +623,7 @@ Settings operational control plane है, जो interface और model output 
 Settings → Learning & conversation के तहत **Video Learning**, Reading के लिए YouTube captions और Invidious access configure करता है। Invidious उपयोग करने के लिए administrator द्वारा managed backend API origin (उदाहरण के लिए `http://127.0.0.1:3000`) और browser से accessible public origin set करें, connection test करें, Invidious select करें, और save करें। Reading के add-material dialog में **Browse Invidious** से videos खोजे जा सकते हैं और connected subscriptions तथा playlists खोली जा सकती हैं। YouTube playback official privacy-enhanced player उपयोग करता है; captions न होने की स्थिति दिखाई जाती है और tutor के evidence को सीमित करती है, लेकिन native playback को नहीं रोकती। Default YouTube caption loader के लिए `.[video-learning]` install करें। Existing Watching links conversation history, compatible transcripts, notes और progress को बनाए रखते हुए Reading में migrate होते हैं; नए timestamp notes Reading annotations होते हैं। Bilibili अपनी playback और caption प्रक्रिया उपयोग करता है।
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/settings/01-appearance%20settings.png" alt="DeepTutor appearance settings और themes" width="900">
+<img src="../../assets/figs/web-dev/appearance.png" alt="DeepTutor appearance settings और themes" width="900">
 </div>
 
 अधिकांश sections एक draft-and-apply flow उपयोग करते हैं, इसलिए आप provider को commit करने से पहले test कर सकते हैं। आप बस Chat में भी पूछ सकते हैं: assistant current configuration पढ़ता है, एक change apply करता है, और बताता है कि उसे restart या re-index चाहिए या नहीं — एक नए model को commit करने से पहले probe करते हुए, इसलिए यह खुद को किसी unreachable चीज़ पर switch नहीं कर सकता। API keys कभी model से नहीं गुजरतीं, जो इसकी बजाय आपके लिए matching form खोल देता है। चार themes box में आते हैं — Default, Cream, Dark, और Glass। Project-root `.env` files जानबूझकर ignored हैं; runtime configuration `data/user/settings/*.json` के नीचे रहती है जब तक कि `DEEPTUTOR_HOME` या `deeptutor start --home` app को कहीं और point न करे।

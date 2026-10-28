@@ -1,6 +1,6 @@
 <div align="center">
 
-<p align="center"><img src="../../assets/figs/logo/logo.png" alt="Logótipo do DeepTutor" height="56" style="vertical-align: middle;">&nbsp;<img src="../../assets/figs/logo/banner.png" alt="DeepTutor" height="48" style="vertical-align: middle;"></p>
+<p align="center"><img src="../../assets/figs/logo/color-full.png" alt="DeepTutor" width="480"></p>
 
 # DeepTutor: Tutoria Personalizada Vitalícia
 
@@ -422,16 +422,15 @@ Comece pelas superfícies principais que usará no dia a dia: Chat, Partners, Me
 Se uma resposta perder uma restrição anterior, citar evidências fracas ou discordar do material selecionado, recolha os diagnósticos em [`REASONING_SAFETY_CHECKLIST.md`](../../docs-for-user/REASONING_SAFETY_CHECKLIST.md) antes de abrir uma issue.
 
 <div align="center">
-<img src="../../assets/figs/web-1.6.5/OVERVIEW.png" alt="Página inicial do DeepTutor — o espaço de trabalho Chat com todas as superfícies na barra lateral" width="900">
+<img src="../../assets/figs/web-dev/overview.png" alt="DeepTutor Home and workspace navigation" width="900">
 </div>
 
-> **Estado das capturas:** a visão geral está atualizada para a v1.6.5. As capturas de superfícies abaixo continuam referências da v1.4.6 durante a atualização. Use-as para entender os fluxos, não como navegação exata atual.
 
 <details>
 <summary><b>🏗️ Arquitetura do sistema</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/system/system%20architecture.png" alt="Arquitetura do sistema DeepTutor" width="900">
+<img src="../../assets/figs/system/system-architecture.svg" alt="Arquitetura do sistema DeepTutor" width="900">
 </div>
 
 </details>
@@ -442,13 +441,13 @@ Se uma resposta perder uma restrição anterior, citar evidências fracas ou dis
 Chat é a capacidade predefinida e o lugar onde a maior parte do trabalho começa. Um único thread pode conversar normalmente, chamar ferramentas, fundamentar-se em bases de conhecimento selecionadas, ler anexos, gerar imagens, consultar subagentes, escrever registos de notebook e continuar com o mesmo contexto entre turnos.
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/home/00-overview.png" alt="Espaço de trabalho de chat DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/chat.png" alt="Espaço de trabalho de chat DeepTutor" width="900">
 </div>
 
 O loop é deliberadamente simples: o modelo pensa em rondas, chama ferramentas quando útil, observa os resultados e termina com uma mensagem sem ferramentas. `ask_user` é especial — em vez de adivinhar, o agente pode pausar o turno, fazer uma pergunta de esclarecimento estruturada e retomar assim que responder.
 
 <div align="center">
-<img src="../../assets/figs/system/chat-agent-loop.png" alt="Loop de agente de chat DeepTutor" width="900">
+<img src="../../assets/figs/system/chat-agent-loop.svg" alt="Loop de agente de chat DeepTutor" width="900">
 </div>
 
 As ferramentas ativáveis pelo utilizador são `brainstorm`, `web_search`, `paper_search`, `zotero_search`, `reason` e `geogebra_analysis` — mais `imagegen` e `videogen` depois de configurar o modelo de geração correspondente. Ferramentas contextuais como `rag`, `kb_files`, `knowledge_frontier`, `read_source`, `read_memory`, `write_memory`, `read_skill`, `load_tools`, `exec`, `web_fetch`, `ask_user`, `list_notebook`, `write_note`, `question_bank`, `github`, `consult_subagent`, `workspace_list`, `workspace_read`, `workspace_search`, `workspace_present` e `workspace_export` montam automaticamente quando o turno tem o contexto certo.
@@ -463,7 +462,7 @@ A página inicial mantém **Chat**, **Ask Questions**, **Quiz** e **Visualize** 
 <summary><b>🤝 Partner — Companheiros Persistentes no Mesmo Cérebro</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/partners/00-partners%20overview.png" alt="Espaço de trabalho de partners DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/partners.png" alt="Espaço de trabalho de partners DeepTutor" width="900">
 </div>
 
 Os Partners são companheiros persistentes com a sua própria alma, política de modelo, biblioteca, memória e canais. Não são um motor de bot separado: cada mensagem web ou IM recebida torna-se um turno normal do `ChatOrchestrator` dentro de um espaço de trabalho com âmbito de partner. Um partner é "um chat que tem personalidade e número de telefone."
@@ -475,7 +474,7 @@ Os Partners são companheiros persistentes com a sua própria alma, política de
 Cada partner tem um `SOUL.md`, seleção de modelo, canais, política de ferramentas e biblioteca atribuída. A sua biblioteca pode copiar bases de conhecimento, skills e notebooks para `data/partners/<id>/workspace/`, ou permanecer ligada aos ficheiros e recursos de um workspace existente; a identidade, as conversas e a memória do Partner continuam separadas. Os utilizadores autenticados que não sejam administradores mantêm sessões Partner e memória de relacionamento privadas, enquanto o Partner lê a sua memória pessoal em modo somente leitura; o tráfego de administrador, de grupo e não vinculado usa o âmbito Partner partilhado.
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/partners/02-IM%20config%20for%20each%20partner.png" alt="Configuração de canal IM por partner" width="900">
+<img src="../../assets/figs/web-dev/partners-channels.png" alt="Configuração de canal IM por partner" width="900">
 </div>
 
 A camada de canais é orientada por esquema e pode ligar-se a plataformas IM como Feishu, Telegram, Slack, Discord, DingTalk, QQ/NapCat, WeCom, WhatsApp, Zulip, Mattermost, Matrix, Mochat e Microsoft Teams dependendo dos extras instalados e das credenciais configuradas. Um partner também pode ser conectado como subagente e consultado a partir de um turno de chat normal — veja **Meus Agentes** abaixo.
@@ -488,7 +487,7 @@ Para uma configuração mais rápida, a página de canal do Partner pode criar u
 <summary><b>🧑‍🚀 Meus Agentes — Consultar e Importar Outros Agentes</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/myagents/00-overview.png" alt="Espaço de trabalho Meus Agentes DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/agents.png" alt="Espaço de trabalho Meus Agentes DeepTutor" width="900">
 </div>
 
 Meus Agentes transforma outros agentes em contexto para o DeepTutor, e faz duas coisas distintas. **Conectar um agente ao vivo** — Claude Code, Codex, Grok CLI, Antigravity, Kimi, opencode, MiMo Code, Hermes Agent, OpenClaw ou DeepSeek Harness na sua máquina, um gateway Hermes remoto ou um dos seus Partners — e consultá-lo a partir de dentro de um turno de chat: o DeepTutor *executa* mesmo o outro agente e transmite o seu trabalho para o painel de Atividade via a ferramenta `consult_subagent`. Selecione-o e o respetivo limite de rondas com o chip de Agente, ou filtre a mesma lista de agentes conectados com `@`; a escolha permanece associada à sessão.
@@ -500,7 +499,7 @@ Em **Settings → Partners & Agents → Grok CLI**, deixe o modelo e o esforço 
 O Grok usa a sua própria autenticação e armazenamento de sessão; o DeepTutor não copia as suas credenciais. Consultas de seguimento retomam a sessão da ligação no mesmo diretório de trabalho. O texto e a atividade de ferramentas são transmitidos em direto; as cargas de pensamento privado são omitidas. A memória do Grok entre sessões está desativada por predefinição. Este conector suporta perguntas de texto e ferramentas da CLI, não o envio de imagens nem a importação de conversas anteriores do Grok. No Docker, instale e autentique o Grok dentro do contentor do backend; uma CLI instalada apenas na máquina do navegador não é alcançável.
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/home/08-subagent%20demo%20with%20claude%20code.png" alt="Consultar um subagente Claude Code ao vivo" width="900">
+<img src="../../assets/figs/web-dev/personalization.png" alt="Account personalization: agents, personas, skills, and connections" width="900">
 </div>
 
 **Importar conversas anteriores** — traga o seu histórico existente do ChatGPT, Claude Code e Codex como conversas pesquisáveis e retomáveis. Selecione `conversations.json` de uma exportação de dados oficial do ChatGPT para uma importação de instantâneo segura e idempotente, escolha o histórico do Claude por projeto / diretório de trabalho, ou escolha o histórico do Codex por data do calendário. Os agentes baseados em pastas continuam atualizáveis, de modo que o seu âmbito selecionado pode obter novas conversas. Referencie uma a partir de um turno do Chat via `+` → Meus Agentes, e o DeepTutor lê-a como uma transcrição de terceiros — permanece *a conversa deles*, não a voz própria do DeepTutor.
@@ -511,13 +510,13 @@ O Grok usa a sua própria autenticação e armazenamento de sessão; o DeepTutor
 <summary><b>✍️ Co-Writer — Rascunho Markdown com Consciência de Seleção</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/co-writer/00-overview.png" alt="Espaço de trabalho Co-Writer DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/co-writer.png" alt="Learning notebook pages" width="900">
 </div>
 
 Co-Writer é um espaço de trabalho Markdown de vista dividida para relatórios, tutoriais, notas e artefactos de aprendizagem de formato longo. Os documentos guardam automaticamente, renderizam uma pré-visualização em tempo real (matemática KaTeX, cercas de diagramas) e podem ser guardados de volta em notebooks quando um rascunho se torna contexto reutilizável. Importe um `.docx` para começar um rascunho e exporte o editor atual como Markdown ou Word.
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/co-writer/01-edit%20panel.png" alt="Editor Co-Writer com pré-visualização em tempo real" width="900">
+<img src="../../assets/figs/web-dev/notebook-detail.png" alt="Learning notebook block editor and Dito" width="900">
 </div>
 
 A sua ideia central é a **edição cirúrgica**: selecione um trecho e peça ao DeepTutor para reescrever, expandir ou encurtar. Escolha o modelo de edição; este pode usar uma base de conhecimento ou evidências da web e mantém um rasto das suas chamadas de ferramentas. Se o rascunho não tiver mudado durante o trabalho, o resultado substitui diretamente o texto selecionado e continua reversível com **Undo**.
@@ -528,17 +527,17 @@ A sua ideia central é a **edição cirúrgica**: selecione um trecho e peça ao
 <summary><b>📖 Book (Livro) — Livros Vivos dos Seus Materiais</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/book/00-book_overview.png" alt="Biblioteca de livros DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/books.png" alt="Biblioteca de livros DeepTutor" width="900">
 </div>
 
 Book converte fontes selecionadas num **livro vivo** interativo — não um PDF estático, mas um ambiente de leitura construído a partir de blocos tipados. Um livro pode começar a partir de bases de conhecimento, notebooks, bancos de perguntas ou histórico de chat; o fluxo de criação propõe uma estrutura de capítulos antes de o conteúdo ser gerado, para que os utilizadores possam rever a forma em vez de aceitar uma saída cega de disparo único.
 
 <p align="center">
-<img src="../../assets/figs/web-1.4.6+/book/01-book-demo-quiz%20card.png" alt="Bloco de quiz do Book" width="31%">
+<img src="../../assets/figs/web-dev/book-quiz.png" alt="Bloco de quiz do Book" width="31%">
 &nbsp;
-<img src="../../assets/figs/web-1.4.6+/book/02-book-demo-manim%20video.png" alt="Bloco de animação Manim do Book" width="31%">
+<img src="../../assets/figs/web-dev/book-detail.png" alt="Book outline and chapters" width="31%">
 &nbsp;
-<img src="../../assets/figs/web-1.4.6+/book/03-book-demo%20interactive%20module.png" alt="Bloco de widget interativo do Book" width="31%">
+<img src="../../assets/figs/web-dev/book-widget.png" alt="Bloco de widget interativo do Book" width="31%">
 </p>
 
 Cada capítulo compila em blocos tipados editáveis — texto, callouts, quizzes, cartões flash, linhas do tempo, código, figuras, HTML interativo, animações, gráficos de conceitos, mergulhos profundos e notas de utilizador — e cada página dispõe do seu próprio Page Chat. Insira, mova, regenere, reescreva ou mude o tipo de um bloco; os trechos selecionados entram numa caixa de entrada de capturas de aprendizagem sujeita a revisão. O progresso, os marcadores, as tentativas de quiz, as capturas e o Page Chat permanecem privados por leitor, mesmo quando um livro do administrador é partilhado em modo só de leitura ou para edição colaborativa; a eliminação de livros partilhados continua reservada ao administrador. Qualquer livro exporta para Markdown, as compilações longas pausam e retomam, e `deeptutor book health` / `refresh-fingerprints` assinalam divergências nas fontes.
@@ -549,13 +548,13 @@ Cada capítulo compila em blocos tipados editáveis — texto, callouts, quizzes
 <summary><b>📚 Centro de Conhecimento — Bibliotecas RAG Multi-Motor</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/knowledge/00-overview.png" alt="Centro de Conhecimento DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/knowledge.png" alt="Centro de Conhecimento DeepTutor" width="900">
 </div>
 
 As bases de conhecimento são as coleções de documentos por trás do RAG — fundamentam os turnos do Chat, edições do Co-Writer, geração do Book e conversas do Partner. O que é distintivo é uma **escolha de motores de recuperação**: **LlamaIndex** (o padrão, vetor híbrido + BM25 com reranking opcional por cross-encoder e índices FAISS exact-flat ou HNSW), **PageIndex** (recuperação de raciocínio com citações ao nível da página, alojado ou OSS auto-hospedado), **GraphRAG** e **LightRAG** (recuperação de grafo de conhecimento), **LightRAG Server** (recuperação delegada a uma instância externa de LightRAG conectada via HTTP), **WeKnora** (recuperação a partir de uma base de conhecimento na sua implementação auto-hospedada, sem índice local nem cópia de documentos), **Tencent IMA** (uma biblioteca que cura no IMA — pesquisada, navegada e escrita de volta através da sua OpenAPI), **MarginNote 4** (os seus dados de estudo MN4 — documentos, excertos, cartões de mapa mental e as ligações entre eles — enviados pelo Add-on da aplicação e navegados com ferramentas dedicadas), **Kiwix** (um arquivo ZIM pesquisável servido por HTTP sem indexação local), ou um vault **Obsidian** vinculado que o tutor lê e escreve no lugar. Cada KB está vinculada a um motor.
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/knowledge/01-create%20knowledge%20base.png" alt="Criar uma base de conhecimento" width="900">
+<img src="../../assets/figs/web-dev/knowledge-create.png" alt="Criar uma base de conhecimento" width="900">
 </div>
 
 Vai migrar uma biblioteca Obsidian, Hermes ou Markdown existente? Consulte o [guia de migração de Knowledge](../../docs-for-user/KNOWLEDGE_MIGRATION.md) para os caminhos de vault ligado e cópia indexada.
@@ -578,13 +577,13 @@ As consultas nativas do LightRAG e a indexação incremental exigem a configura�
 <summary><b>🌐 Espaço de Aprendizado — Skills, Personas e Contexto Reutilizável</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/learning-space/00-overview.png" alt="Hub do Espaço de Aprendizado DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/resources.png" alt="Resources in the active workspace" width="900">
 </div>
 
 O Espaço de Aprendizado é a camada de biblioteca, organização e personalização. **Conversas e Materiais** contém o Chat History, notebooks com registos transferíveis e exportação em Markdown, e um banco de questões com respostas e explicações. Inicie **Prática** a partir de uma seleção do banco de questões ou de Aprendizagem personalizada para sessões de revisão, acompanhamento de erros e repetição programada. **Personalização** contém personas, skills (playbooks `SKILL.md`), **Serviços MCP** de um clique e **Aplicações CLI** do catálogo [CLI-Anything](https://github.com/HKUDS/CLI-Anything), cada uma com um guia de utilização carregado a pedido. O espaço de trabalho separado **My Courses** agrupa conversas por disciplina e threads de tutoria; cada recurso é oferecido apenas nos fluxos de trabalho que o suportam.
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/learning-space/07-%20download%20skills%20from%20eduhub.png" alt="Importar skills do EduHub" width="900">
+<img src="../../assets/figs/web-dev/skills.png" alt="Personalization skill library" width="900">
 </div>
 
 Não tem de escrever cada skill você mesmo — **Importar do EduHub** navega no catálogo da comunidade e descarrega uma skill diretamente para a sua biblioteca através de uma porta de segurança (veja [Ecossistema](#-ecossistema--eduhub-e-a-comunidade-de-skills)).
@@ -595,13 +594,13 @@ Não tem de escrever cada skill você mesmo — **Importar do EduHub** navega no
 <summary><b>🧠 Memória — Personalização Inspecionável</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/memory/00-overview.png" alt="Visão geral da memória DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/memory.png" alt="Visão geral da memória DeepTutor" width="900">
 </div>
 
 A Memória é um sistema de três camadas suportado por ficheiros que pode ler, curar e auditar — deliberadamente *não* um armazém de vetores oculto. **L1** é o espelho do espaço de trabalho mais um rasto de eventos append-only (`trace/<surface>/<date>.jsonl`); **L2** são factos curados por superfície (`L2/<surface>.md`) com referências a entidades L1; **L3** é a síntese entre superfícies (`L3/<profile|recent|scope|preferences>.md`) que regista as superfícies L2 contribuintes.
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/memory/01-3%20layer%20memory%20graph.png" alt="Gráfico de memória de três camadas DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/memory-graph.png" alt="Gráfico de memória de três camadas DeepTutor" width="900">
 </div>
 
 O Memory Graph mostra toda a pirâmide — síntese L3 no centro, L2 no anel do meio, rastreamentos L1 no exterior — com arestas de evidência L2 → L1 exatas e ligações L3 → superfícies contribuintes. A memória é rastreada nas superfícies `chat`, `notebook`, `quiz`, `kb`, `book`, partner e `cowriter`; os orçamentos de Atualização / Auditoria / Deduplicação do consolidador são ajustados em **Settings → Memory**.
@@ -612,7 +611,7 @@ O Memory Graph mostra toda a pirâmide — síntese L3 no centro, L2 no anel do 
 <summary><b>⚙️ Configurações — Um Plano de Controlo</b></summary>
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/settings/00-setting%20overview.png" alt="Hub de configurações DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/settings.png" alt="Settings navigator" width="900">
 </div>
 
 Configurações é o plano de controlo operacional e abre em **Geral**, com o idioma da interface e o de saída do modelo. O navegador pesquisável liga a páginas independentes: **Pessoal** inclui Workspaces, Migração de dados, Aparência e Estatísticas de utilização; **Aprendizagem e conversa** inclui pontos de partida, anexos, Video Learning, controlos de alunos e responsáveis, Progresso de aprendizagem e Memory; **Modelos e serviços** inclui Provedores, Modelos de linguagem, Modelos de tarefa, Embedding, Search, Voz e Geração multimodal; **Funcionalidades e integrações** inclui ferramentas, parâmetros de capacidades, Partners e agentes e Conhecimento e documentos. **Sistema** reúne Rede, Estado de execução e Sobre; **Conversas arquivadas** permite pesquisar, restaurar ou eliminar permanentemente conversas arquivadas. Estado de execução contém a saúde do backend, memória residente e a matriz de **Prontidão**, que classifica bloqueios, avisos e sugestões das capacidades. Workspaces mantém os ficheiros dos temas e o estado de aprendizagem separados, com migração e exportação verificadas em Migração de dados. Um **provedor** guarda o endereço e a credencial de um fornecedor para reutilização pelos seus modelos de serviço; as páginas de modelos selecionam provedores guardados e configuram nomes e capacidades dos modelos. Os **modelos de tarefa** fixam um modelo pequeno e rápido para trabalho em segundo plano — nomear conversas e escrever pontos de partida — e usam a predefinição ativa quando deixados em branco. Voz agrupa síntese e transcrição de voz; Geração multimodal agrupa modelos de imagem e vídeo. Partners e agentes configura harnesses locais e um gateway Hermes remoto.
@@ -625,7 +624,7 @@ Configurações é o plano de controlo operacional e abre em **Geral**, com o id
 **Video Learning** em Settings → Aprendizagem e conversa configura as legendas do YouTube e o acesso ao Invidious para Reading. Para usar o Invidious, defina a origem da API do backend gerida pelo administrador (por exemplo, `http://127.0.0.1:3000`) e a origem pública acessível pelo navegador, teste a ligação, selecione Invidious e guarde. **Browse Invidious** no diálogo para adicionar materiais do Reading pesquisa vídeos e acede às subscrições e listas de reprodução conectadas. A reprodução do YouTube usa o leitor oficial com privacidade melhorada; a ausência de legendas permanece visível e limita as evidências do tutor sem bloquear a reprodução nativa. Instale `.[video-learning]` para o carregador predefinido de legendas do YouTube. Os links existentes de Watching migram para Reading, preservando o histórico de conversas, transcrições compatíveis, notas e progresso; as novas notas com marcas temporais são anotações do Reading. O Bilibili usa o seu próprio caminho de reprodução e legendas.
 
 <div align="center">
-<img src="../../assets/figs/web-1.4.6+/settings/01-appearance%20settings.png" alt="Configurações de aparência e temas DeepTutor" width="900">
+<img src="../../assets/figs/web-dev/appearance.png" alt="Configurações de aparência e temas DeepTutor" width="900">
 </div>
 
 A maioria das secções usa um fluxo de rascunho e aplicação, para que possa testar um provedor antes de o confirmar. Também pode simplesmente pedir no Chat: o assistente lê a configuração atual, aplica uma alteração e diz se é necessário reiniciar ou reindexar — testando um novo modelo antes de o confirmar, para que nunca possa mudar-se sozinho para algo inacessível. As chaves API nunca passam pelo modelo, que em vez disso abre o formulário correspondente para si. Quatro temas incluídos — Default, Cream, Dark e Glass. Os ficheiros `.env` da raiz do projeto são intencionalmente ignorados; a configuração de runtime vive sob `data/user/settings/*.json` a menos que `DEEPTUTOR_HOME` ou `deeptutor start --home` aponte a aplicação para outro lugar.
