@@ -1,7 +1,7 @@
 <div align="center">
 
 <p align="center"><img src="../../assets/figs/logo/color-full.png" alt="DeepTutor" width="480"></p>
-# DeepTutor：終身個人化學習導師
+<h1 align="center">DeepTutor：終身個人化學習導師</h1>
 
 <p align="center">
   <a href="https://deeptutor.info" target="_blank"><img alt="文件 — deeptutor.info" src="https://img.shields.io/badge/Docs-deeptutor.info%20%E2%86%97-0A0A0A?style=for-the-badge&labelColor=F5F5F4" height="36"></a>&nbsp;
