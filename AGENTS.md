@@ -81,7 +81,7 @@ Multi-stage pipelines that own the turn:
 | `video_lesson`   | code_generation → render_check → render_output (Remotion lesson played live in the browser, with TTS narration) |
 
 All capabilities converge on `emit_capability_result()` in
-`deeptutor/capabilities/_shared.py` so every turn emits the same envelope
+`deeptutor/agents/_shared/capability_result.py` so every turn emits the same envelope
 (response payload + `cost_summary` from `UsageTracker`). Status copy and
 prompts are i18n'd via `capabilities/prompts/{en,zh}/<name>.yaml`.
 
@@ -122,7 +122,7 @@ to inspect installed/enabled/ready states and `deeptutor plugin list` to discove
 registered capabilities and tools. Source Web startup also needs Node.js 22 LTS
 and `npm ci --legacy-peer-deps` in `web/`. CLI-only source users can skip frontend
 setup, but still need the full Python dependencies. Follow
-[Agent Setup](docs-for-user/AGENT_SETUP.md) for credentials and verification.
+[Agent Setup](docs-for-dev/AGENT_SETUP.md) for credentials and verification.
 
 ## Key Files
 
@@ -140,7 +140,7 @@ setup, but still need the full Python dependencies. Follow
 | `deeptutor/core/context.py`                | `UnifiedContext` dataclass            |
 | `deeptutor/tools/builtin/__init__.py`      | All built-in tool wrappers           |
 | `deeptutor/capabilities/`                  | Built-in capability implementations  |
-| `deeptutor/app.py`                         | `DeepTutorApp` — Python SDK facade    |
+| `deeptutor/app/`                           | `DeepTutorApp` SDK facade + durable application service |
 | `deeptutor_cli/main.py`                    | Typer CLI entry point                |
 | `deeptutor/api/routers/unified_ws.py`      | Unified WebSocket endpoint           |
 

@@ -80,16 +80,16 @@ DeepTutor एक agent-native learning workspace है जो tutoring, problem
 ```text
 Help me install and configure the current dev version of DeepTutor from https://github.com/HKUDS/DeepTutor.
 Clone the dev branch, or inspect and reuse my existing checkout, and read SKILL.md and
-docs-for-user/AGENT_SETUP.md first. Follow that guide to prepare the environment,
+docs-for-dev/AGENT_SETUP.md first. Follow that guide to prepare the environment,
 configure my model provider, verify the setup, and start the Web app.
 Ask me for any missing provider, model, or credential-source information;
 do not print API keys. Preserve my existing files and settings, and finish
 with the access URL and the results of your checks.
 ```
 
-[Agent Setup guide](../../docs-for-user/AGENT_SETUP.md) में पूरी प्रक्रिया दी गई है, जिसमें non-interactive CLI configuration भी शामिल है। खुद install करने के लिए नीचे दिए गए paths में से एक चुनें।
+[Agent Setup guide](../../docs-for-dev/AGENT_SETUP.md) में पूरी प्रक्रिया दी गई है, जिसमें non-interactive CLI configuration भी शामिल है। खुद install करने के लिए नीचे दिए गए paths में से एक चुनें।
 
-DeepTutor चार installation paths के साथ आता है। वे सभी एक runtime-home layout साझा करते हैं: private settings उस directory के नीचे `data/user/settings/` में रहती हैं जहां से आप launch करते हैं (या `DEEPTUTOR_HOME` / `deeptutor start --home` के नीचे अगर आप explicitly set करते हैं)। पूरे storage layout, database support और backup संबंधी जानकारी के लिए [स्थानीय डेटा का स्थायी संग्रह](../../docs-for-user/DATA_STORAGE.md) देखें। पूरे app के लिए, recommended flow है **एक runtime-home directory चुनें → install करें → `deeptutor init` → `deeptutor start`**।
+DeepTutor चार installation paths के साथ आता है। वे सभी एक runtime-home layout साझा करते हैं: private settings उस directory के नीचे `data/user/settings/` में रहती हैं जहां से आप launch करते हैं (या `DEEPTUTOR_HOME` / `deeptutor start --home` के नीचे अगर आप explicitly set करते हैं)। पूरे storage layout, database support और backup संबंधी जानकारी के लिए [स्थानीय डेटा का स्थायी संग्रह](../../docs-for-dev/DATA_STORAGE.md) देखें। पूरे app के लिए, recommended flow है **एक runtime-home directory चुनें → install करें → `deeptutor init` → `deeptutor start`**।
 
 ### एक कमांड से Docker आज़माएं
 
@@ -118,7 +118,7 @@ deeptutor workspace reset
 
 Capabilities built-in workspace tools के जरिए अपना selected workspace inspect करती हैं। Model को केवल `outputs/...` जैसे relative paths मिलते हैं; जब वह `workspace_present` उपयोग करता है, तो UI एक authenticated, openable snapshot render करता है। वही exact relative path एक normal Markdown link या image में भी काम करता है। बाद में source file बदलने से पहले से presented snapshot नहीं बदलता।
 
-Learning Space resource library manage करता है। **Settings → Workspaces** में हर workspace को Skills, MCP services और knowledge bases assign करें, या उसके existing access rules बनाए रखें। Selection save होने तक existing workspaces का current access बना रहता है। Assignments credentials या knowledge indexes copy किए बिना original resources को reference करते हैं; workspace-specific skills shared versions को override कर सकती हैं। [Workspace resource assignments](../../docs-for-user/workspaces.md) देखें।
+Learning Space resource library manage करता है। **Settings → Workspaces** में हर workspace को Skills, MCP services और knowledge bases assign करें, या उसके existing access rules बनाए रखें। Selection save होने तक existing workspaces का current access बना रहता है। Assignments credentials या knowledge indexes copy किए बिना original resources को reference करते हैं; workspace-specific skills shared versions को override कर सकती हैं। [Workspace resource assignments](../../docs-for-dev/workspaces.md) देखें।
 
 `outputs/` के बाहर execution read-only है। Content workspace में कहीं और किसी generated file को copy करने के लिए उस exact source और destination के लिए एक explicit **Allow once** confirmation चाहिए। उपलब्ध होने पर एक system sandbox या Docker runner इस boundary को enforce करता है; local restricted-subprocess fallback को Workspace settings में **best effort** के रूप में दिखाया जाता है।
 
@@ -223,7 +223,7 @@ deeptutor start --dev
 - `ghcr.io/hkuds/deeptutor:latest` — latest stable release
 - `ghcr.io/hkuds/deeptutor:<version>` — शुरू के `v` के बिना exact release (उदाहरण `:1.6.3`); pre-releases को केवल उनका version tag मिलता है
 
-> podman/rootless/read-only-rootfs deployments और पूरे per-installation guide के लिए [CONTAINERIZATION.md](../../docs-for-user/CONTAINERIZATION.md) देखें।
+> podman/rootless/read-only-rootfs deployments और पूरे per-installation guide के लिए [CONTAINERIZATION.md](../../docs-for-dev/CONTAINERIZATION.md) देखें।
 
 ```bash
 docker run --rm --name deeptutor \
@@ -293,7 +293,7 @@ docker run --rm --name deeptutor \
 
 Docker Desktop (macOS/Windows) आमतौर पर `--add-host` के बिना `host.docker.internal` resolve करता है। Linux पर, यह flag modern Docker Engine पर वह hostname बनाने का portable तरीका है।
 
-**Linux alternative — host networking:** `--network=host` add करें और `-p` flags हटाएं। Container host network directly share करता है, इसलिए [http://127.0.0.1:3782](http://127.0.0.1:3782) (या `system.json` में `frontend_port`) खोलें, और host services को normal localhost URLs जैसे `http://127.0.0.1:11434/v1` से reach किया जा सकता है। ध्यान दें कि host networking container ports को host पर directly expose करता है और existing services से conflict हो सकता है — उन्हें loopback पर रखने के लिए `BACKEND_HOST=127.0.0.1` और `FRONTEND_HOST=127.0.0.1` set करें ([CONTAINERIZATION.md](../../docs-for-user/CONTAINERIZATION.md) देखें)।
+**Linux alternative — host networking:** `--network=host` add करें और `-p` flags हटाएं। Container host network directly share करता है, इसलिए [http://127.0.0.1:3782](http://127.0.0.1:3782) (या `system.json` में `frontend_port`) खोलें, और host services को normal localhost URLs जैसे `http://127.0.0.1:11434/v1` से reach किया जा सकता है। ध्यान दें कि host networking container ports को host पर directly expose करता है और existing services से conflict हो सकता है — उन्हें loopback पर रखने के लिए `BACKEND_HOST=127.0.0.1` और `FRONTEND_HOST=127.0.0.1` set करें ([CONTAINERIZATION.md](../../docs-for-dev/CONTAINERIZATION.md) देखें)।
 
 </details>
 
@@ -426,7 +426,7 @@ DeepTutor अपने installed code, private runtime home, और optional Con
 
 किसी विषय या project के लिए एक **workspace** से शुरू करें। उसके **Home**, **Learning** और **Resources** में आपकी conversations, learning activities और materials रहते हैं। **Partners** और **Personalization** अलग-अलग workspaces में भी आपके account से जुड़े रहते हैं। नीचे का tour बताता है कि ये surfaces कैसे जुड़ती हैं, फिर settings और multi-user deployment समझाता है।
 
-अगर कोई answer पहले का constraint खो दे, weak evidence cite करे, या selected material से disagree करे, तो issue खोलने से पहले [`REASONING_SAFETY_CHECKLIST.md`](../../docs-for-user/REASONING_SAFETY_CHECKLIST.md) में diagnostics collect करें।
+अगर कोई answer पहले का constraint खो दे, weak evidence cite करे, या selected material से disagree करे, तो issue खोलने से पहले [`REASONING_SAFETY_CHECKLIST.md`](../../docs-for-dev/REASONING_SAFETY_CHECKLIST.md) में diagnostics collect करें।
 
 <div align="center">
 <img src="../../assets/figs/web-dev/overview.png" alt="DeepTutor Home और workspace नेविगेशन" width="900">
@@ -564,7 +564,7 @@ Knowledge bases RAG के पीछे document collections हैं — व�
 <img src="../../assets/figs/web-dev/knowledge-create.png" alt="एक knowledge base बनाएं" width="900">
 </div>
 
-Existing Obsidian, Hermes, या Markdown library migrate कर रहे हैं? Connected-vault और indexed-copy paths के लिए [Knowledge migration guide](../../docs-for-user/KNOWLEDGE_MIGRATION.md) देखें।
+Existing Obsidian, Hermes, या Markdown library migrate कर रहे हैं? Connected-vault और indexed-copy paths के लिए [Knowledge migration guide](../../docs-for-dev/KNOWLEDGE_MIGRATION.md) देखें।
 
 KB बनाते समय, आप **नया create** कर सकते हैं (documents upload और index करें), **existing link** कर सकते हैं (कहीं और बने index को in-place reuse करें), या **Kiwix connect** कर सकते हैं (serve किए गए एक ZIM archive में जरूरत पर search करें)। Creation के समय उसका storage workspace चुनें; existing KB को preview के बाद workspaces के बीच move किया जा सकता है, जबकि assignments और saved references बने रहते हैं। एक KB **GitHub repositories** (repo, branch, glob) या **documentation-site URLs** (सीमित crawl depth और page count, default रूप से हर 24 घंटे में re-sync) को भी track कर सकती है; sync added, changed, और removed content का hash-diff करती है, इसलिए जो documentation आप follow करते हैं वह re-upload किए बिना current बनी रहती है, और **linked folders** sync पर नई या बदली हुई local files pick up करते हैं। Re-indexing एक नई flat `version-N` directory लिखता है और prior ones रखता है, इसलिए एक working index rebuild के दौरान कभी destroy नहीं होता। एक single document को **error**-state base से भी remove किया जा सकता है — पूरी delete-and-rebuild के बिना parse होने में failed हुई file को drop करना। Document parsing — Text-only, MinerU, Docling, Tika, markitdown, PyMuPDF4LLM, या LiteParse — और एक optional image-description model **Settings → Knowledge & documents** में चुने जाते हैं, local model downloads default रूप से off हैं। Docling को **remote** mode में भी एक Docling Serve server के विरुद्ध चलाया जा सकता है (कोई local install या models की जरूरत नहीं), जिसे उसी page पर (`mode=remote`, एक server base URL, और एक optional API key) या `DOCLING_MODE` / `DOCLING_API_BASE_URL` / `DOCLING_API_TOKEN` environment variables के जरिए configure किया जाता है। Tika remote-only है और उस page पर configured Apache Tika server पर point करता है। CLI lifecycle को `list/info/create/connect-kiwix/add/search/eval/eval-diff/set-default/delete`, source add/remove commands, `list-sources`, और `sync` से mirror करता है।
 
@@ -641,7 +641,7 @@ Sign-in और **Refresh models** पर, DeepTutor official npm registry से
 
 Successful version history same-account token renewal और catalog authentication errors के पार बची रहती है, बिना invalidated model data या ETags को फिर से usable बनाए। Sign out करने से उस account का local cache clear हो जाता है, जिसमें version history भी शामिल है। सामान्य status reads और inference npm को query नहीं करते। नई catalog entries आपके पहले से selected model को replace नहीं करती हैं या learning sessions restart नहीं करती हैं; catalog में दिखना पूरी inference-protocol compatibility स्थापित नहीं करता। कोई background version updater या user version setting नहीं है।
 
-Default local Docker और Podman deployments separate loopback networks उपयोग करते हैं और sign-in के दौरान एक temporary bridge की जरूरत होती है। Docker, Compose, Podman, और teardown के exact commands के लिए [temporary local Codex OAuth bridge guide](../../docs-for-user/CONTAINERIZATION.md#temporary-local-codex-oauth-bridge) follow करें।
+Default local Docker और Podman deployments separate loopback networks उपयोग करते हैं और sign-in के दौरान एक temporary bridge की जरूरत होती है। Docker, Compose, Podman, और teardown के exact commands के लिए [temporary local Codex OAuth bridge guide](../../docs-for-dev/CONTAINERIZATION.md#temporary-local-codex-oauth-bridge) follow करें।
 
 Remote deployment में, browser का `localhost` और server का `localhost` एक ही machine नहीं हैं, इसलिए सिर्फ एक ordinary reverse proxy browser के localhost callback को server तक नहीं पहुंचा सकता — callback bridge बनाने के लिए SSH tunnel जरूरी है। Tunnel पहले से published Web port तक पहुंचता है; Next.js केवल exact callback path को public callback broker पर rewrite करता है, और broker original OAuth operation पर route करने से पहले `state` validate करता है। Callback listener backend loopback पर ही रहता है, ports `1455` और `1457` publish नहीं होते, और यह path default Docker bridge network को support करता है।
 
@@ -725,7 +725,7 @@ SID=$(deeptutor run deep_research "Survey 2026 papers on RAG" \
 deeptutor run deep_question "Quiz me on that survey" --session "$SID" --format json
 ```
 
-Repo एक root [`SKILL.md`](../../SKILL.md) ship करता है — CLI के लिए एक संक्षिप्त handover doc। अपने agent से इसे स्पष्ट रूप से पढ़ने को कहें; इसकी [Agent Setup guide](../../docs-for-user/AGENT_SETUP.md) में installation और configuration दिए गए हैं। आप `deeptutor run` को LangChain / AutoGen loop में एक tool के रूप में भी wrap कर सकते हैं। पूरे recipes: [Agent Handoff](https://deeptutor.info/docs/cli/agent-handoff/)।
+Repo एक root [`SKILL.md`](../../SKILL.md) ship करता है — CLI के लिए एक संक्षिप्त handover doc। अपने agent से इसे स्पष्ट रूप से पढ़ने को कहें; इसकी [Agent Setup guide](../../docs-for-dev/AGENT_SETUP.md) में installation और configuration दिए गए हैं। आप `deeptutor run` को LangChain / AutoGen loop में एक tool के रूप में भी wrap कर सकते हैं। पूरे recipes: [Agent Handoff](https://deeptutor.info/docs/cli/agent-handoff/)।
 
 </details>
 

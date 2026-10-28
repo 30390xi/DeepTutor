@@ -1,5 +1,7 @@
 # Modules and installation
 
+[Handbook](README.md) · [Related guide](TESTING.md)
+
 DeepTutor has one source repository and disjoint Python distributions. `deeptutor`
 owns the shared turn runtime, CLI and Python SDK. Feature distributions add code
 into the same package namespace without overwriting core files. `deeptutor-cli`
@@ -160,17 +162,11 @@ offline module command. It no longer upgrades packages beneath active turns.
 Model-weight downloads remain background jobs, because they do not alter Python
 code. Third-party managed plugins retain their existing isolated environments.
 
-## Worker streaming and cancellation
+## Third-party worker extensions
 
-A worker may advertise `"transport": "ndjson-v1"` in `describe_capability`.
-For a run, it emits JSON lines of `{"kind":"event","event":{...}}`, then
-`{"kind":"complete"}`. Events are forwarded immediately through the ordinary
-turn stream, which owns persistence/replay. EOF without completion, malformed
-frames and permission escalation fail the run. Requests, frames, total output,
-stderr and execution time have bounds; the consumer queue applies backpressure.
-Cancellation closes the process group and waits for cleanup. Legacy one-response
-workers remain supported and also stop on cancellation. The learning-echo example
-shows both protocols. These workers do not share the host's Python environment.
+Managed plugin workers use their own environments and lifecycle, separately
+from official module wheels. See [plugin streaming and cancellation](PLUGINS.md#worker-protocol-and-cancellation)
+and the [runnable example](examples/learning_echo/README.md).
 
 ## Validation
 
@@ -193,3 +189,9 @@ Manim additionally needs system rendering libraries, FFmpeg and
 LaTeX. A render and cancellation test should accompany changes to its renderer.
 The Web application remains one frontend distribution; independently replaceable
 third-party frontend bundles are outside this Python module contract.
+
+## Implementation and verification
+
+- [deeptutor/modules/manifests/](../deeptutor/modules/manifests/)
+- [scripts/build_modules.py](../scripts/build_modules.py)
+- [scripts/check_module_install.py](../scripts/check_module_install.py)

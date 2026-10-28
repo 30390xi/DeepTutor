@@ -79,16 +79,16 @@ Copie este prompt para o seu agente de IA com acesso ao terminal (como Codex ou 
 ```text
 Help me install and configure the current dev version of DeepTutor from https://github.com/HKUDS/DeepTutor.
 Clone the dev branch, or inspect and reuse my existing checkout, and read SKILL.md and
-docs-for-user/AGENT_SETUP.md first. Follow that guide to prepare the environment,
+docs-for-dev/AGENT_SETUP.md first. Follow that guide to prepare the environment,
 configure my model provider, verify the setup, and start the Web app.
 Ask me for any missing provider, model, or credential-source information;
 do not print API keys. Preserve my existing files and settings, and finish
 with the access URL and the results of your checks.
 ```
 
-O [guia de configuração por agentes](../../docs-for-user/AGENT_SETUP.md) cobre todo o processo, incluindo a configuração não interativa pela CLI. Para instalar por conta própria, escolha um dos caminhos abaixo.
+O [guia de configuração por agentes](../../docs-for-dev/AGENT_SETUP.md) cobre todo o processo, incluindo a configuração não interativa pela CLI. Para instalar por conta própria, escolha um dos caminhos abaixo.
 
-O DeepTutor inclui quatro caminhos de instalação. Todos partilham o mesmo layout de diretório de runtime: as configurações privadas vivem em `data/user/settings/` sob o diretório a partir do qual é iniciado (ou sob `DEEPTUTOR_HOME` / `deeptutor start --home` se definido explicitamente). Consulte [Persistência de Dados Locais](../../docs-for-user/DATA_STORAGE.md) para o layout completo de armazenamento, o suporte de bases de dados e as notas de cópia de segurança. Para a aplicação completa, o fluxo recomendado é **escolher um diretório de runtime → instalar → `deeptutor init` → `deeptutor start`**.
+O DeepTutor inclui quatro caminhos de instalação. Todos partilham o mesmo layout de diretório de runtime: as configurações privadas vivem em `data/user/settings/` sob o diretório a partir do qual é iniciado (ou sob `DEEPTUTOR_HOME` / `deeptutor start --home` se definido explicitamente). Consulte [Persistência de Dados Locais](../../docs-for-dev/DATA_STORAGE.md) para o layout completo de armazenamento, o suporte de bases de dados e as notas de cópia de segurança. Para a aplicação completa, o fluxo recomendado é **escolher um diretório de runtime → instalar → `deeptutor init` → `deeptutor start`**.
 
 ### Experimentar com Docker num Único Comando
 
@@ -117,7 +117,7 @@ deeptutor workspace reset
 
 As capacidades inspecionam o workspace selecionado através das ferramentas de workspace integradas. O modelo recebe apenas caminhos relativos como `outputs/...`; quando usa `workspace_present`, a UI apresenta um instantâneo autenticado e que pode ser aberto. O mesmo caminho relativo exato também funciona num link ou imagem Markdown normal. Alterar o ficheiro de origem mais tarde não altera um instantâneo já apresentado.
 
-O Espaço de Aprendizado gere a biblioteca de recursos. Em **Settings → Workspaces**, atribua Skills, serviços MCP e bases de conhecimento a cada workspace, ou mantenha as suas regras de acesso existentes. Os workspaces existentes conservam o acesso atual até que seja guardada uma seleção. As atribuições referenciam os recursos originais sem copiar credenciais nem índices de conhecimento; as skills específicas de um workspace podem substituir as versões partilhadas. Consulte as [atribuições de recursos do workspace](../../docs-for-user/workspaces.md).
+O Espaço de Aprendizado gere a biblioteca de recursos. Em **Settings → Workspaces**, atribua Skills, serviços MCP e bases de conhecimento a cada workspace, ou mantenha as suas regras de acesso existentes. Os workspaces existentes conservam o acesso atual até que seja guardada uma seleção. As atribuições referenciam os recursos originais sem copiar credenciais nem índices de conhecimento; as skills específicas de um workspace podem substituir as versões partilhadas. Consulte as [atribuições de recursos do workspace](../../docs-for-dev/workspaces.md).
 
 A execução é apenas de leitura fora de `outputs/`. Copiar um ficheiro gerado para outro local dentro do content workspace requer uma confirmação explícita **Allow once** para essa origem e destino exatos. Uma sandbox de sistema ou o executor Docker aplica esse limite quando disponível; o fallback local de subprocesso restrito é apresentado como **best effort** nas definições de Workspace.
 
@@ -222,7 +222,7 @@ Um contentor para a aplicação web completa. Imagens no GitHub Container Regist
 - `ghcr.io/hkuds/deeptutor:latest` — lançamento estável mais recente
 - `ghcr.io/hkuds/deeptutor:<version>` — lançamento exato sem o `v` inicial (por exemplo, `:1.6.3`); os pré-lançamentos recebem apenas a respetiva tag de versão
 
-> Consulte [CONTAINERIZATION.md](../../docs-for-user/CONTAINERIZATION.md) para implementações podman/rootless/read-only-rootfs e o guia completo por instalação.
+> Consulte [CONTAINERIZATION.md](../../docs-for-dev/CONTAINERIZATION.md) para implementações podman/rootless/read-only-rootfs e o guia completo por instalação.
 
 ```bash
 docker run --rm --name deeptutor \
@@ -292,7 +292,7 @@ Depois em **Settings → Providers**, aponte o URL Base do provedor para `host.d
 
 O Docker Desktop (macOS/Windows) geralmente resolve `host.docker.internal` sem `--add-host`. No Linux, o flag é a forma portátil de criar esse nome de host no Docker Engine moderno.
 
-**Alternativa para Linux — rede do host:** adicione `--network=host` e remova os flags `-p`. O contentor partilha a rede do host diretamente, por isso abra [http://127.0.0.1:3782](http://127.0.0.1:3782) (ou o `frontend_port` em `system.json`), e os serviços do host podem ser alcançados com URLs de localhost normais como `http://127.0.0.1:11434/v1`. Note que a rede do host expõe as portas do contentor diretamente no host e pode entrar em conflito com serviços existentes — para os manter no loopback, defina `BACKEND_HOST=127.0.0.1` e `FRONTEND_HOST=127.0.0.1` (consulte [CONTAINERIZATION.md](../../docs-for-user/CONTAINERIZATION.md)).
+**Alternativa para Linux — rede do host:** adicione `--network=host` e remova os flags `-p`. O contentor partilha a rede do host diretamente, por isso abra [http://127.0.0.1:3782](http://127.0.0.1:3782) (ou o `frontend_port` em `system.json`), e os serviços do host podem ser alcançados com URLs de localhost normais como `http://127.0.0.1:11434/v1`. Note que a rede do host expõe as portas do contentor diretamente no host e pode entrar em conflito com serviços existentes — para os manter no loopback, defina `BACKEND_HOST=127.0.0.1` e `FRONTEND_HOST=127.0.0.1` (consulte [CONTAINERIZATION.md](../../docs-for-dev/CONTAINERIZATION.md)).
 
 </details>
 
@@ -425,7 +425,7 @@ O DeepTutor separa o código instalado, o seu espaço de trabalho de runtime pri
 
 Comece por um **workspace** para uma disciplina ou projeto. A **Página inicial**, a **Aprendizagem** e os **Recursos** guardam as suas conversas, atividades de aprendizagem e materiais. Os **Partners** e a **Personalização** acompanham a conta entre workspaces. O tour abaixo mostra como estas áreas se ligam, seguido das configurações e da implementação multi-utilizador.
 
-Se uma resposta perder uma restrição anterior, citar evidências fracas ou discordar do material selecionado, recolha os diagnósticos em [`REASONING_SAFETY_CHECKLIST.md`](../../docs-for-user/REASONING_SAFETY_CHECKLIST.md) antes de abrir uma issue.
+Se uma resposta perder uma restrição anterior, citar evidências fracas ou discordar do material selecionado, recolha os diagnósticos em [`REASONING_SAFETY_CHECKLIST.md`](../../docs-for-dev/REASONING_SAFETY_CHECKLIST.md) antes de abrir uma issue.
 
 <div align="center">
 <img src="../../assets/figs/web-dev/overview.png" alt="Página inicial e navegação entre workspaces do DeepTutor" width="900">
@@ -563,7 +563,7 @@ As bases de conhecimento são as coleções de documentos por trás do RAG — f
 <img src="../../assets/figs/web-dev/knowledge-create.png" alt="Criar uma base de conhecimento" width="900">
 </div>
 
-Vai migrar uma biblioteca Obsidian, Hermes ou Markdown existente? Consulte o [guia de migração de Knowledge](../../docs-for-user/KNOWLEDGE_MIGRATION.md) para os caminhos de vault ligado e cópia indexada.
+Vai migrar uma biblioteca Obsidian, Hermes ou Markdown existente? Consulte o [guia de migração de Knowledge](../../docs-for-dev/KNOWLEDGE_MIGRATION.md) para os caminhos de vault ligado e cópia indexada.
 
 Ao criar uma KB, pode **criar nova** (carregar e indexar documentos), **vincular existente** (reutilizar um índice no local) ou **conectar Kiwix** (pesquisar um arquivo ZIM servido quando necessário). Escolha o workspace de armazenamento ao criar a KB; uma KB existente pode ser movida entre workspaces após uma pré-visualização, mantendo as atribuições e as referências guardadas. Uma KB também pode rastrear **repositórios GitHub** (repositório, branch, glob) ou **URLs de sites de documentação** (com profundidade de rastreio e número de páginas limitados, resincronizados a cada 24 h por predefinição); a sincronização compara hashes para detetar conteúdo adicionado, alterado ou removido, para que a documentação que segue se mantenha atual sem reenvio, e as **pastas vinculadas** capturam ficheiros locais novos ou alterados na sincronização. A reindexação escreve um novo diretório plano `version-N` e mantém os anteriores, pelo que um índice funcional nunca é destruído a meio de uma reconstrução. Um único documento pode ser removido mesmo de uma base em estado de **erro** — descartando um ficheiro que falhou a análise sem uma eliminação e reconstrução completas. A análise de documentos — Somente Texto, MinerU, Docling, Tika, markitdown, PyMuPDF4LLM ou LiteParse — e um modelo opcional de descrição de imagens são escolhidos em **Settings → Knowledge & documents**, com downloads de modelos locais desativados por predefinição. O Docling também pode correr em modo **remoto** contra um servidor Docling Serve (sem necessidade de instalação local nem de modelos), configurado nessa página (`mode=remote`, um URL base do servidor e uma chave API opcional) ou das variáveis de ambiente `DOCLING_MODE` / `DOCLING_API_BASE_URL` / `DOCLING_API_TOKEN`. O Tika é apenas remoto e aponta para o servidor Apache Tika configurado nessa página. A CLI espelha o ciclo de vida com `list/info/create/connect-kiwix/add/search/eval/eval-diff/set-default/delete`, comandos para adicionar ou remover fontes, `list-sources` e `sync`.
 
@@ -641,7 +641,7 @@ No início de sessão e em **Refresh models**, o DeepTutor lê a última versão
 
 O histórico de versões bem-sucedido sobrevive à renovação de token da mesma conta e a erros de autenticação do catálogo, sem tornar novamente utilizáveis dados de modelo ou ETags invalidados. Terminar sessão limpa a cache local dessa conta, incluindo o histórico de versões. As leituras de estado normais e a inferência não consultam o npm. Novas entradas do catálogo não substituem um modelo já selecionado nem reiniciam sessões de aprendizagem em curso; aparecer no catálogo não estabelece compatibilidade total do protocolo de inferência. Não existe um atualizador de versão em segundo plano nem uma definição de versão pelo utilizador.
 
-As implementações locais predefinidas com Docker e Podman usam redes loopback separadas e precisam de uma ponte temporária durante o início de sessão. Siga o [guia da ponte OAuth temporária local do Codex](../../docs-for-user/CONTAINERIZATION.md#temporary-local-codex-oauth-bridge) para os comandos exatos de Docker, Compose, Podman e desmontagem.
+As implementações locais predefinidas com Docker e Podman usam redes loopback separadas e precisam de uma ponte temporária durante o início de sessão. Siga o [guia da ponte OAuth temporária local do Codex](../../docs-for-dev/CONTAINERIZATION.md#temporary-local-codex-oauth-bridge) para os comandos exatos de Docker, Compose, Podman e desmontagem.
 
 Para uma implementação remota, o `localhost` do navegador e o `localhost` do servidor são máquinas diferentes, pelo que um proxy inverso comum sozinho não consegue transportar o callback localhost do navegador até ao servidor. Use um túnel SSH como ponte de callback. O túnel alcança a porta Web já publicada; o Next.js reencaminha apenas o caminho exato de callback para o broker de callback público, e o broker valida `state` antes de encaminhar para a operação OAuth original. O listener de callback permanece no loopback do backend, as portas `1455` e `1457` não são publicadas, e este caminho suporta a rede bridge predefinida do Docker.
 
@@ -725,7 +725,7 @@ SID=$(deeptutor run deep_research "Survey 2026 papers on RAG" \
 deeptutor run deep_question "Quiz me on that survey" --session "$SID" --format json
 ```
 
-O repositório inclui um [`SKILL.md`](../../SKILL.md) na raiz — um documento compacto de orientação para a CLI. Peça ao seu agente para o ler explicitamente; o respetivo [guia de configuração por agentes](../../docs-for-user/AGENT_SETUP.md) cobre a instalação e a configuração. Também pode envolver `deeptutor run` como uma ferramenta num loop LangChain / AutoGen. Receitas completas: [Agent Handoff](https://deeptutor.info/docs/cli/agent-handoff/).
+O repositório inclui um [`SKILL.md`](../../SKILL.md) na raiz — um documento compacto de orientação para a CLI. Peça ao seu agente para o ler explicitamente; o respetivo [guia de configuração por agentes](../../docs-for-dev/AGENT_SETUP.md) cobre a instalação e a configuração. Também pode envolver `deeptutor run` como uma ferramenta num loop LangChain / AutoGen. Receitas completas: [Agent Handoff](https://deeptutor.info/docs/cli/agent-handoff/).
 
 </details>
 

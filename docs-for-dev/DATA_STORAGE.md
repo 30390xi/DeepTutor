@@ -1,5 +1,7 @@
 # Local Data Persistence
 
+[Handbook](README.md) · [Workspaces](workspaces.md) · [Containers](CONTAINERIZATION.md)
+
 DeepTutor's default installation does not require PostgreSQL, MySQL, or another
 database server. Durable state is written below one runtime-home directory, so
 a deployment has one tree to mount, inspect, and back up. Some state is stored
@@ -83,3 +85,9 @@ the app runs can lose recent transactions. Back up the complete runtime-home
 `data` directory plus each separately configured Content Workspace. Treat every
 copy as sensitive because it can contain credentials, private conversation
 text, and uploaded learning material.
+
+## Implementation and verification
+
+- [deeptutor/runtime/home.py](../deeptutor/runtime/home.py)
+- [deeptutor/services/path_service.py](../deeptutor/services/path_service.py)
+- [deeptutor/services/workspace/context.py](../deeptutor/services/workspace/context.py)

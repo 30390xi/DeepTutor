@@ -80,16 +80,16 @@ Copiez cette consigne dans votre agent IA capable d’utiliser un terminal (comm
 ```text
 Help me install and configure the current dev version of DeepTutor from https://github.com/HKUDS/DeepTutor.
 Clone the dev branch, or inspect and reuse my existing checkout, and read SKILL.md and
-docs-for-user/AGENT_SETUP.md first. Follow that guide to prepare the environment,
+docs-for-dev/AGENT_SETUP.md first. Follow that guide to prepare the environment,
 configure my model provider, verify the setup, and start the Web app.
 Ask me for any missing provider, model, or credential-source information;
 do not print API keys. Preserve my existing files and settings, and finish
 with the access URL and the results of your checks.
 ```
 
-Le [guide de configuration par un agent](../../docs-for-user/AGENT_SETUP.md) décrit tout le parcours, y compris la configuration CLI non interactive. Pour l’installer vous-même, choisissez l’une des méthodes ci-dessous.
+Le [guide de configuration par un agent](../../docs-for-dev/AGENT_SETUP.md) décrit tout le parcours, y compris la configuration CLI non interactive. Pour l’installer vous-même, choisissez l’une des méthodes ci-dessous.
 
-DeepTutor propose quatre chemins d'installation. Ils partagent tous une même structure de répertoire d'exécution : les paramètres privés résident dans `data/user/settings/` sous le répertoire depuis lequel vous lancez l'application (ou sous `DEEPTUTOR_HOME` / `deeptutor start --home` si vous en définissez un explicitement). Consultez la [persistance des données locales](../../docs-for-user/DATA_STORAGE.md) pour la structure complète du stockage, la prise en charge des bases de données et les recommandations de sauvegarde. Pour l'application complète, le flux recommandé est **choisir un répertoire d'exécution → installer → `deeptutor init` → `deeptutor start`**.
+DeepTutor propose quatre chemins d'installation. Ils partagent tous une même structure de répertoire d'exécution : les paramètres privés résident dans `data/user/settings/` sous le répertoire depuis lequel vous lancez l'application (ou sous `DEEPTUTOR_HOME` / `deeptutor start --home` si vous en définissez un explicitement). Consultez la [persistance des données locales](../../docs-for-dev/DATA_STORAGE.md) pour la structure complète du stockage, la prise en charge des bases de données et les recommandations de sauvegarde. Pour l'application complète, le flux recommandé est **choisir un répertoire d'exécution → installer → `deeptutor init` → `deeptutor start`**.
 
 ### Essai Docker en une commande
 
@@ -118,7 +118,7 @@ deeptutor workspace reset
 
 Les capacités inspectent leur espace de travail sélectionné via les outils workspace intégrés. Le modèle ne reçoit que des chemins relatifs tels que `outputs/...` ; quand il utilise `workspace_present`, l'interface affiche un instantané authentifié et ouvrable. Le même chemin relatif exact fonctionne aussi dans un lien ou une image Markdown normal. Modifier le fichier source ultérieurement ne change pas un instantané déjà présenté.
 
-Learning Space gère la bibliothèque de ressources. Dans **Paramètres → Espaces de travail**, attribuez des compétences, des services MCP et des bases de connaissances à chaque espace, ou conservez ses règles d'accès existantes. Les espaces existants gardent leurs accès actuels jusqu'à l'enregistrement d'une sélection. Les attributions référencent les ressources d'origine sans copier les identifiants ni les index de connaissances ; les compétences propres à un espace peuvent remplacer les versions partagées. Consultez les [attributions de ressources aux espaces de travail](../../docs-for-user/workspaces.md).
+Learning Space gère la bibliothèque de ressources. Dans **Paramètres → Espaces de travail**, attribuez des compétences, des services MCP et des bases de connaissances à chaque espace, ou conservez ses règles d'accès existantes. Les espaces existants gardent leurs accès actuels jusqu'à l'enregistrement d'une sélection. Les attributions référencent les ressources d'origine sans copier les identifiants ni les index de connaissances ; les compétences propres à un espace peuvent remplacer les versions partagées. Consultez les [attributions de ressources aux espaces de travail](../../docs-for-dev/workspaces.md).
 
 L'exécution est en lecture seule en dehors de `outputs/`. Copier un fichier généré ailleurs dans le content workspace nécessite une confirmation explicite **Allow once** pour cette source et cette destination exactes. Un sandbox système ou le runner Docker impose cette frontière quand il est disponible ; le repli local par sous-processus restreint est indiqué comme **best effort** dans les paramètres Workspace.
 
@@ -223,7 +223,7 @@ Un conteneur pour l'application Web complète. Images sur GitHub Container Regis
 - `ghcr.io/hkuds/deeptutor:latest` — dernière version stable
 - `ghcr.io/hkuds/deeptutor:<version>` — version exacte sans le `v` initial (par exemple `:1.6.3`) ; les préversions ne reçoivent que leur tag de version
 
-> Voir [CONTAINERIZATION.md](../../docs-for-user/CONTAINERIZATION.md) pour les déploiements podman/rootless/système de fichiers racine en lecture seule et le guide complet par installation.
+> Voir [CONTAINERIZATION.md](../../docs-for-dev/CONTAINERIZATION.md) pour les déploiements podman/rootless/système de fichiers racine en lecture seule et le guide complet par installation.
 
 ```bash
 docker run --rm --name deeptutor \
@@ -303,7 +303,7 @@ Puis dans **Paramètres → Fournisseurs**, pointez l'URL de base du fournisseur
 
 Docker Desktop (macOS/Windows) résout généralement `host.docker.internal` sans `--add-host`. Sur Linux, le drapeau est la façon portable de créer ce nom d'hôte avec les versions modernes de Docker Engine.
 
-**Alternative Linux — réseau hôte :** ajoutez `--network=host` et supprimez les drapeaux `-p`. Le conteneur partage directement le réseau hôte, ouvrez donc [http://127.0.0.1:3782](http://127.0.0.1:3782) (ou le `frontend_port` dans `system.json`), et les services hôtes sont accessibles avec des URLs localhost normales comme `http://127.0.0.1:11434/v1`. Notez que le réseau hôte expose les ports du conteneur directement sur l'hôte et peut entrer en conflit avec des services existants — pour les maintenir sur loopback, définissez `BACKEND_HOST=127.0.0.1` et `FRONTEND_HOST=127.0.0.1` (voir [CONTAINERIZATION.md](../../docs-for-user/CONTAINERIZATION.md)).
+**Alternative Linux — réseau hôte :** ajoutez `--network=host` et supprimez les drapeaux `-p`. Le conteneur partage directement le réseau hôte, ouvrez donc [http://127.0.0.1:3782](http://127.0.0.1:3782) (ou le `frontend_port` dans `system.json`), et les services hôtes sont accessibles avec des URLs localhost normales comme `http://127.0.0.1:11434/v1`. Notez que le réseau hôte expose les ports du conteneur directement sur l'hôte et peut entrer en conflit avec des services existants — pour les maintenir sur loopback, définissez `BACKEND_HOST=127.0.0.1` et `FRONTEND_HOST=127.0.0.1` (voir [CONTAINERIZATION.md](../../docs-for-dev/CONTAINERIZATION.md)).
 
 </details>
 
@@ -436,7 +436,7 @@ DeepTutor sépare son code installé, son répertoire d'exécution privé et son
 
 Commencez par un **espace de travail** pour une matière ou un projet. Ses rubriques **Accueil**, **Apprentissage** et **Ressources** rassemblent vos conversations, activités d'apprentissage et supports. **Partners** et **Personnalisation** restent liés à votre compte entre les espaces de travail. La visite ci-dessous montre comment ces surfaces sont reliées, puis présente les paramètres et le déploiement multi-utilisateur.
 
-Si une réponse perd une contrainte antérieure, cite des preuves faibles ou contredit les supports sélectionnés, rassemblez les diagnostics dans [`REASONING_SAFETY_CHECKLIST.md`](../../docs-for-user/REASONING_SAFETY_CHECKLIST.md) avant d'ouvrir une issue.
+Si une réponse perd une contrainte antérieure, cite des preuves faibles ou contredit les supports sélectionnés, rassemblez les diagnostics dans [`REASONING_SAFETY_CHECKLIST.md`](../../docs-for-dev/REASONING_SAFETY_CHECKLIST.md) avant d'ouvrir une issue.
 
 <div align="center">
 <img src="../../assets/figs/web-dev/overview.png" alt="Accueil de DeepTutor et navigation des espaces de travail" width="900">
@@ -574,7 +574,7 @@ Les bases de connaissances sont les collections de documents derrière le RAG �
 <img src="../../assets/figs/web-dev/knowledge-create.png" alt="Créer une base de connaissances" width="900">
 </div>
 
-Vous migrez une bibliothèque Obsidian, Hermes ou Markdown existante ? Consultez le [guide de migration des connaissances](../../docs-for-user/KNOWLEDGE_MIGRATION.md) pour les parcours de vault connecté et de copie indexée.
+Vous migrez une bibliothèque Obsidian, Hermes ou Markdown existante ? Consultez le [guide de migration des connaissances](../../docs-for-dev/KNOWLEDGE_MIGRATION.md) pour les parcours de vault connecté et de copie indexée.
 
 Lors de la création d'une KB, vous pouvez **en créer une nouvelle** (téléverser et indexer des documents), **en lier une existante** (réutiliser un index sur place) ou **connecter Kiwix** (interroger à la demande une archive ZIM servie). Choisissez son espace de travail de stockage lors de la création ; une KB existante peut être déplacée entre espaces de travail après un aperçu, tout en conservant ses attributions et ses références enregistrées. Une KB peut aussi suivre des **dépôts GitHub** (dépôt, branche, glob) ou des **URL de sites de documentation** (profondeur d'exploration et nombre de pages limités, resynchronisés toutes les 24 h par défaut) ; la synchronisation compare les empreintes pour détecter les contenus ajoutés, modifiés ou supprimés, afin que la documentation suivie reste à jour sans nouveau téléversement, et les **dossiers liés** récupèrent les fichiers locaux nouveaux ou modifiés lors de la synchronisation. La re-indexation écrit un nouveau répertoire plat `version-N` et conserve les précédents, donc un index fonctionnel n'est jamais détruit en milieu de reconstruction. Un seul document peut être supprimé même d'une base en état d'**erreur** — retirer un fichier dont l'analyse a échoué sans devoir tout supprimer et reconstruire. L'analyse de documents — Text-only, MinerU, Docling, Tika, markitdown, PyMuPDF4LLM ou LiteParse — et un modèle optionnel de description d'images sont choisis dans **Paramètres → Connaissances & documents**, avec les téléchargements de modèles locaux désactivés par défaut. Docling peut aussi fonctionner en mode **distant** contre un serveur Docling Serve (aucune installation ni modèle local nécessaire), configuré sur cette page (`mode=remote`, une URL de base de serveur, et une clé API optionnelle) ou les variables d'environnement `DOCLING_MODE` / `DOCLING_API_BASE_URL` / `DOCLING_API_TOKEN`. Tika est distant uniquement et pointe vers le serveur Apache Tika configuré sur cette page. La CLI reprend le cycle de vie avec `list/info/create/connect-kiwix/add/search/eval/eval-diff/set-default/delete`, les commandes d'ajout et de suppression de sources, `list-sources` et `sync`.
 
@@ -652,7 +652,7 @@ La plupart des sections utilisent un flux brouillon-et-application, vous pouvez 
 
 L'historique des versions réussies survit au renouvellement de jeton du même compte et aux erreurs d'authentification du catalogue, sans rendre à nouveau utilisables les données de modèle ou les ETags invalidés. La déconnexion efface le cache local de ce compte, y compris l'historique des versions. Les lectures d'état ordinaires et l'inférence n'interrogent pas npm. Les nouvelles entrées du catalogue ne remplacent pas un modèle déjà sélectionné ni ne redémarrent les sessions d'apprentissage ; figurer dans le catalogue n'établit pas une compatibilité complète du protocole d'inférence. Il n'existe pas de mise à jour de version en arrière-plan ni de paramètre de version utilisateur.
 
-Les déploiements locaux par défaut Docker et Podman utilisent des réseaux loopback séparés et nécessitent un pont temporaire pendant la connexion. Suivez le [guide du pont OAuth Codex local temporaire](../../docs-for-user/CONTAINERIZATION.md#temporary-local-codex-oauth-bridge) pour les commandes exactes de Docker, Compose, Podman et d'arrêt.
+Les déploiements locaux par défaut Docker et Podman utilisent des réseaux loopback séparés et nécessitent un pont temporaire pendant la connexion. Suivez le [guide du pont OAuth Codex local temporaire](../../docs-for-dev/CONTAINERIZATION.md#temporary-local-codex-oauth-bridge) pour les commandes exactes de Docker, Compose, Podman et d'arrêt.
 
 Pour un déploiement distant, le `localhost` du navigateur et le `localhost` du serveur sont deux machines différentes, donc un simple proxy inverse ne peut pas à lui seul acheminer le callback localhost du navigateur jusqu'au serveur. Utilisez un tunnel SSH comme pont de callback. Le tunnel atteint le port Web déjà publié ; Next.js ne réécrit que le chemin de callback exact vers le courtier de callback public, et ce courtier valide `state` avant de router vers l'opération OAuth d'origine. L'écouteur de callback reste sur le loopback du backend, les ports `1455` et `1457` ne sont pas publiés, et ce chemin prend en charge le réseau bridge Docker par défaut.
 
@@ -736,7 +736,7 @@ SID=$(deeptutor run deep_research "Survey 2026 papers on RAG" \
 deeptutor run deep_question "Quiz me on that survey" --session "$SID" --format json
 ```
 
-Le dépôt inclut un [`SKILL.md`](../../SKILL.md) racine — un document de passation concis pour la CLI. Demandez explicitement à votre agent de le lire ; son [guide de configuration par un agent](../../docs-for-user/AGENT_SETUP.md) couvre l’installation et la configuration. Vous pouvez aussi envelopper `deeptutor run` comme un outil dans une boucle LangChain / AutoGen. Recettes complètes : [Agent Handoff](https://deeptutor.info/docs/cli/agent-handoff/).
+Le dépôt inclut un [`SKILL.md`](../../SKILL.md) racine — un document de passation concis pour la CLI. Demandez explicitement à votre agent de le lire ; son [guide de configuration par un agent](../../docs-for-dev/AGENT_SETUP.md) couvre l’installation et la configuration. Vous pouvez aussi envelopper `deeptutor run` comme un outil dans une boucle LangChain / AutoGen. Recettes complètes : [Agent Handoff](https://deeptutor.info/docs/cli/agent-handoff/).
 
 </details>
 

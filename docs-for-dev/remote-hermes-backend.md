@@ -1,5 +1,7 @@
 # Remote Hermes Agent backend
 
+[Handbook](README.md) · [Related guide](ARCHITECTURE.md)
+
 DeepTutor Connected Agents can call a Hermes Agent gateway without installing a
 Hermes CLI in the DeepTutor container. The backend kind is `hermes_remote` and
 its display name is **Hermes Agent (remote)**.
@@ -92,3 +94,10 @@ settings files, logs, event text, and frontend payloads.
 Streaming is quiet except for the structured SSE lifecycle exposed by the
 adapter. It does not poll or retry `POST /v1/runs`; a caller cancellation or
 idle watchdog always attempts a bounded stop.
+
+## Implementation and verification
+
+- [deeptutor/services/subagent/hermes_remote.py](../deeptutor/services/subagent/hermes_remote.py)
+- [deeptutor/services/subagent/hermes_remote_client.py](../deeptutor/services/subagent/hermes_remote_client.py)
+- [deeptutor/services/subagent/hermes_remote_events.py](../deeptutor/services/subagent/hermes_remote_events.py)
+- [tests/services/test_hermes_remote_backend.py](../tests/services/test_hermes_remote_backend.py)

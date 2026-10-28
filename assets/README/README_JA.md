@@ -80,16 +80,16 @@ DeepTutorは、個別指導、問題解決、クイズ生成、研究、ビジ�
 ```text
 Help me install and configure the current dev version of DeepTutor from https://github.com/HKUDS/DeepTutor.
 Clone the dev branch, or inspect and reuse my existing checkout, and read SKILL.md and
-docs-for-user/AGENT_SETUP.md first. Follow that guide to prepare the environment,
+docs-for-dev/AGENT_SETUP.md first. Follow that guide to prepare the environment,
 configure my model provider, verify the setup, and start the Web app.
 Ask me for any missing provider, model, or credential-source information;
 do not print API keys. Preserve my existing files and settings, and finish
 with the access URL and the results of your checks.
 ```
 
-[エージェントセットアップガイド](../../docs-for-user/AGENT_SETUP.md)は、対話なしでのCLI設定を含む一連の手順を説明しています。自分でインストールする場合は、以下の方法から選んでください。
+[エージェントセットアップガイド](../../docs-for-dev/AGENT_SETUP.md)は、対話なしでのCLI設定を含む一連の手順を説明しています。自分でインストールする場合は、以下の方法から選んでください。
 
-DeepTutorは4つのインストールパスを提供しています。どれも同じランタイムホームのレイアウトを共有します。プライベート設定は、起動元のディレクトリ（または明示的に設定した場合は`DEEPTUTOR_HOME` / `deeptutor start --home`）配下の`data/user/settings/`に保存されます。ストレージの全体構成、データベースのサポート、バックアップの注意点については[ローカルデータの永続化](../../docs-for-user/DATA_STORAGE.md)をご覧ください。フルアプリの場合、推奨されるフローは **ランタイムホームディレクトリの選択 → インストール → `deeptutor init` → `deeptutor start`** です。
+DeepTutorは4つのインストールパスを提供しています。どれも同じランタイムホームのレイアウトを共有します。プライベート設定は、起動元のディレクトリ（または明示的に設定した場合は`DEEPTUTOR_HOME` / `deeptutor start --home`）配下の`data/user/settings/`に保存されます。ストレージの全体構成、データベースのサポート、バックアップの注意点については[ローカルデータの永続化](../../docs-for-dev/DATA_STORAGE.md)をご覧ください。フルアプリの場合、推奨されるフローは **ランタイムホームディレクトリの選択 → インストール → `deeptutor init` → `deeptutor start`** です。
 
 ### 1コマンドでDockerを試す
 
@@ -118,7 +118,7 @@ deeptutor workspace reset
 
 各機能は、組み込みのワークスペースツールを通じて選択されたワークスペースを検査します。モデルが受け取るのは`outputs/...`のような相対パスのみです。`workspace_present`を使用すると、UIは認証済みの開けるスナップショットをレンダリングします。同じ正確な相対パスは、通常のMarkdownリンクや画像でもそのまま機能します。後で元のファイルを変更しても、すでに提示されたスナップショットは変わりません。
 
-Learning Spaceはリソースライブラリを管理します。**Settings → Workspaces**で各ワークスペースにSkills、MCPサービス、知識ベースを割り当てるか、既存のアクセスルールを維持できます。既存のワークスペースは、選択を保存するまで現在のアクセス権を保持します。割り当ては元のリソースを参照し、認証情報や知識インデックスをコピーしません。ワークスペース固有のスキルは共有版を上書きできます。[ワークスペースのリソース割り当て](../../docs-for-user/workspaces.md)を参照してください。
+Learning Spaceはリソースライブラリを管理します。**Settings → Workspaces**で各ワークスペースにSkills、MCPサービス、知識ベースを割り当てるか、既存のアクセスルールを維持できます。既存のワークスペースは、選択を保存するまで現在のアクセス権を保持します。割り当ては元のリソースを参照し、認証情報や知識インデックスをコピーしません。ワークスペース固有のスキルは共有版を上書きできます。[ワークスペースのリソース割り当て](../../docs-for-dev/workspaces.md)を参照してください。
 
 実行は`outputs/`の外では読み取り専用です。生成されたファイルをコンテンツワークスペース内の別の場所にコピーするには、その正確なコピー元とコピー先について明示的な**Allow once**の確認が必要です。利用可能な場合はシステムサンドボックスまたはDocker runnerがこの境界を強制します。ローカルの制限付きサブプロセスフォールバックは、Workspace設定で**best effort**として表示されます。
 
@@ -223,7 +223,7 @@ deeptutor start --dev
 - `ghcr.io/hkuds/deeptutor:latest` — 最新の安定版リリース
 - `ghcr.io/hkuds/deeptutor:<version>` — 先頭の`v`を除いた正確なリリース（例：`:1.6.3`）。プレリリースにはそのバージョンタグのみが付与されます
 
-> ポッドマン/rootless/読み取り専用rootfsデプロイメントと完全なインストール別ガイドについては [CONTAINERIZATION.md](../../docs-for-user/CONTAINERIZATION.md) を参照してください。
+> ポッドマン/rootless/読み取り専用rootfsデプロイメントと完全なインストール別ガイドについては [CONTAINERIZATION.md](../../docs-for-dev/CONTAINERIZATION.md) を参照してください。
 
 ```bash
 docker run --rm --name deeptutor \
@@ -293,7 +293,7 @@ docker run --rm --name deeptutor \
 
 Docker Desktop（macOS/Windows）は通常`--add-host`なしで`host.docker.internal`を解決します。Linuxでは、このフラグが最新のDocker Engineでそのホスト名を作成するポータブルな方法です。
 
-**Linuxの代替 — ホストネットワーキング：** `--network=host`を追加して`-p`フラグを削除します。コンテナはホストネットワークを直接共有するため、[http://127.0.0.1:3782](http://127.0.0.1:3782)（または`system.json`の`frontend_port`）を開き、ホストサービスには`http://127.0.0.1:11434/v1`のような通常のlocalhostのURLでアクセスできます。ホストネットワーキングはコンテナのポートをホスト上に直接公開し、既存のサービスと競合する可能性があります — それらをループバックに保つには`BACKEND_HOST=127.0.0.1`と`FRONTEND_HOST=127.0.0.1`を設定してください（[CONTAINERIZATION.md](../../docs-for-user/CONTAINERIZATION.md)参照）。
+**Linuxの代替 — ホストネットワーキング：** `--network=host`を追加して`-p`フラグを削除します。コンテナはホストネットワークを直接共有するため、[http://127.0.0.1:3782](http://127.0.0.1:3782)（または`system.json`の`frontend_port`）を開き、ホストサービスには`http://127.0.0.1:11434/v1`のような通常のlocalhostのURLでアクセスできます。ホストネットワーキングはコンテナのポートをホスト上に直接公開し、既存のサービスと競合する可能性があります — それらをループバックに保つには`BACKEND_HOST=127.0.0.1`と`FRONTEND_HOST=127.0.0.1`を設定してください（[CONTAINERIZATION.md](../../docs-for-dev/CONTAINERIZATION.md)参照）。
 
 </details>
 
@@ -426,7 +426,7 @@ DeepTutorは、インストールされたコード、プライベートなラ�
 
 科目やプロジェクト用の**ワークスペース**から始めましょう。その**Home**、**Learning**、**Resources**に、会話、学習活動、教材がまとまります。**Partners**と**Personalization**はワークスペースをまたいでアカウントに紐づきます。以下のツアーでは各画面のつながりを紹介し、続いて設定とマルチユーザーデプロイメントを説明します。
 
-回答が以前の制約を失ったり、弱い根拠を引用したり、選択した資料と矛盾したりする場合は、Issueを開く前に[`REASONING_SAFETY_CHECKLIST.md`](../../docs-for-user/REASONING_SAFETY_CHECKLIST.md)に診断情報をまとめてください。
+回答が以前の制約を失ったり、弱い根拠を引用したり、選択した資料と矛盾したりする場合は、Issueを開く前に[`REASONING_SAFETY_CHECKLIST.md`](../../docs-for-dev/REASONING_SAFETY_CHECKLIST.md)に診断情報をまとめてください。
 
 <div align="center">
 <img src="../../assets/figs/web-dev/overview.png" alt="DeepTutorのHomeとワークスペースナビゲーション" width="900">
@@ -564,7 +564,7 @@ Bookは選択したソースをインタラクティブな**生きている本**
 <img src="../../assets/figs/web-dev/knowledge-create.png" alt="知識ベースの作成" width="900">
 </div>
 
-既存のObsidian、Hermes、Markdownライブラリを移行する場合は、接続ボールトとインデックス付きコピーの手順を[Knowledge migration guide](../../docs-for-user/KNOWLEDGE_MIGRATION.md)で確認してください。
+既存のObsidian、Hermes、Markdownライブラリを移行する場合は、接続ボールトとインデックス付きコピーの手順を[Knowledge migration guide](../../docs-for-dev/KNOWLEDGE_MIGRATION.md)で確認してください。
 
 KBを作成する際は、**新規作成**（ドキュメントをアップロードしてインデックスを構築）、**既存をリンク**（既存のインデックスをその場で再利用）、または**Kiwixに接続**（提供中の1つのZIMアーカイブをオンデマンドで検索）を選べます。作成時に保存先ワークスペースを選択します。既存のKBも、プレビューで確認した後に、割り当てと保存済みの参照を維持したままワークスペース間で移動できます。KBは**GitHubリポジトリ**（リポジトリ、ブランチ、glob）または**ドキュメントサイトのURL**（クロール深度とページ数に上限あり、デフォルトで24時間ごとに再同期）も追跡できます。同期はコンテンツのハッシュ差分から追加・変更・削除を検出するため、フォローしているドキュメントを再アップロードなしで最新の状態に保てます。**リンクされたフォルダ**は同期時にローカルの新規・変更ファイルを取り込みます。再インデックスは新しいフラットな`version-N`ディレクトリを書き込み、以前のものを保持するため、再構築中に作業中のインデックスが破壊されることはありません。解析に失敗したファイルを完全な削除・再構築なしで取り除けるよう、**error**状態のベースからでも単一のドキュメントを削除できます。ドキュメント解析（Text-only、MinerU、Docling、Tika、markitdown、PyMuPDF4LLM、LiteParse）とオプションの画像説明モデルは**Settings → Knowledge & documents**で選択し、ローカルモデルのダウンロードはデフォルトでオフです。Docling は、Docling Serve サーバーに対して**remote**モードで実行することもできます（ローカルインストールやモデルは不要）。この設定は同じページ（`mode=remote`、サーバーのベースURL、オプションのAPIキー）または `DOCLING_MODE` / `DOCLING_API_BASE_URL` / `DOCLING_API_TOKEN` 環境変数で行います。Tikaはリモート専用で、そのページに設定したApache Tikaサーバーを参照します。CLIは`list/info/create/connect-kiwix/add/search/eval/eval-diff/set-default/delete`、ソースの追加/削除コマンド、`list-sources`、`sync`でライフサイクルをミラーします。
 
@@ -641,7 +641,7 @@ Settings → Learning & conversationの**Video Learning**では、Reading用のY
 
 成功したバージョン履歴は、同一アカウントのトークン更新やカタログ認証エラーをまたいで保持されますが、無効化されたモデルデータやETagが再び使用可能になることはありません。サインアウトすると、バージョン履歴を含むそのアカウントのローカルキャッシュがクリアされます。通常のステータス読み取りと推論はnpmに問い合わせません。新しいカタログエントリは、すでに選択済みのモデルを置き換えたり学習セッションを再起動させたりしません。カタログに登場することは、完全な推論プロトコル互換性を保証するものではありません。バックグラウンドのバージョン更新機能やユーザー向けのバージョン設定はありません。
 
-デフォルトのローカルDockerおよびPodmanデプロイメントは別々のループバックネットワークを使用するため、サインイン中に一時的なブリッジが必要です。正確なDocker、Compose、Podman、および後片付け用のコマンドについては、[一時的なローカルCodex OAuthブリッジガイド](../../docs-for-user/CONTAINERIZATION.md#temporary-local-codex-oauth-bridge)を参照してください。
+デフォルトのローカルDockerおよびPodmanデプロイメントは別々のループバックネットワークを使用するため、サインイン中に一時的なブリッジが必要です。正確なDocker、Compose、Podman、および後片付け用のコマンドについては、[一時的なローカルCodex OAuthブリッジガイド](../../docs-for-dev/CONTAINERIZATION.md#temporary-local-codex-oauth-bridge)を参照してください。
 
 リモートデプロイメントでは、ブラウザ側の`localhost`とサーバー側の`localhost`は別のマシンであるため、通常のリバースプロキシだけではブラウザのlocalhostコールバックをサーバーまで運べません。コールバックの橋渡しとしてSSHトンネルを使用してください。トンネルは既に公開されているWebポートに到達します。Next.jsは正確なコールバックパスのみを公開コールバックブローカーに書き換え、ブローカーは元のOAuth操作にルーティングする前に`state`を検証します。コールバックリスナーはバックエンドのループバックに留まり、ポート`1455`と`1457`は公開されず、このパスはデフォルトのDockerブリッジネットワークをサポートします。
 
@@ -725,7 +725,7 @@ SID=$(deeptutor run deep_research "Survey 2026 papers on RAG" \
 deeptutor run deep_question "Quiz me on that survey" --session "$SID" --format json
 ```
 
-リポジトリには、CLIの簡潔な引き継ぎドキュメントであるルートの[`SKILL.md`](../../SKILL.md)が含まれています。エージェントに明示的に読み取るよう依頼してください。[エージェントセットアップガイド](../../docs-for-user/AGENT_SETUP.md)では、インストールと設定を説明しています。`deeptutor run`をLangChain / AutoGenループのツールとしてラップすることもできます。完全なレシピ：[Agent Handoff](https://deeptutor.info/docs/cli/agent-handoff/)。
+リポジトリには、CLIの簡潔な引き継ぎドキュメントであるルートの[`SKILL.md`](../../SKILL.md)が含まれています。エージェントに明示的に読み取るよう依頼してください。[エージェントセットアップガイド](../../docs-for-dev/AGENT_SETUP.md)では、インストールと設定を説明しています。`deeptutor run`をLangChain / AutoGenループのツールとしてラップすることもできます。完全なレシピ：[Agent Handoff](https://deeptutor.info/docs/cli/agent-handoff/)。
 
 </details>
 

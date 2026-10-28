@@ -248,7 +248,7 @@ deeptutor config apply setup.json [--home PATH]    # 无交互应用配置
 ```
 
 让外部 Agent 配置 DeepTutor 时，先阅读根目录的 [SKILL.md](../SKILL.md)，再按
-[Agent Setup 指南](../docs-for-user/AGENT_SETUP.md) 完成安装、配置、启动和验证。
+[Agent Setup 指南](../docs-for-dev/AGENT_SETUP.md) 完成安装、配置、启动和验证。
 `deeptutor init --non-interactive [--home PATH]` 只创建缺失的默认设置，不询问参数、
 不选择模型，也不会覆盖已有设置。CLI-only 可以同时加 `--cli`。
 

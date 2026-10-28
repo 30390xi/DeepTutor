@@ -1,5 +1,7 @@
 # Source visuals in knowledge bases
 
+[Handbook](README.md) · [Related guide](INDEXING_RECOVERY.md)
+
 DeepTutor can retain extracted source images when a PDF or EPUB parser emits
 image files. The KB stores verified parser-extracted PNG, JPEG, GIF, or WebP
 bytes with a deterministic asset ID, document hash, parser identity, source
@@ -213,7 +215,9 @@ Use `false` to disable it. The option also lives at
 `engines.mineru.normalize_tiny_scans` in `document_parsing.json`. Enabling it
 changes the cloud parse-cache signature; old parses remain intact. Existing
 indexes are not rebuilt automatically. The optional
-`deeptutor[parse-pymupdf4llm]` extra provides the required PyMuPDF dependency.
+`deeptutor[parse-pymupdf4llm]` wheel extra provides the required PyMuPDF dependency.
+For a source checkout, use `python scripts/install_extras.py parse-pymupdf4llm`
+(see [module installation](MODULES.md#source-checkout)).
 
 Only text-free pages below 144 points on their longest side, with a
 high-resolution image covering at least 80% of the page at an apparent density
@@ -252,3 +256,11 @@ not cached; successful split groups can be reused. Setting the size
 back to `1` restores the normal single-image path. The model must support
 multiple image blocks; unsupported API responses are reported without a burst
 of fallback requests.
+
+## Implementation and verification
+
+- [deeptutor/services/rag/visual_assets.py](../deeptutor/services/rag/visual_assets.py)
+- [deeptutor/services/rag/source_pages.py](../deeptutor/services/rag/source_pages.py)
+- [deeptutor/services/parsing/engines/mineru/](../deeptutor/services/parsing/engines/mineru/)
+- [deeptutor/learning/visual_practice.py](../deeptutor/learning/visual_practice.py)
+- [tests/services/rag/test_source_visual_grounding.py](../tests/services/rag/test_source_visual_grounding.py)

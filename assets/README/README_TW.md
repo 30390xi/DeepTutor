@@ -79,16 +79,16 @@ DeepTutor 是代理程式原生的學習工作區，在同一個可擴充系統�
 ```text
 Help me install and configure the current dev version of DeepTutor from https://github.com/HKUDS/DeepTutor.
 Clone the dev branch, or inspect and reuse my existing checkout, and read SKILL.md and
-docs-for-user/AGENT_SETUP.md first. Follow that guide to prepare the environment,
+docs-for-dev/AGENT_SETUP.md first. Follow that guide to prepare the environment,
 configure my model provider, verify the setup, and start the Web app.
 Ask me for any missing provider, model, or credential-source information;
 do not print API keys. Preserve my existing files and settings, and finish
 with the access URL and the results of your checks.
 ```
 
-[代理程式設定指南](../../docs-for-user/AGENT_SETUP.md)涵蓋完整流程，包括非互動式 CLI 設定。若要自行安裝，請選擇下列其中一種方式。
+[代理程式設定指南](../../docs-for-dev/AGENT_SETUP.md)涵蓋完整流程，包括非互動式 CLI 設定。若要自行安裝，請選擇下列其中一種方式。
 
-DeepTutor 提供四種安裝方式，皆共用同一套執行環境目錄配置：私有設定會儲存在啟動目錄下的 `data/user/settings/`（若明確設定 `DEEPTUTOR_HOME` 或 `deeptutor start --home`，則改儲存在該位置）。請參閱[本機資料持久化](../../docs-for-user/DATA_STORAGE.md)，了解完整的儲存配置、資料庫支援與備份說明。完整應用程式的建議流程是：**選擇一個執行環境目錄 → 安裝 → `deeptutor init` → `deeptutor start`**。
+DeepTutor 提供四種安裝方式，皆共用同一套執行環境目錄配置：私有設定會儲存在啟動目錄下的 `data/user/settings/`（若明確設定 `DEEPTUTOR_HOME` 或 `deeptutor start --home`，則改儲存在該位置）。請參閱[本機資料持久化](../../docs-for-dev/DATA_STORAGE.md)，了解完整的儲存配置、資料庫支援與備份說明。完整應用程式的建議流程是：**選擇一個執行環境目錄 → 安裝 → `deeptutor init` → `deeptutor start`**。
 
 ### 一行指令試用 Docker
 
@@ -117,7 +117,7 @@ deeptutor workspace reset
 
 各項能力都能透過內建的 workspace 工具檢視所選工作區。模型只會收到 `outputs/...` 之類的相對路徑；當它使用 `workspace_present` 時，UI 會顯示一個已驗證身分、可開啟的快照。同一組相對路徑，在一般的 Markdown 連結或圖片中也同樣可用。日後變更來源檔案，並不會改變已呈現的快照。
 
-Learning Space 管理資源庫。在 **Settings → Workspaces** 中，可為各工作區指派 Skills、MCP 服務與知識庫，或保留原有的存取規則。既有工作區會維持目前的存取權，直到儲存選擇為止。指派會參照原始資源，不會複製憑證或知識索引；工作區專屬技能可以覆寫共用版本。請參閱[工作區資源指派](../../docs-for-user/workspaces.md)。
+Learning Space 管理資源庫。在 **Settings → Workspaces** 中，可為各工作區指派 Skills、MCP 服務與知識庫，或保留原有的存取規則。既有工作區會維持目前的存取權，直到儲存選擇為止。指派會參照原始資源，不會複製憑證或知識索引；工作區專屬技能可以覆寫共用版本。請參閱[工作區資源指派](../../docs-for-dev/workspaces.md)。
 
 在 `outputs/` 之外，執行動作一律唯讀。若要將生成的檔案複製到內容工作區中的其他位置，必須針對該確切的來源與目的地，明確以 **Allow once** 確認。系統沙箱或 Docker runner（若可用）會強制執行此邊界；本機受限制的子處理程序備援方式，則會在 Workspace 設定中顯示為**盡力而為（best effort）**。
 
@@ -222,7 +222,7 @@ deeptutor start --dev
 - `ghcr.io/hkuds/deeptutor:latest` — 最新穩定版本
 - `ghcr.io/hkuds/deeptutor:<version>` — 不含開頭 `v` 的確切版本（例如 `:1.6.3`）；預先發行版本只會提供其版本標籤
 
-> 如需 podman／rootless／唯讀 rootfs 部署及各安裝方式的完整指南，請參閱 [CONTAINERIZATION.md](../../docs-for-user/CONTAINERIZATION.md)。
+> 如需 podman／rootless／唯讀 rootfs 部署及各安裝方式的完整指南，請參閱 [CONTAINERIZATION.md](../../docs-for-dev/CONTAINERIZATION.md)。
 
 ```bash
 docker run --rm --name deeptutor \
@@ -292,7 +292,7 @@ docker run --rm --name deeptutor \
 
 Docker Desktop（macOS／Windows）通常不加 `--add-host` 也能解析 `host.docker.internal`。在 Linux 上，此旗標是在現代 Docker Engine 建立該主機名稱的可攜方式。
 
-**Linux 替代方案 — host networking：** 加上 `--network=host` 並移除 `-p` 旗標。容器會直接共用主機網路，因此請開啟 [http://127.0.0.1:3782](http://127.0.0.1:3782)（或 `system.json` 中的 `frontend_port`），並以一般 localhost URL（例如 `http://127.0.0.1:11434/v1`）連接主機服務。請注意，host networking 會直接在主機上公開容器連接埠，且可能與既有服務衝突；若要讓它們維持在 loopback，請設定 `BACKEND_HOST=127.0.0.1` 與 `FRONTEND_HOST=127.0.0.1`（參閱 [CONTAINERIZATION.md](../../docs-for-user/CONTAINERIZATION.md)）。
+**Linux 替代方案 — host networking：** 加上 `--network=host` 並移除 `-p` 旗標。容器會直接共用主機網路，因此請開啟 [http://127.0.0.1:3782](http://127.0.0.1:3782)（或 `system.json` 中的 `frontend_port`），並以一般 localhost URL（例如 `http://127.0.0.1:11434/v1`）連接主機服務。請注意，host networking 會直接在主機上公開容器連接埠，且可能與既有服務衝突；若要讓它們維持在 loopback，請設定 `BACKEND_HOST=127.0.0.1` 與 `FRONTEND_HOST=127.0.0.1`（參閱 [CONTAINERIZATION.md](../../docs-for-dev/CONTAINERIZATION.md)）。
 
 </details>
 
@@ -425,7 +425,7 @@ DeepTutor 會將已安裝的程式碼、私有執行環境目錄與選用的內�
 
 先為科目或專案建立一個**工作區**。其中的 **Home**、**Learning** 與 **Resources** 分別容納對話、學習活動與素材。**Partners** 與 **Personalization** 隨帳號跨工作區共用。下方導覽會介紹這些介面如何相互連結，接著說明設定與多使用者部署。
 
-如果回答遺漏先前限制、引用薄弱證據，或與所選素材不一致，請先將診斷資料收集到 [`REASONING_SAFETY_CHECKLIST.md`](../../docs-for-user/REASONING_SAFETY_CHECKLIST.md)，再建立 issue。
+如果回答遺漏先前限制、引用薄弱證據，或與所選素材不一致，請先將診斷資料收集到 [`REASONING_SAFETY_CHECKLIST.md`](../../docs-for-dev/REASONING_SAFETY_CHECKLIST.md)，再建立 issue。
 
 <div align="center">
 <img src="../../assets/figs/web-dev/overview.png" alt="DeepTutor 首頁與工作區導覽" width="900">
@@ -563,7 +563,7 @@ Book 會將選定來源轉換成互動式**活書**；它不是靜態 PDF，而�
 <img src="../../assets/figs/web-dev/knowledge-create.png" alt="建立知識庫" width="900">
 </div>
 
-要遷移現有的 Obsidian、Hermes 或 Markdown 知識庫嗎？請參閱 [Knowledge 遷移指南](../../docs-for-user/KNOWLEDGE_MIGRATION.md)，了解連結 vault 與索引副本兩種方式。
+要遷移現有的 Obsidian、Hermes 或 Markdown 知識庫嗎？請參閱 [Knowledge 遷移指南](../../docs-for-dev/KNOWLEDGE_MIGRATION.md)，了解連結 vault 與索引副本兩種方式。
 
 建立知識庫時，可以選擇**建立新的知識庫**（上傳文件並建立索引）、**連結現有知識庫**（就地重複使用索引），或**連接 Kiwix**（按需搜尋一個由服務提供的 ZIM 封存檔）。建立時可選擇其儲存工作區；既有知識庫可在預覽後移至其他工作區，並保留指派與已儲存的參照。知識庫也可以追蹤 **GitHub repositories**（repo、branch、glob）或**文件網站 URL**（限制爬取深度與頁面數量，預設每 24 小時重新同步一次）；同步時會以內容雜湊差異識別新增、變更與移除的內容，因此你所追蹤的文件能保持最新，無須重新上傳，**已連結的資料夾**也會在同步時取得新增或變更的本機檔案。重新建立索引時，系統會寫入新的扁平 `version-N` 目錄並保留先前版本，因此可用索引不會在重建途中遭到破壞。即使知識庫處於 **error** 狀態，也能移除單一文件；可直接刪除解析失敗的檔案，無須刪除並重建全部內容。文件解析方式（Text-only、MinerU、Docling、Tika、markitdown、PyMuPDF4LLM 或 LiteParse）與選用的影像描述模型可在 **Settings → Knowledge & documents** 選擇，預設不下載本機模型。Docling 也可以在**遠端（remote）**模式下運作，改連線至 Docling Serve 伺服器（無須本機安裝或下載模型），可在同一頁面（設定 `mode=remote`、伺服器基礎 URL 與選用的 API 金鑰）或 `DOCLING_MODE`／`DOCLING_API_BASE_URL`／`DOCLING_API_TOKEN` 環境變數進行設定。Tika 僅支援遠端模式，會連線至該頁面設定的 Apache Tika 伺服器。CLI 也提供對應的完整生命週期指令：`list/info/create/connect-kiwix/add/search/eval/eval-diff/set-default/delete`、來源新增／移除指令、`list-sources` 與 `sync`。
 
@@ -641,7 +641,7 @@ Settings 是操作控制中心，開啟時會顯示用於設定介面與模型�
 
 同一帳號的 token 更新，以及型錄驗證錯誤，都不會影響先前已成功記錄的版本歷史；但這不會讓已失效的模型資料或 ETag 重新變得可用。登出會清除該帳號的本機快取，包括版本歷史。一般的狀態讀取與推理呼叫不會查詢 npm。新的型錄項目不會取代你已選用的模型，也不會重新啟動學習工作階段；出現在型錄中並不代表已完整相容於推理協定。目前沒有背景版本更新程式，也沒有使用者可設定的版本選項。
 
-預設本機 Docker 與 Podman 部署各自使用獨立的 loopback 網路，登入期間需要暫時橋接。請依照[暫時性本機 Codex OAuth 橋接指南](../../docs-for-user/CONTAINERIZATION.md#temporary-local-codex-oauth-bridge)，使用確切的 Docker、Compose、Podman 與拆除指令。
+預設本機 Docker 與 Podman 部署各自使用獨立的 loopback 網路，登入期間需要暫時橋接。請依照[暫時性本機 Codex OAuth 橋接指南](../../docs-for-dev/CONTAINERIZATION.md#temporary-local-codex-oauth-bridge)，使用確切的 Docker、Compose、Podman 與拆除指令。
 
 在遠端部署中，瀏覽器的 `localhost` 與伺服器的 `localhost` 是不同電腦，因此單靠一般反向代理，無法將瀏覽器的 localhost callback 傳送到伺服器。請使用 SSH 通道作為 callback 橋接。此通道會連到已發布的 Web 連接埠；Next.js 只將確切的 callback 路徑改寫至公開 callback broker，broker 驗證 `state` 後再導向原始 OAuth 操作。Callback listener 仍位於後端 loopback，`1455` 與 `1457` 不會發布；此方式支援預設 Docker bridge 網路。
 
@@ -725,7 +725,7 @@ SID=$(deeptutor run deep_research "Survey 2026 papers on RAG" \
 deeptutor run deep_question "Quiz me on that survey" --session "$SID" --format json
 ```
 
-repo 根目錄附有 [`SKILL.md`](../../SKILL.md)，這是一份精簡的 CLI 交接文件。請明確要求代理程式讀取它；其中的[代理程式設定指南](../../docs-for-user/AGENT_SETUP.md)涵蓋安裝與設定。你也可以在 LangChain／AutoGen 迴圈中將 `deeptutor run` 包裝成工具。完整作法請參閱 [Agent Handoff](https://deeptutor.info/docs/cli/agent-handoff/)。
+repo 根目錄附有 [`SKILL.md`](../../SKILL.md)，這是一份精簡的 CLI 交接文件。請明確要求代理程式讀取它；其中的[代理程式設定指南](../../docs-for-dev/AGENT_SETUP.md)涵蓋安裝與設定。你也可以在 LangChain／AutoGen 迴圈中將 `deeptutor run` 包裝成工具。完整作法請參閱 [Agent Handoff](https://deeptutor.info/docs/cli/agent-handoff/)。
 
 </details>
 

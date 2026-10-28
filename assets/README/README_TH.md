@@ -80,16 +80,16 @@ DeepTutor คือ workspace การเรียนรู้แบบ agent-n
 ```text
 Help me install and configure the current dev version of DeepTutor from https://github.com/HKUDS/DeepTutor.
 Clone the dev branch, or inspect and reuse my existing checkout, and read SKILL.md and
-docs-for-user/AGENT_SETUP.md first. Follow that guide to prepare the environment,
+docs-for-dev/AGENT_SETUP.md first. Follow that guide to prepare the environment,
 configure my model provider, verify the setup, and start the Web app.
 Ask me for any missing provider, model, or credential-source information;
 do not print API keys. Preserve my existing files and settings, and finish
 with the access URL and the results of your checks.
 ```
 
-[คู่มือ Agent Setup](../../docs-for-user/AGENT_SETUP.md) ครอบคลุมขั้นตอนทั้งหมด รวมถึงการกำหนดค่าผ่าน CLI แบบไม่โต้ตอบ หากต้องการติดตั้งด้วยตัวเอง ให้เลือกหนึ่งในเส้นทางด้านล่าง
+[คู่มือ Agent Setup](../../docs-for-dev/AGENT_SETUP.md) ครอบคลุมขั้นตอนทั้งหมด รวมถึงการกำหนดค่าผ่าน CLI แบบไม่โต้ตอบ หากต้องการติดตั้งด้วยตัวเอง ให้เลือกหนึ่งในเส้นทางด้านล่าง
 
-DeepTutor มีเส้นทางการติดตั้งสี่เส้นทาง ทั้งหมดแชร์ layout runtime home เดียวกัน: การตั้งค่าส่วนตัวอยู่ใน `data/user/settings/` ภายใต้ไดเร็กทอรีที่คุณเปิดตัว (หรือภายใต้ `DEEPTUTOR_HOME` / `deeptutor start --home` หากคุณตั้งค่าไว้อย่างชัดเจน) ดู [การจัดเก็บข้อมูลในเครื่องอย่างถาวร](../../docs-for-user/DATA_STORAGE.md) สำหรับ layout การจัดเก็บทั้งหมด การรองรับฐานข้อมูล และคำแนะนำในการสำรองข้อมูล สำหรับแอปเต็มรูปแบบ ขั้นตอนที่แนะนำคือ **เลือกไดเร็กทอรี runtime home → ติดตั้ง → `deeptutor init` → `deeptutor start`**
+DeepTutor มีเส้นทางการติดตั้งสี่เส้นทาง ทั้งหมดแชร์ layout runtime home เดียวกัน: การตั้งค่าส่วนตัวอยู่ใน `data/user/settings/` ภายใต้ไดเร็กทอรีที่คุณเปิดตัว (หรือภายใต้ `DEEPTUTOR_HOME` / `deeptutor start --home` หากคุณตั้งค่าไว้อย่างชัดเจน) ดู [การจัดเก็บข้อมูลในเครื่องอย่างถาวร](../../docs-for-dev/DATA_STORAGE.md) สำหรับ layout การจัดเก็บทั้งหมด การรองรับฐานข้อมูล และคำแนะนำในการสำรองข้อมูล สำหรับแอปเต็มรูปแบบ ขั้นตอนที่แนะนำคือ **เลือกไดเร็กทอรี runtime home → ติดตั้ง → `deeptutor init` → `deeptutor start`**
 
 ### ทดลองใช้ Docker ด้วยคำสั่งเดียว
 
@@ -118,7 +118,7 @@ deeptutor workspace reset
 
 แต่ละความสามารถตรวจสอบ workspace ที่เลือกผ่านเครื่องมือ workspace ในตัว model จะได้รับเฉพาะ relative path เช่น `outputs/...`; เมื่อ model ใช้ `workspace_present` UI จะ render snapshot ที่ authenticated และเปิดได้ relative path เดียวกันเป๊ะนี้ยังใช้ได้ในลิงก์หรือรูปภาพ Markdown ปกติ การเปลี่ยนไฟล์ต้นทางในภายหลังจะไม่เปลี่ยน snapshot ที่นำเสนอไปแล้ว
 
-Learning Space จัดการไลบรารีทรัพยากร ใน **Settings → Workspaces** ให้กำหนด Skills, บริการ MCP และ knowledge bases ให้แต่ละ workspace หรือคงกฎการเข้าถึงเดิมไว้ workspace ที่มีอยู่จะคงสิทธิ์การเข้าถึงปัจจุบันจนกว่าจะบันทึกการเลือก การกำหนดทรัพยากรจะอ้างอิงต้นฉบับโดยไม่คัดลอก credentials หรือดัชนีความรู้ และ skills เฉพาะ workspace สามารถแทนที่เวอร์ชันที่แชร์ได้ ดู[การกำหนดทรัพยากรให้ workspace](../../docs-for-user/workspaces.md)
+Learning Space จัดการไลบรารีทรัพยากร ใน **Settings → Workspaces** ให้กำหนด Skills, บริการ MCP และ knowledge bases ให้แต่ละ workspace หรือคงกฎการเข้าถึงเดิมไว้ workspace ที่มีอยู่จะคงสิทธิ์การเข้าถึงปัจจุบันจนกว่าจะบันทึกการเลือก การกำหนดทรัพยากรจะอ้างอิงต้นฉบับโดยไม่คัดลอก credentials หรือดัชนีความรู้ และ skills เฉพาะ workspace สามารถแทนที่เวอร์ชันที่แชร์ได้ ดู[การกำหนดทรัพยากรให้ workspace](../../docs-for-dev/workspaces.md)
 
 การรันโค้ดเป็นแบบ read-only นอก `outputs/` การคัดลอกไฟล์ที่สร้างขึ้นไปยังที่อื่น
 ใน content workspace ต้องมีการยืนยัน **Allow once** อย่างชัดเจนสำหรับ
@@ -227,7 +227,7 @@ Container เดียวสำหรับแอป Web แบบเต็ม�
 - `ghcr.io/hkuds/deeptutor:latest` — รุ่นเสถียรล่าสุด
 - `ghcr.io/hkuds/deeptutor:<version>` — รุ่นที่ระบุแบบตรงตัวโดยไม่มี `v` นำหน้า (เช่น `:1.6.3`); รุ่นก่อนเผยแพร่จะได้รับเฉพาะแท็กเวอร์ชันของตน
 
-> ดู [CONTAINERIZATION.md](../../docs-for-user/CONTAINERIZATION.md) สำหรับการปรับใช้ podman/rootless/read-only-rootfs และคู่มือต่อการติดตั้งแบบครบถ้วน
+> ดู [CONTAINERIZATION.md](../../docs-for-dev/CONTAINERIZATION.md) สำหรับการปรับใช้ podman/rootless/read-only-rootfs และคู่มือต่อการติดตั้งแบบครบถ้วน
 
 ```bash
 docker run --rm --name deeptutor \
@@ -301,7 +301,7 @@ docker run --rm --name deeptutor \
 
 Docker Desktop (macOS/Windows) มักจะ resolve `host.docker.internal` ได้โดยไม่ต้องใช้ `--add-host` บน Linux ตัวเลือกนี้คือวิธีที่ portable ในการสร้าง hostname บน Docker Engine สมัยใหม่
 
-**ทางเลือกบน Linux — host networking:** เพิ่ม `--network=host` และลบ flags `-p` ออก Container จะแชร์ network ของ host โดยตรง เปิด [http://127.0.0.1:3782](http://127.0.0.1:3782) (หรือ `frontend_port` ใน `system.json`) และ services ของ host สามารถเข้าถึงได้ด้วย localhost URLs ปกติ เช่น `http://127.0.0.1:11434/v1` โปรดทราบว่า host networking จะเปิดเผยพอร์ต container โดยตรงบน host และอาจขัดแย้งกับ services ที่มีอยู่ — หากต้องการเก็บไว้บน loopback ให้ตั้ง `BACKEND_HOST=127.0.0.1` และ `FRONTEND_HOST=127.0.0.1` (ดู [CONTAINERIZATION.md](../../docs-for-user/CONTAINERIZATION.md))
+**ทางเลือกบน Linux — host networking:** เพิ่ม `--network=host` และลบ flags `-p` ออก Container จะแชร์ network ของ host โดยตรง เปิด [http://127.0.0.1:3782](http://127.0.0.1:3782) (หรือ `frontend_port` ใน `system.json`) และ services ของ host สามารถเข้าถึงได้ด้วย localhost URLs ปกติ เช่น `http://127.0.0.1:11434/v1` โปรดทราบว่า host networking จะเปิดเผยพอร์ต container โดยตรงบน host และอาจขัดแย้งกับ services ที่มีอยู่ — หากต้องการเก็บไว้บน loopback ให้ตั้ง `BACKEND_HOST=127.0.0.1` และ `FRONTEND_HOST=127.0.0.1` (ดู [CONTAINERIZATION.md](../../docs-for-dev/CONTAINERIZATION.md))
 
 </details>
 
@@ -434,7 +434,7 @@ DeepTutor แยกโค้ดที่ติดตั้ง, runtime home ส�
 
 เริ่มต้นด้วย **workspace** สำหรับวิชาหรือโปรเจกต์ โดย **Home**, **Learning** และ **Resources** เก็บบทสนทนา กิจกรรมการเรียน และสื่อการเรียนของคุณ ส่วน **Partners** และ **Personalization** จะผูกกับบัญชีของคุณข้าม workspaces การสำรวจด้านล่างแสดงให้เห็นว่าส่วนเหล่านี้เชื่อมต่อกันอย่างไร ตามด้วยการตั้งค่าและการปรับใช้แบบ multi-user
 
-หากคำตอบทำข้อกำหนดก่อนหน้าหลุดหาย, อ้างหลักฐานที่อ่อน หรือไม่สอดคล้องกับสื่อที่เลือก ให้รวบรวมข้อมูลวินิจฉัยตาม [`REASONING_SAFETY_CHECKLIST.md`](../../docs-for-user/REASONING_SAFETY_CHECKLIST.md) ก่อนเปิด issue
+หากคำตอบทำข้อกำหนดก่อนหน้าหลุดหาย, อ้างหลักฐานที่อ่อน หรือไม่สอดคล้องกับสื่อที่เลือก ให้รวบรวมข้อมูลวินิจฉัยตาม [`REASONING_SAFETY_CHECKLIST.md`](../../docs-for-dev/REASONING_SAFETY_CHECKLIST.md) ก่อนเปิด issue
 
 <div align="center">
 <img src="../../assets/figs/web-dev/overview.png" alt="หน้า Home และการนำทาง workspace ของ DeepTutor" width="900">
@@ -592,7 +592,7 @@ Knowledge bases คือคอลเลกชันเอกสารที่�
 <img src="../../assets/figs/web-dev/knowledge-create.png" alt="สร้าง knowledge base" width="900">
 </div>
 
-กำลังย้ายไลบรารี Obsidian, Hermes หรือ Markdown ที่มีอยู่ใช่ไหม ดู [คู่มือการย้ายข้อมูล Knowledge](../../docs-for-user/KNOWLEDGE_MIGRATION.md) สำหรับเส้นทางแบบ connected-vault และ indexed-copy
+กำลังย้ายไลบรารี Obsidian, Hermes หรือ Markdown ที่มีอยู่ใช่ไหม ดู [คู่มือการย้ายข้อมูล Knowledge](../../docs-for-dev/KNOWLEDGE_MIGRATION.md) สำหรับเส้นทางแบบ connected-vault และ indexed-copy
 
 เมื่อสร้าง KB คุณสามารถ **สร้างใหม่** (อัพโหลดและทำ index เอกสาร), **เชื่อมโยงที่มีอยู่** (ใช้ index เดิมในที่เดิม) หรือ **เชื่อมต่อ Kiwix** (ค้นหา ZIM archive หนึ่งชุดที่ให้บริการอยู่ตามต้องการ) เลือก storage workspace ขณะสร้าง; หลังจากดูตัวอย่างแล้ว คุณสามารถย้าย KB ที่มีอยู่ระหว่าง workspaces โดยคงการกำหนดและการอ้างอิงที่บันทึกไว้ KB ยังสามารถติดตาม **GitHub repositories** (repo, branch, glob) หรือ **URL ของเว็บไซต์เอกสาร** (จำกัดความลึกในการ crawl และจำนวนหน้า โดย re-sync ทุก 24 ชั่วโมงเป็นค่าเริ่มต้น) ได้; การ sync จะเปรียบเทียบ hash ของเนื้อหาที่เพิ่ม เปลี่ยนแปลง และลบ เพื่อให้เอกสารที่ติดตามทันสมัยอยู่เสมอโดยไม่ต้องอัพโหลดใหม่ และ **linked folders** จะดึงไฟล์ local ที่เพิ่มหรือเปลี่ยนแปลงเข้ามาเมื่อ sync การ re-indexing จะเขียน directory `version-N` ใหม่แบบแบนและเก็บอันก่อนหน้าไว้ ดังนั้น index ที่ทำงานอยู่จะไม่ถูกทำลายระหว่างการสร้างใหม่ สามารถลบเอกสารหนึ่งรายการได้แม้ KB จะอยู่ในสถานะ **error** — ตัดไฟล์ที่แยกวิเคราะห์ไม่สำเร็จออกโดยไม่ต้องลบและสร้างใหม่ทั้งหมด การแยกวิเคราะห์เอกสาร — Text-only, MinerU, Docling, Tika, markitdown, PyMuPDF4LLM หรือ LiteParse — และโมเดลอธิบายรูปภาพที่เป็นทางเลือก ถูกเลือกใน **Settings → Knowledge & documents** โดยการดาวน์โหลด local model ปิดโดยค่าเริ่มต้น Docling ยังสามารถรันในโหมด **remote** กับเซิร์ฟเวอร์ Docling Serve ได้ (ไม่ต้องติดตั้ง local หรือใช้ model ใด ๆ) โดยกำหนดค่าในหน้านั้น (`mode=remote`, server base URL และ API key ที่เป็นทางเลือก) หรือผ่าน environment variables `DOCLING_MODE` / `DOCLING_API_BASE_URL` / `DOCLING_API_TOKEN` Tika ทำงานในโหมด remote เท่านั้นและชี้ไปยังเซิร์ฟเวอร์ Apache Tika ที่กำหนดค่าไว้ในหน้านั้น CLI ครอบคลุม lifecycle ด้วย `list/info/create/connect-kiwix/add/search/eval/eval-diff/set-default/delete`, คำสั่งเพิ่ม/ลบ source, `list-sources` และ `sync`
 
@@ -670,7 +670,7 @@ Settings คือศูนย์ควบคุมการทำงาน โ�
 
 ประวัติเวอร์ชันที่สำเร็จจะยังอยู่รอดผ่านการ renew token ของบัญชีเดิมและข้อผิดพลาด authentication ของ catalog โดยไม่ทำให้ model data หรือ ETags ที่ invalidate แล้วกลับมาใช้ได้อีก การลงชื่อออกจะล้าง local cache ของบัญชีนั้น รวมถึงประวัติเวอร์ชันด้วย การอ่านสถานะปกติและ inference จะไม่ query npm รายการ catalog ใหม่จะไม่แทนที่ model ที่คุณเลือกไว้แล้วหรือรีสตาร์ท learning session; การปรากฏใน catalog ไม่ได้เป็นการยืนยันความเข้ากันได้ของ inference protocol แบบสมบูรณ์ ไม่มี background version updater หรือ user version setting
 
-การปรับใช้ Docker และ Podman บนเครื่อง local แบบเริ่มต้นใช้ loopback network แยกจากกัน และต้องการสะพานเชื่อมชั่วคราวระหว่างการลงชื่อเข้าใช้ ทำตาม [คู่มือสะพานเชื่อม Codex OAuth ชั่วคราวสำหรับเครื่อง local](../../docs-for-user/CONTAINERIZATION.md#temporary-local-codex-oauth-bridge) สำหรับคำสั่ง Docker, Compose, Podman และ teardown ที่แน่นอน
+การปรับใช้ Docker และ Podman บนเครื่อง local แบบเริ่มต้นใช้ loopback network แยกจากกัน และต้องการสะพานเชื่อมชั่วคราวระหว่างการลงชื่อเข้าใช้ ทำตาม [คู่มือสะพานเชื่อม Codex OAuth ชั่วคราวสำหรับเครื่อง local](../../docs-for-dev/CONTAINERIZATION.md#temporary-local-codex-oauth-bridge) สำหรับคำสั่ง Docker, Compose, Podman และ teardown ที่แน่นอน
 
 สำหรับการปรับใช้แบบ remote `localhost` ของเบราว์เซอร์และ `localhost` ของเซิร์ฟเวอร์คือคนละเครื่องกัน ดังนั้น reverse proxy ธรรมดาเพียงอย่างเดียวไม่สามารถส่ง callback แบบ localhost ของเบราว์เซอร์ไปถึงเซิร์ฟเวอร์ได้ ให้ใช้ SSH tunnel เป็นสะพานเชื่อม callback ตัว tunnel จะไปถึงพอร์ต Web ที่เผยแพร่อยู่แล้ว; Next.js จะ rewrite เฉพาะ callback path ที่ตรงเป๊ะไปยัง public callback broker เท่านั้น และ broker จะตรวจสอบ `state` ก่อนที่จะ route ไปยัง OAuth operation ต้นทาง callback listener ยังคงอยู่ที่ backend loopback พอร์ต `1455` และ `1457` จะไม่ถูกเผยแพร่ และเส้นทางนี้รองรับ Docker bridge network เริ่มต้น
 
@@ -754,7 +754,7 @@ SID=$(deeptutor run deep_research "Survey 2026 papers on RAG" \
 deeptutor run deep_question "Quiz me on that survey" --session "$SID" --format json
 ```
 
-repo มี root [`SKILL.md`](../../SKILL.md) — เอกสาร handover แบบกระชับสำหรับ CLI ขอให้ agent ของคุณอ่านไฟล์นี้อย่างชัดเจน; [คู่มือ Agent Setup](../../docs-for-user/AGENT_SETUP.md) ครอบคลุมการติดตั้งและการกำหนดค่า คุณยังสามารถ wrap `deeptutor run` เป็นเครื่องมือใน LangChain / AutoGen loop ได้ด้วย สูตรเต็ม: [Agent Handoff](https://deeptutor.info/docs/cli/agent-handoff/)
+repo มี root [`SKILL.md`](../../SKILL.md) — เอกสาร handover แบบกระชับสำหรับ CLI ขอให้ agent ของคุณอ่านไฟล์นี้อย่างชัดเจน; [คู่มือ Agent Setup](../../docs-for-dev/AGENT_SETUP.md) ครอบคลุมการติดตั้งและการกำหนดค่า คุณยังสามารถ wrap `deeptutor run` เป็นเครื่องมือใน LangChain / AutoGen loop ได้ด้วย สูตรเต็ม: [Agent Handoff](https://deeptutor.info/docs/cli/agent-handoff/)
 
 </details>
 

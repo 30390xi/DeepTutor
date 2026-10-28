@@ -1,7 +1,10 @@
 # Knowledge migration guide
 
+[Handbook](README.md) · [Related guide](INDEXING_RECOVERY.md)
+
 This guide covers moving existing notes from Obsidian, Hermes, or another
-Markdown-based tool into DeepTutor. It matches the v1.6.0 Knowledge Center.
+Markdown-based tool into the current Knowledge Center. For moving existing
+DeepTutor data between workspaces, use [workspace data migration](workspaces.md).
 
 ## Choose a migration path
 
@@ -112,3 +115,9 @@ when filenames repeat or hierarchy is meaningful. Use `deeptutor kb list` and
   note, and then delete that scratch note from Obsidian.
 - Keep the original backup until retrieval quality and asset references are
   confirmed.
+
+## Implementation and verification
+
+- [deeptutor/capabilities/obsidian/vault.py](../deeptutor/capabilities/obsidian/vault.py)
+- [deeptutor/api/routers/knowledge.py](../deeptutor/api/routers/knowledge.py)
+- [deeptutor_cli/kb.py](../deeptutor_cli/kb.py)

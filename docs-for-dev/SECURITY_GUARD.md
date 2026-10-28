@@ -1,5 +1,7 @@
 # Optional request screening (fastapi-guard)
 
+[Handbook](README.md) · [Related guide](CONTAINERIZATION.md)
+
 DeepTutor can screen HTTP requests inside the backend with [fastapi-guard](https://github.com/Guard-Core/fastapi-guard). It is **off by default**. When it is off, the package is never imported and the middleware stack is unchanged. Like any new setting, `system.json` gains the disabled `security_guard` block with its defaults on the next load, and a malformed block is replaced by the defaults.
 
 The guard is an application-layer control. It complements a reverse proxy, WAF or firewall at the edge, and it keeps working when the backend port is reached without one (for example a published `:8001`, `deeptutor serve` on a LAN, or a tunnel).
@@ -26,10 +28,13 @@ Two engine behaviours worth knowing, as of fastapi-guard 8.1.1 / guard-core 4.4.
 
 ## Enable it
 
-1. Install the extra (it adds `fastapi-guard`; `redis` is already a DeepTutor dependency, `maxminddb` and `cachetools` are new):
+1. Install the optional guard dependencies in the environment that owns the server:
 
    ```bash
-   pip install "deeptutor[guard]"      # or: pip install -r requirements/guard.txt
+   # Source checkout:
+   python scripts/install_extras.py guard
+   # Wheel environment with the server already installed:
+   python -m pip install "deeptutor[guard]"
    ```
 
    In Docker set `DEEPTUTOR_EXTRAS: "guard"` on the service, the same way as other extras (see [CONTAINERIZATION.md](CONTAINERIZATION.md)).
@@ -79,3 +84,8 @@ Dual-stack binds: with guard-core 4.4.0, a peer reported in IPv4-mapped form (`:
 **Bundled frontend.** The Next.js proxy (`web/proxy.ts`) deletes `X-Forwarded-For` and the other forwarded headers from browser requests (`web/lib/backend-forward.ts`) and does not add the browser's address. Requests that reach the backend through it all arrive from the frontend's own address (loopback in the default layout), with no forwarded header. One shared limit would throttle every user together, so `exempt_ips` (default `127.0.0.1` and `::1`) exempts that address from the rate limit. Through the frontend, requests are therefore screened for attack patterns and the denylist, but not rate-limited. Per-client limits apply to requests that reach the backend directly, or through a reverse proxy that sets `X-Forwarded-For` and is listed in `trusted_proxies` (with `exempt_ips` containing loopback, a loopback request that carries `X-Forwarded-For` is limited as the forwarded client). `exempt_ips` skips the rate limit only: the denylist, bans and the attack-pattern scan still apply to listed addresses. The guard does not ban loopback addresses.
 
 **Allowlist with the bundled frontend.** If `whitelist` is set, frontend traffic (loopback) is refused unless loopback is listed. With the bundled frontend, add `127.0.0.1` and `::1` to `whitelist`. The allowlist and denylist then govern direct backend access only, because the frontend hides browser addresses.
+
+## Implementation and verification
+
+- [deeptutor/api/security_guard.py](../deeptutor/api/security_guard.py)
+- [tests/api/test_security_guard.py](../tests/api/test_security_guard.py)

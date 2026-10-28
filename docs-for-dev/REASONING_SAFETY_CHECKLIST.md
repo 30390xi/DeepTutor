@@ -1,5 +1,7 @@
 # Long-Horizon Reasoning and Safety Checklist
 
+[Handbook](README.md) · [Related guide](AGENT_SETUP.md#6-troubleshooting)
+
 Use this checklist when a tutoring answer looks unreliable, changes assumptions midway, cites weak evidence, or fails to reflect the material a learner selected. It is intentionally diagnostic: it helps users collect useful evidence and helps maintainers distinguish a prompt problem, retrieval problem, context problem, or product bug.
 
 ## Quick Diagnostic Questions
@@ -76,3 +78,8 @@ Expected behavior:
 Actual behavior:
 What I already tried:
 ```
+
+## Implementation and verification
+
+- [deeptutor/agents/loop/](../deeptutor/agents/loop/)
+- [deeptutor/services/rag/](../deeptutor/services/rag/)

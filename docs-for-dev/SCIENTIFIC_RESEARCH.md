@@ -1,8 +1,11 @@
 # Scientific research workflows
 
+[Handbook](README.md) · [Related guide](TOOLS_AND_CAPABILITIES.md)
+
 DeepTutor mounts `preprint`, `research_audit` and `research_lit` for scientific
 paper requests, paper-search-enabled chat, and Deep Research. They are
-context-gated tools; the seven user-toggleable tools remain unchanged.
+context-gated tools, separate from the eight user-toggleable tools described
+in [Tools and capabilities](TOOLS_AND_CAPABILITIES.md#mounting-rules).
 
 - `preprint(paper, action="read", pages=[...])` reads the primary arXiv PDF,
   preserves requested versions and legacy archive IDs, records its SHA-256 and
@@ -89,3 +92,10 @@ setting changes neither `web_fetch` nor native paper/repository downloads.
 Legacy administrator-owned local/stdio configurations keep their original
 behavior. Native arXiv metadata is paced in-process; provider rate-limit errors
 remain visible. See the [arXiv API documentation](https://info.arxiv.org/help/api/user-manual.html).
+
+## Implementation and verification
+
+- [deeptutor/tools/research_tools.py](../deeptutor/tools/research_tools.py)
+- [deeptutor/services/research/primitives.py](../deeptutor/services/research/primitives.py)
+- [tests/services/research/test_primitives.py](../tests/services/research/test_primitives.py)
+- [tests/services/research/test_mcp_boundaries.py](../tests/services/research/test_mcp_boundaries.py)

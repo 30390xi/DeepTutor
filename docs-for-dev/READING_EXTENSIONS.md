@@ -1,5 +1,7 @@
 # Immersive Reading extensions
 
+[Handbook](README.md) · [Related guide](PLUGINS.md)
+
 Immersive Reading discovers server-side packages through the
 `deeptutor.reading_extensions` Python entry-point group. DeepTutor ships read
 aloud, study guidance, vocabulary, quiz, and explicit-target translation
@@ -65,3 +67,7 @@ class ExampleExtension:
 Protocol changes must remain backward-compatible within version `1`. A future
 incompatible contract must use a new protocol version rather than changing the
 meaning of an existing field.
+
+## Implementation and verification
+
+- [deeptutor/reading/extensions.py](../deeptutor/reading/extensions.py)

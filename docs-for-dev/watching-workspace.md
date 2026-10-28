@@ -1,5 +1,7 @@
 # Video learning in Immersive Reading
 
+[Handbook](README.md) · [Related guide](READING_EXTENSIONS.md)
+
 Open **Reading** under Learning, add a YouTube or Bilibili URL to a collection, and study it beside the tutor. Videos use the same reading material, transcript, annotations and conversation stores as documents. The media stage supports transcript search and follow, timestamp citations, fullscreen viewing and the current/next caption lines. Missing captions or unsupported playback are shown explicitly; a tutor must not claim to have watched footage from transcript text alone.
 
 New timestamped notes are Reading annotations. Their location is captured when the editor opens, so playback moving while you write does not move the note. Failed saves keep the draft for retry; an older save finishing does not erase newer text.
@@ -21,3 +23,8 @@ Use **Browse Invidious** in the add-material dialog to search or select from an 
 ## Verification and recovery
 
 Check playback, seeking, transcript search/follow, timestamp citations, and note save/edit/retry. Reopen a migrated conversation and confirm that its message history and source identity remain unchanged. Also check missing captions, an unavailable provider, narrow screens and owner access boundaries. Preserve the existing data directory and owner identity during deployment or rollback; do not overwrite newer user data with a backup merely to undo a frontend change.
+
+## Implementation and verification
+
+- [deeptutor/reading/](../deeptutor/reading/)
+- [web/components/reading/](../web/components/reading/)

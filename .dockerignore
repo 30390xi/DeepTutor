@@ -18,6 +18,7 @@
 *.md
 !README.md
 docs/
+docs-for-dev/
 assets/gifs/
 assets/figs/
 assets/README/

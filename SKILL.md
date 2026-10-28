@@ -28,10 +28,12 @@ Use this skill when the user wants to:
 
 ## Agent Setup
 
+Start with the [developer and agent handbook](docs-for-dev/README.md) to find
+the relevant setup, architecture, development, testing, or feature guide.
 When the user asks you to install, configure, or troubleshoot DeepTutor, follow
-[docs-for-user/AGENT_SETUP.md](docs-for-user/AGENT_SETUP.md). It covers cloning,
+[docs-for-dev/AGENT_SETUP.md](docs-for-dev/AGENT_SETUP.md). It covers cloning,
 environment preparation, credential sources, optional RAG/search, startup,
-and verification, plus a [troubleshooting approach](docs-for-user/AGENT_SETUP.md#6-troubleshooting)
+and verification, plus a [troubleshooting approach](docs-for-dev/AGENT_SETUP.md#6-troubleshooting)
 for existing installations. Read it before changing settings; reuse existing checkouts
 and preserve the user's files. Keep `DEEPTUTOR_HOME` consistent for all commands.
 

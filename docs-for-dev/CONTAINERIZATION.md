@@ -1,5 +1,7 @@
 # DeepTutor Containerization
 
+[Handbook](README.md) · [Agent setup](AGENT_SETUP.md) · [Storage](DATA_STORAGE.md)
+
 This document covers deploying DeepTutor from a container image: the
 recommended `docker run` path, the hardened rootless-Podman path with a
 read-only root filesystem, runtime configuration, the optional PocketBase
@@ -42,7 +44,7 @@ no longer lives in the frontend bundle. Concretely:
   `DEEPTUTOR_API_BASE_URL` at request time. That env var is set by the
   container entrypoint on every start, read from
   `data/user/settings/system.json`.
-- `start-frontend.sh` is now 12 lines: it sets `PORT`/`HOSTNAME` and
+- `start-frontend.sh` sets `PORT`/`HOSTNAME` and
   `exec`s `node /app/web/server.js`. No mutations of the bundle.
 - `supervisord` runs as root (PID 1) and drops each program (backend,
   frontend) to a non-root `deeptutor` user (UID 1000) via its per-program
@@ -332,11 +334,11 @@ What `compose.yaml` does, and why:
 - **`read_only: true` on every service.** The container's rootfs is
   read-only. The only writable surface is the `tmpfs:` mounts listed
   per service plus the bind-mounted `./data` and Content Workspace directories.
-- **`userns_mode: keep-id`.** The container's UID 0 maps to your host
-  UID; the container's UID 1000 (the `deeptutor` user inside the image)
-  maps to your host UID 1000 (which most distros reserve for the first
-  human user). The `:U` suffix on every volume mount tells podman to
-  chown the bind-mount target to that mapped UID.
+- **`userns_mode: keep-id`.** Uses the runtime's keep-id user namespace.
+  Inspect the actual mapping on the target host; do not assume that container
+  UID 0 or UID 1000 maps identically for every host account. The `:U` mount
+  option adjusts ownership for the container mapping and can change host
+  directory ownership. Use dedicated data directories and verify write access.
 - **`tmpfs:` mounts for the system dirs the runtime expects to write.**
   `/tmp` (Python/Node scratch), `/run` and `/var/run` (pidfiles),
   `/var/log`, `/root`, `/home`. Sizes are intentionally generous; trim
@@ -361,7 +363,10 @@ invariants apply if you want to drive `podman run` directly:
 
 ```bash
 mkdir -p data/user/settings
-echo '{}' > data/user/settings/system.json
+# Create defaults only when no settings exist; preserve existing configuration.
+if [ ! -f data/user/settings/system.json ]; then
+  printf '{}\n' > data/user/settings/system.json
+fi
 
 podman run --rm -d --name deeptutor \
   -p 127.0.0.1:8001:8001 \
@@ -539,3 +544,12 @@ renormalized on save.
   scan) is available through `security_guard` in `system.json` and the
   `guard` extra (`DEEPTUTOR_EXTRAS: "guard"`). It is off by default; see
   [SECURITY_GUARD.md](SECURITY_GUARD.md).
+
+## Implementation and verification
+
+- [Dockerfile](../Dockerfile)
+- [docker-compose.yml](../docker-compose.yml)
+- [docker-compose.ghcr.yml](../docker-compose.ghcr.yml)
+- [compose.yaml](../compose.yaml)
+- [scripts/docker_compose.py](../scripts/docker_compose.py)
+- [tests/scripts/test_docker_compose.py](../tests/scripts/test_docker_compose.py)

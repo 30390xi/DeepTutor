@@ -259,17 +259,18 @@ Copy this prompt into your terminal-capable AI agent (such as Codex or Claude Co
 
 ```text
 Help me install and configure the current dev version of DeepTutor from https://github.com/HKUDS/DeepTutor.
-Clone the dev branch, or inspect and reuse my existing checkout, and read SKILL.md and
-docs-for-user/AGENT_SETUP.md first. Follow that guide to prepare the environment,
+Clone the dev branch, or inspect and reuse my existing checkout. Start at
+docs-for-dev/README.md, then read docs-for-dev/AGENT_SETUP.md and SKILL.md.
+Follow the setup guide to prepare the environment,
 configure my model provider, verify the setup, and start the Web app.
 Ask me for any missing provider, model, or credential-source information;
 do not print API keys. Preserve my existing files and settings, and finish
 with the access URL and the results of your checks.
 ```
 
-The [Agent Setup guide](docs-for-user/AGENT_SETUP.md) covers the full flow, including non-interactive CLI configuration. To install it yourself, choose one of the paths below.
+The [developer and agent handbook](docs-for-dev/README.md) is the documentation entry point for setup, architecture, extension development, testing, and troubleshooting. Its [Agent Setup guide](docs-for-dev/AGENT_SETUP.md) covers the full installation flow, including non-interactive CLI configuration. To install it yourself, choose one of the paths below.
 
-DeepTutor ships four installation paths. They all share one runtime-home layout: private settings live in `data/user/settings/` under the directory you launch from (or under `DEEPTUTOR_HOME` / `deeptutor start --home` if you set one explicitly). See [Local Data Persistence](./docs-for-user/DATA_STORAGE.md) for the complete storage layout, database support, and backup notes. For the full app, the recommended flow is **pick a runtime-home directory → install → `deeptutor init` → `deeptutor start`**.
+DeepTutor ships four installation paths. They all share one runtime-home layout: private settings live in `data/user/settings/` under the directory you launch from (or under `DEEPTUTOR_HOME` / `deeptutor start --home` if you set one explicitly). See [Local Data Persistence](./docs-for-dev/DATA_STORAGE.md) for the complete storage layout, database support, and backup notes. For the full app, the recommended flow is **pick a runtime-home directory → install → `deeptutor init` → `deeptutor start`**.
 
 ### One-Command Docker Trial
 
@@ -314,7 +315,7 @@ Skills, MCP services and knowledge bases to each workspace, or retain its
 existing access rules. Existing workspaces keep their current access until a
 selection is saved. Assignments reference the original resources without copying
 credentials or knowledge indexes; workspace-specific skills can override shared
-versions. See [workspace resource assignments](docs-for-user/workspaces.md).
+versions. See [workspace resource assignments](docs-for-dev/workspaces.md).
 
 Execution is read-only outside `outputs/`. Copying a generated file elsewhere
 in the content workspace requires an explicit **Allow once** confirmation for
@@ -423,7 +424,7 @@ One container for the full Web app. Images on GitHub Container Registry:
 - `ghcr.io/hkuds/deeptutor:latest` — latest stable release
 - `ghcr.io/hkuds/deeptutor:<version>` — exact release without the leading `v` (for example `:1.6.3`); pre-releases receive only their version tag
 
-> See [CONTAINERIZATION.md](./docs-for-user/CONTAINERIZATION.md) for podman/rootless/read-only-rootfs deployments and the full per-installation guide.
+> See [CONTAINERIZATION.md](./docs-for-dev/CONTAINERIZATION.md) for podman/rootless/read-only-rootfs deployments and the full per-installation guide.
 
 ```bash
 docker run --rm --name deeptutor \
@@ -507,7 +508,7 @@ Then in **Settings → Providers**, point the provider Base URL at `host.docker.
 
 Docker Desktop (macOS/Windows) usually resolves `host.docker.internal` without `--add-host`. On Linux, the flag is the portable way to create that hostname on modern Docker Engine.
 
-**Linux alternative — host networking:** add `--network=host` and drop the `-p` flags. The container shares the host network directly, so open [http://127.0.0.1:3782](http://127.0.0.1:3782) (or the `frontend_port` in `system.json`), and host services can be reached with normal localhost URLs like `http://127.0.0.1:11434/v1`. Note that host networking exposes container ports directly on the host and may conflict with existing services — to keep them on loopback, set `BACKEND_HOST=127.0.0.1` and `FRONTEND_HOST=127.0.0.1` (see [CONTAINERIZATION.md](./docs-for-user/CONTAINERIZATION.md)).
+**Linux alternative — host networking:** add `--network=host` and drop the `-p` flags. The container shares the host network directly, so open [http://127.0.0.1:3782](http://127.0.0.1:3782) (or the `frontend_port` in `system.json`), and host services can be reached with normal localhost URLs like `http://127.0.0.1:11434/v1`. Note that host networking exposes container ports directly on the host and may conflict with existing services — to keep them on loopback, set `BACKEND_HOST=127.0.0.1` and `FRONTEND_HOST=127.0.0.1` (see [CONTAINERIZATION.md](./docs-for-dev/CONTAINERIZATION.md)).
 
 </details>
 
@@ -680,7 +681,7 @@ uninstalling DeepTutor.
 
 Start with a **workspace** for a subject or project. Its **Home**, **Learning**, and **Resources** hold your conversations, learning activities, and materials. **Partners** and **Personalization** stay with your account across workspaces. The tour below shows how these surfaces connect, followed by settings and multi-user deployment.
 
-If an answer loses an earlier constraint, cites weak evidence, or disagrees with selected material, collect the diagnostics in [`REASONING_SAFETY_CHECKLIST.md`](./docs-for-user/REASONING_SAFETY_CHECKLIST.md) before opening an issue.
+If an answer loses an earlier constraint, cites weak evidence, or disagrees with selected material, collect the diagnostics in [`REASONING_SAFETY_CHECKLIST.md`](./docs-for-dev/REASONING_SAFETY_CHECKLIST.md) before opening an issue.
 
 <div align="center">
 <img src="assets/figs/web-dev/overview.png" alt="DeepTutor Home and workspace navigation" width="900">
@@ -837,7 +838,7 @@ Knowledge bases are the document collections behind RAG — they ground Chat tur
 <img src="assets/figs/web-dev/knowledge-create.png" alt="Create a knowledge base" width="900">
 </div>
 
-Migrating an existing Obsidian, Hermes, or Markdown library? See [Knowledge migration guide](./docs-for-user/KNOWLEDGE_MIGRATION.md) for connected-vault and indexed-copy paths.
+Migrating an existing Obsidian, Hermes, or Markdown library? See [Knowledge migration guide](./docs-for-dev/KNOWLEDGE_MIGRATION.md) for connected-vault and indexed-copy paths.
 
 Creating a KB, you can **create new** (upload and index documents), **link existing** (reuse an index in place), or **connect Kiwix** (search one served ZIM archive on demand). Choose its storage workspace at creation; an existing KB can move between workspaces after a preview, keeping assignments and saved references. A KB can also track **GitHub repositories** (repo, branch, glob) or **documentation-site URLs** (bounded crawl depth and page count, re-synced every 24 h by default); sync hash-diffs added, changed, and removed content so followed documentation stays current without re-uploading, and **linked folders** pick up new or changed local files on sync. Re-indexing writes a new flat `version-N` directory and keeps prior ones, so a working index is never destroyed mid-rebuild. A single document can be removed even from an **error**-state base — dropping a file that failed to parse without a full delete-and-rebuild. Document parsing — Text-only, MinerU, Docling, Tika, markitdown, PyMuPDF4LLM, or LiteParse — and an optional image-description model are chosen in **Settings → Knowledge & documents**, with local model downloads off by default. Docling can also run in **remote** mode against a Docling Serve server (no local install or models needed), configured on that page (`mode=remote`, a server base URL, and an optional API key) or the `DOCLING_MODE` / `DOCLING_API_BASE_URL` / `DOCLING_API_TOKEN` environment variables. Tika is remote-only and points at the Apache Tika server configured on that page. The CLI mirrors the lifecycle with `list/info/create/connect-kiwix/add/search/eval/eval-diff/set-default/delete`, source add/remove commands, `list-sources`, and `sync`.
 
@@ -915,7 +916,7 @@ On sign-in and **Refresh models**, DeepTutor reads the latest stable `@openai/co
 
 Successful version history survives same-account token renewal and catalog authentication errors, without making invalidated model data or ETags usable again. Signing out clears that account's local cache, including the version history. Ordinary status reads and inference do not query npm. New catalog entries do not replace a model you already selected or restart learning sessions; appearing in the catalog does not establish full inference-protocol compatibility. There is no background version updater or user version setting.
 
-Default local Docker and Podman deployments use separate loopback networks and need a temporary bridge during sign-in. Follow the [temporary local Codex OAuth bridge guide](./docs-for-user/CONTAINERIZATION.md#temporary-local-codex-oauth-bridge) for the exact Docker, Compose, Podman, and teardown commands.
+Default local Docker and Podman deployments use separate loopback networks and need a temporary bridge during sign-in. Follow the [temporary local Codex OAuth bridge guide](./docs-for-dev/CONTAINERIZATION.md#temporary-local-codex-oauth-bridge) for the exact Docker, Compose, Podman, and teardown commands.
 
 For a remote deployment, the browser's `localhost` and the server's `localhost` are different machines, so an ordinary reverse proxy alone cannot carry the browser's localhost callback to the server. Use an SSH tunnel as the callback bridge. The tunnel reaches the already-published Web port; Next.js rewrites only the exact callback path to the public callback broker, and the broker validates `state` before routing to the original OAuth operation. The callback listener remains on the backend loopback, ports `1455` and `1457` are not published, and this path supports the default Docker bridge network.
 
@@ -999,7 +1000,7 @@ SID=$(deeptutor run deep_research "Survey 2026 papers on RAG" \
 deeptutor run deep_question "Quiz me on that survey" --session "$SID" --format json
 ```
 
-The repo ships a root [`SKILL.md`](SKILL.md) — a compact handover doc for the CLI. Ask your agent to read it explicitly; its [Agent Setup guide](docs-for-user/AGENT_SETUP.md) covers installation and configuration. You can also wrap `deeptutor run` as a tool in a LangChain / AutoGen loop. Full recipes: [Agent Handoff](https://deeptutor.info/docs/cli/agent-handoff/).
+The repo ships a root [`SKILL.md`](SKILL.md) — a compact handover doc for the CLI. Ask your agent to read it explicitly; its [Agent Setup guide](docs-for-dev/AGENT_SETUP.md) covers installation and configuration. You can also wrap `deeptutor run` as a tool in a LangChain / AutoGen loop. Full recipes: [Agent Handoff](https://deeptutor.info/docs/cli/agent-handoff/).
 
 </details>
 

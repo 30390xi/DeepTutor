@@ -1,5 +1,7 @@
 # 练习：题库、错题与每日复习
 
+[Handbook](README.md) · [Related guide](workspaces.md)
+
 「学习空间 → 题库」（`/space/questions`）用于管理完整题库与错题，支持导入、搜索、筛选、标签和收藏。
 「个性化学习 → 练习」（`/learning/practice`）提供练习统计、每日错题复习，以及相同的题库、错题和导入功能。
 两个入口共用题目与复习记录；学习空间的题库页面不展示统计图表或每日复习面板。
@@ -106,3 +108,9 @@ SQLite 在原有题目写入时自动收集错题，不要求每个来源单独�
 回退应用版本前仍应备份数据库；旧版本不能展示新的复习计划，但原始题库数据不依赖新表。
 
 开发安装更新后需要重启后端才能注册新接口，前端需使用对应版本。
+
+## Implementation and verification
+
+- [deeptutor/services/practice/](../deeptutor/services/practice/)
+- [deeptutor/api/routers/practice.py](../deeptutor/api/routers/practice.py)
+- [tests/api/test_practice.py](../tests/api/test_practice.py)

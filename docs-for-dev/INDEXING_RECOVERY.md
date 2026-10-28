@@ -1,5 +1,7 @@
 # Long-document indexing and recovery
 
+[Handbook](README.md) · [Related guide](EVENTS_AND_PROGRESS.md)
+
 Each knowledge base records its latest indexing run in `.indexing-run.json`.
 The Files/detail view exposes **Indexing recovery details**, including individual
 source outcomes, current phase and phase-local counts, elapsed runtime, time
@@ -35,3 +37,9 @@ A failed or partial candidate does not overwrite a previous queryable version.
 Completed and failed sources are reported separately, including partial success.
 The durable journal is scoped to the active user/workspace knowledge base;
 linked/read-only knowledge bases cannot be cancelled through mutation routes.
+
+## Implementation and verification
+
+- [deeptutor/knowledge/indexing_run.py](../deeptutor/knowledge/indexing_run.py)
+- [deeptutor/services/parsing/cache.py](../deeptutor/services/parsing/cache.py)
+- [tests/knowledge/test_indexing_run.py](../tests/knowledge/test_indexing_run.py)

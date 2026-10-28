@@ -1,5 +1,7 @@
 # Set Up and Troubleshoot DeepTutor with Your Agent
 
+[Handbook](README.md) · [Development](DEVELOPMENT.md) · [Modules](MODULES.md) · [Storage](DATA_STORAGE.md)
+
 This guide is for an external agent installing, configuring, and verifying
 DeepTutor for a user, or investigating problems in an existing installation.
 For an existing problem, start with [Troubleshooting](#6-troubleshooting) rather
@@ -60,7 +62,7 @@ The 1.7.0 package layout uses `python -m pip install "deeptutor[full]"`
 for the complete Web app. Bare `deeptutor` contains core chat, CLI and SDK;
 it does not contain the server or Web assets. For development builds,
 use the source flow above or the local wheels described in
-[Modules](../docs-for-dev/MODULES.md).
+[Modules](MODULES.md).
 
 When upgrading from 1.6.15, stop DeepTutor, back up the existing runtime home,
 and keep using the same `DEEPTUTOR_HOME`. To install 1.7.0, run
@@ -207,7 +209,7 @@ app needs server and web; RAG needs knowledge and parsing; optional capabilities
 need their owning modules. Core-only intentionally omits these modules. Source
 checkouts use `module enable/disable`; wheel installs also support
 `module install/uninstall`. Stop DeepTutor before changes, and use
-`--wheelhouse /path/to/wheels` for unpublished modules. See [Modules](../docs-for-dev/MODULES.md).
+`--wheelhouse /path/to/wheels` for unpublished modules. See [Modules](MODULES.md).
 
 `doctor` checks local readiness; `doctor --online` makes a small real model request
 and may incur provider usage. Inspect exit status and required failures. Fix
@@ -289,3 +291,9 @@ based on evidence; there is no need to run every command for every problem.
    hypotheses. If unresolved, provide a concise handoff: environment/version,
    reproduction, expected versus actual behavior, relevant redacted errors,
    checks already tried, and the next useful investigation.
+
+## Implementation and verification
+
+- [deeptutor_cli/setup_config.py](../deeptutor_cli/setup_config.py)
+- [deeptutor_cli/doctor.py](../deeptutor_cli/doctor.py)
+- [tests/cli/test_agent_setup.py](../tests/cli/test_agent_setup.py)
